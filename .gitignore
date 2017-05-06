@@ -28,11 +28,11 @@ Makefile.in
 *.o
 *.obj
 *.la
-/tests/*.dev
-/tests/*.lib
-/tests/*.app
-/tests/*.dat
+/tests/*.mar
+/tests/*.mlib
+/tests/*.mapp
 /tests/*.cpp
+/docs/*.pdf
 
 # Compiled Dynamic libraries
 *.so
