@@ -1,0 +1,59 @@
+# Exception Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+#==============================================================================
+#
+Test subClass: Test.Exception body: {
+
+	# Initialize the new test object
+	method initialize {
+		super initialize
+		self setTitle: "Exception throwing and catching"
+	}
+
+	# Where all the tests happen.
+	method execute {
+		# This should catch the exception an not let it get to the test suite.
+		Exception try: {
+			Exception throw: "Exception was not caught by the try clause"
+			self fail: "Exception thrown but not caught"
+		}
+
+		# Same as above just with a different method.
+		Exception try: {
+			Exception throw: "Exception was not caught by the try clause"
+			self fail: "Exception thrown but not caught"
+		} catch: {
+		}
+
+		# Here we actually catch the exception and tests it's value.
+		Exception try: {
+			Exception throw: "Exception was not caught by the try clause"
+			self fail: "Exception thrown but not caught"
+		} catch: .error do: {
+			[[.error message] != "Exception was not caught by the try clause"] isTrue: {
+				self fail: "Didn't receive the correct error message"
+			}
+		}
+		self pass
+	}
+}
+

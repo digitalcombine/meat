@@ -1,0 +1,56 @@
+# Number Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+Library import: Console
+
+Test subClass: Test.NumberBadness body: {
+
+	method initialize {
+		super initialize
+		self setTitle: "Number error management"
+	}
+
+	method execute {
+		[[1.0 type] == Number] isFalse: {
+			self fail: "Constant not converted to a Number type"
+		}
+	
+		# First things first, divide by zero
+		Exception try: {
+			answer = [1.0 / 0.0]
+			self fail: "Dividing by zero didn't throw an error"
+		}
+		
+		#  Here we don't test for correctness but rather just than the methods are
+		# implemented.
+		answer = [1.0 + 1.0]
+		answer = [1.0 - 1.0]
+		answer = [1.0 * 1.0]
+		answer = [1.0 / 1.0]
+		answer = [1.0 % 1.0]
+		answer = [1.0 ^ 1.0]
+		
+    num = 3.4
+    answer = [num + 2.3]
+
+		self pass
+	}
+}
+

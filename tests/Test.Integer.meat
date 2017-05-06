@@ -1,0 +1,97 @@
+# Object Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Test subClass: Test.Integer body: {
+	
+	method initialize {
+		super initialize
+		self setTitle: "Integer functionallity"
+	}
+
+	method execute {
+		# Test integer constants
+		[34 isType: Integer] isFalse: {
+			self fail: "Integer constant not implemented properly"
+		}
+		[-34 isType: Integer] isFalse: {
+			self fail: "Negative integer constant not implemented properly"
+		}
+	
+		# Test basic operators
+		[[10 + 5] == 15] isFalse: {
+			self fail: "Adding returned incorrect result"
+		}
+		
+		[[10 - 5] == 5] isFalse: {
+			self fail: "Subtracting returned incorrect result"
+		}
+		
+		[[12 * 6] == 72] isFalse: {
+			self fail: "Multiplying returned incorrect result"
+		}
+		
+		[[10 / 3] == 3] isFalse: {
+			self fail: "Dividing returned incorrect result"
+		}
+		
+		[[-10 neg] == 10] isFalse: {
+			self fail: "Method neg returned incorrect result"
+		}
+		
+		[[-3452 abs] == 3452] isFalse: {
+			self fail: "Method abs returned incorrect result"
+		}
+
+		# Test comparison operators
+		# TODO
+		
+		# Test bitwise methods		
+		[[170 or: 85] == 255] isFalse: {
+			self fail: "Bitwise or returned incorrect result"
+		}
+		
+		[[255 and: 4] == 4] isFalse: {
+			self fail: "Bitwise and returned incorrect result"
+		}
+		
+		[[170 xor: 85] == 255] isFalse: {
+			self fail: "Bitwise xor returned incorrect result"
+		}
+		
+		[[8 rshift] == 4] isFalse: {
+			self fail: "Bitwise right shift returned incorrect result"
+		}
+		
+		[[8 rshift: 2] == 2] isFalse: {
+			self fail: "Bitwise right shift of 2 returned incorrect result"
+		}
+		
+		[[2 lshift] == 4] isFalse: {
+			self fail: "Bitwise left shift returned incorrect result"
+		}
+		
+		[[2 lshift: 2] == 8] isFalse: {
+			self fail: "Bitwise left shift of 2 returned incorrect result"
+		}
+		
+		self pass
+	}
+}

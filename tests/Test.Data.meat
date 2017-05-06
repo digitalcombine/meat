@@ -1,0 +1,84 @@
+# Index Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+#
+# See data.meat for the building of the test data.dat file.
+
+Library import: UnitTest
+
+Object subClass: TestObject body: {
+	property list
+	property uninitialized
+	property pfoo
+
+	class method new {
+		self newObject
+		context return: self
+	}
+
+	method initialize {
+		super initialize
+		list = [List new]
+	}
+}
+
+Test subClass: Test.Data body: {
+
+	method initialize {
+		super initialize
+		self setTitle: "Serialization functionallity"
+	}
+
+	method execute {
+		datafile = [Archive open: "data.mar"]
+
+		data = [datafile getObject]
+
+		self test: {
+			[data isType: Index] isFalse: {
+				self fail: "Retrieved object is not an Index"
+			}
+		}
+
+		list = [data get: "List"]
+		[list isType: List] isFalse: {
+			self fail: "Retrieved object is not an List"
+		}
+
+		# Test unserializing boolean objects
+		self test: {
+			value = [data get: "True"]
+			[value != [Boolean true]] isTrue: {
+			  self fail: "Retrieved object is not the true boolean object"
+			}
+		}
+		self test: {
+			value = [data get: "False"]
+			[value != [Boolean false]] isTrue: {
+			  self fail: "Retrieved object is not the true boolean object"
+			}
+		}
+
+		self test: {
+			obj = [list get: 1]
+			[obj == 128] isFalse: {
+				self fail: "Retrieving integer from list failed"
+			}
+		}
+	}
+}

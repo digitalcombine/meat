@@ -1,0 +1,58 @@
+# Build the archive that holds the TestSuite application.
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+archive import: "UnitTest"
+archive import: "Test.Application"
+archive import: "Test.Boolean"
+archive import: "Test.Exception"
+archive import: "Test.Object"
+archive import: "Test.Class"
+archive import: "Test.Numeric"
+archive import: "Test.Number"
+archive import: "Test.Integer"
+archive import: "Test.Text"
+archive import: "Test.Index"
+archive import: "Test.List"
+archive import: "Test.Data"
+archive import: "Test.Compiler"
+
+# Create the Test Suite.
+suite = [TestSuite new]
+
+# Add all our tests to the test suite
+suite add: [Test.Application new]
+suite add: [Test.BooleanTrueFalse new]
+suite add: [Test.BooleanFlow new]
+suite add: [Test.BooleanOperators new]
+suite add: [Test.Exception new]
+suite add: [Test.Object new]
+suite add: [Test.Class new]
+suite add: [Test.Numeric new]
+suite add: [Test.Integer new]
+suite add: [Test.NumberBadness new]
+suite add: [Test.Text new]
+suite add: [Test.Index new]
+suite add: [Test.List new]
+suite add: [Test.Data new]
+suite add: [Test.Compiler new]
+
+# Add the Test Suite to the archive.
+archive setObject: suite
+#archive sync
+

@@ -1,0 +1,37 @@
+# Class Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Test subClass: Test.Class body: {
+
+	method initialize {
+		super initialize
+		self setTitle: "Class test place holder"
+	}
+
+	method execute {
+		#  By the time we get here, Classes have been fairly well put through their
+		# paces. So currently we don't do any actual testing but rather this is
+		# a place holder for the future for testing for bugs that we have fixed.
+
+		self pass
+	}
+}
+

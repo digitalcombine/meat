@@ -1,0 +1,59 @@
+# Index Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Test subClass: Test.List body: {
+
+	method initialize {
+		super initialize
+		self setTitle: "List basic functionallity"
+	}
+
+	method execute {
+		list = [List new]
+		obj = "Hello"
+	
+		list append: 1
+		list append: 2
+		list append: obj
+		list append: 3
+		list append: 4
+		
+		[[list size] == 5] isFalse: {
+			self fail: "List returned incorrect size"
+		}
+		
+		[[list get: 2] == 2] isFalse: {
+			self fail: "Unable to retreive value from list"
+		}
+				
+		list removeAt: 2
+		[[list size]  == 4] isFalse: {
+			self fail: "Failed to remove item from list"
+		}
+		
+		list remove: obj
+		[[list size]  == 3] isFalse: {
+			self fail: "Failed to remove item from list"
+		}
+		
+		self pass
+	}	
+}

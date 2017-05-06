@@ -1,0 +1,60 @@
+\documentclass [10pt]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{tabulary}
+
+\title {Meat Language Reference Standard}
+\author {Ron R Wills \textless\href{mailto:ron.rwsoft@gmail.com}{ron.rwsoft@gmail.com}\textgreater}
+
+\begin {document}
+\pagenumbering {gobble}
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.35\textwidth]{meat-logo.jpg}\par\vspace{2cm}
+	{\scshape\Large Language Version 1.0 Proposal\par}
+	\vspace{1.5cm}
+	{\huge\bfseries Meat Language Standard Reference\par}
+	\vspace{2cm}
+	{\Large\itshape Ron R Wills \texttt{\textless\href{mailto:ron.rwsoft@gmail.com}{ron.rwsoft@gmail.com}\textgreater}}\par
+
+	\vfill
+
+% Bottom of the page
+	{\large \today\par}
+\end{titlepage}
+
+\noindent{}Copyright \copyright{} 2017 Ron R Wills \texttt{\textless\href{mailto:ron.rwsoft@gmail.com}{ron.rwsoft@gmail.com}\textgreater}.\\[.5 cm]
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
+A copy of the license is included in the section entitled \textit{"GNU
+Free Documentation License"}.
+\tableofcontents
+\newpage
+\pagenumbering {arabic}
+
+\section {Introduction}
+\subsection {Scope}
+
+\newpage
+\section {Lexical Elements and Parsing}
+\subsection {Characters}
+
+\newpage
+\section {Core Language Components}
+
+All the components of the language described in this section are considered
+mandatory to the language.
+
+\input {Component-Reference}
+\input {Object-Reference}
+\input {Class-Reference}
+
+\newpage
+\section {Appendix}
+\input {FDL}
+
+\end {document}

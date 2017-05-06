@@ -1,0 +1,241 @@
+# Unit Test Suit for the Gitgo Language.
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+ 
+Library import: Console
+
+#==============================================================================
+# Test Class
+
+Object subClass: Test body: {
+
+	# The title for the test.
+	property title
+	# Flag if the test passed or failed.
+	property passed
+	# If the test failed, the reason why.
+	property failExplanation
+
+	# Create a new Test object.
+	class method new {
+		self newObject
+		context return: self
+	}
+
+	# Initialize a the new Test object with default values.
+	method initialize {
+		super initialize
+		
+		passed = [Boolean true]
+		title = ""
+		failExplanation = [List new]
+	}
+
+	#  Set the title of the test. This should be used by subclass in their
+	# initialize methods.
+	method setTitle: newTitle {
+		title = newTitle
+	}
+
+	method getTitle {
+		context return: title
+	}
+
+	# Execute
+	method execute {
+	}
+
+	method test: body {
+	  Exception try: {
+			body execute
+		} catch: .error do: {
+			failExplanation append: [.error message]
+		}
+	}
+
+	method pass {
+		passed = [Boolean true]
+		[context uplevel] return
+	}
+
+	method fail: reason {
+		passed = [Boolean false]
+		failExplanation append: reason
+		[context uplevel] return
+	}
+
+	method hasPassed {
+		context return: passed
+	}
+
+	# Return the reason why the test failed
+	method whyFailed {
+		passed isFalse: {
+			context return: failExplanation
+		} else: {
+			res = [List new]
+			res append: "But it didn't fail"
+			context return: res
+		}
+	}
+	
+	#  Set the reason why the test failed, but unlike the method fail: it does
+	# not kill the context where the failure occured.
+	method whyFailed: reason {
+		passed = [Boolean false]
+		failExplanation append: reason
+	}
+}
+
+#==============================================================================
+# TestSuite Class
+
+Console subClass: TestSuite body: {
+
+	# A list for all the tests added to the TestSuite.
+	property testList
+
+	# Creates a new TestSuite object.
+	class method new {
+		self newObject
+		context return: self
+	}
+
+	# Initialization a new TestSuite object with default values.
+	method initialize {
+		super initialize
+
+		testList = [List new]
+	}
+
+	# Add a test to the test suite.
+	method add: test {
+		[test isType: Test] isTrue: {
+			testList append: test
+		} else: {
+			Exception throw: "Unable to add non-Test objects to test suite"
+		}
+	}
+
+	# Application entry point.
+	method entry {
+		passedCount = 0
+		failedTests = [List new]
+
+		# Execute the tests.
+		Console writeLn: ["=" * 79]
+		testList forEach: .test do: {
+			Console write: [["TEST: " + [.test getTitle]] + "... "]
+			
+			Exception try: {
+				.test execute
+			} catch: .error do: {
+				.test whyFailed: [.error message]
+			}
+			
+			# Record the results of the test.
+			[.test hasPassed] isTrue: {
+				Console writeLn: "Passed"
+				passedCount = [passedCount + 1]
+			} else: {
+				Console writeLn: "Failed"
+				[.test whyFailed] forEach: .message do: {
+					Console writeLn: ["      - " + .message]
+				}
+				failedTests append: .test
+			}
+		}
+
+		# Display a summary of the test results.
+		Console writeLn: ["=" * 79]
+		Console writeLn: [[[testList size] asText] + " tests completed"]
+		Console writeLn: [[passedCount asText] + " tests passed"]
+
+		# Display all the failed tests. Lets hope this is useless code!!!
+		failedTests forEach: .test do: {
+			Console writeLn: [[.test getTitle] + " failed"]
+			[.test whyFailed] forEach: .message do: {
+				Console writeLn: ["  " + .message]
+			}
+		}
+
+		# Return success or failure according to the test results.
+		[failedTests isEmpty] isTrue: {
+			context return: 0
+		} else: {
+			context return: 1
+		}
+	}
+}
+
+#==============================================================================
+# TestX Class
+
+Object subClass: TestX body: {
+	property title
+	property test
+	property passed
+	property failedReasons
+	
+	class method new: testTitle test: body {
+		self newObject
+		title = testTitle
+		test = body
+		context return: self
+	}
+	
+	method initialize {
+		passed = [Boolean false]
+		failedReasons = [List new]
+	}
+	
+	method execute {
+		Exception try: {
+			test execute
+		} catch: .error do: {
+			failedReasons append: [.error message]
+		}
+	}
+}
+
+#==============================================================================
+# TestSuiteX Class
+
+Console subClass: TestSuiteX body: {
+	property tests
+	
+	# Creates a new TestSuite object.
+	class method new {
+		self newObject
+		context return: self
+	}
+
+	# Initialization a new TestSuite object with default values.
+	method initialize {
+		super initialize
+
+		tests = [List new]
+	}
+	
+	method title: title test: body {
+		tests append: [TestX new: title test: body]
+	}
+	
+	method setup {
+	}
+}

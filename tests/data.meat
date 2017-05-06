@@ -1,0 +1,54 @@
+# Testing Object Serialization
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+archive import: "Test.Data"
+
+# Create an index as the object to add to the archive
+data = [Index new]
+
+# Serialize an Integer
+data set: "Integer" to: 256
+
+# Serialize a Number
+data set: "Number" to: 3.1415
+
+# Serialize some Text
+data set: "Text" to: "Hello from the index"
+
+# Serialize booleans
+data set: "True" to: [Boolean true]
+data set: "False" to: [Boolean false]
+
+# Serialize a test object
+obj = [TestObject new]
+data set: "Test Object" to: obj
+
+# Serialize a List
+list = [List new]
+list push: 128
+list push: 0.4342944819
+list push: "Hello from the list"
+data set: "List" to: list
+
+# Serialize an empty List
+data set: "Empty List" to: [List new]
+
+# Create the data archive
+archive setObject: data
+#archive sync

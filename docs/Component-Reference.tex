@@ -1,0 +1,37 @@
+\subsection {Byte Interpretation}
+
+\subsubsection {Integer Endian}
+
+\begin{center}
+  \begin{tabular}{ c r r }
+    Size (bits) & Original Value & Endian Swapped Value\\ \hline
+    8 & $12_{16}$ & $12_{16}$ \\
+    16 & $1234_{16}$ & $3412_{16}$ \\
+    32 & $12345678_{16}$ & $56781234_{16}$ \\
+  \end{tabular}
+\end{center}
+
+\subsection {Virtual Machine Bytecode}
+
+\begin{center}
+  \begin{tabular}{ | p{6cm} | c | p{8cm} | }
+    \hline
+    Operation & Code & Brief Description \\ \hline
+    No Operation & $00_{16}$ & Only increament the bytecode pointer by one.
+                              Nothing else is done. \\
+    Message Object & $01_{16}$ & Send a message to an object. \\
+    Message Object with Result & $02_{16}$ & Send a message to the object
+                                            and assigning the result to a
+                                            local variable. \\
+    Message Object's Super Class & $03_{16}$ & Nothing is \\
+    Message Object's Super Class with Result & $04_{16}$ & Nothing is \\
+    Beginning of Block Context & $0A_{16}$ & Nothing is \\
+    End of Context & $0B_{16}$ & Nothing is \\
+    Assign Local Variable & $10_{16}$ & ...\\
+    Assign Object Property & $11_{16}$ & ...\\
+    Assign Class Property & $12_{16}$ & ...\\
+    Assign Class to Local Variable & $13_{16}$ & ...\\
+    Assign an Integer Constant to a Local Variable & $14_{16}$ & ...\\
+    \hline
+  \end{tabular}
+\end{center}

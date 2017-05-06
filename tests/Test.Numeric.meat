@@ -1,0 +1,121 @@
+# Numeric Class Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Numeric subClass: BadNumeric body: {
+
+	class method new {
+		self newObject
+		context return: self
+	}
+
+}
+
+Test subClass: Test.Numeric body: {
+
+	method initialize {
+		super initialize
+		self setTitle: "Numerical base testing"
+	}
+
+	method execute {
+		badno = [BadNumeric new]
+		answer = 0
+
+		#  Since the Numeric class is just an abstract base class make sure all
+		# the base operators just throw exceptions.
+		Exception try: {
+			answer = [badno + 1]
+			self fail: "method + should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno - 1]
+			self fail: "method - should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno * 1]
+			self fail: "method * should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno / 1]
+			self fail: "method / should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno % 1]
+			self fail: "method % should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno ^ 1]
+			self fail: "method ^ should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno == 1]
+			self fail: "method == should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno != 1]
+			self fail: "method != should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno < 1]
+			self fail: "method < should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno <= 1]
+			self fail: "method <= should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno > 1]
+			self fail: "method > should throw an Exception"
+		}
+
+		Exception try: {
+			answer = [badno >= 1]
+			self fail: "method >= should throw an Exception"
+		}
+
+		answer = [Numeric cos: 30.0]
+		answer = [Numeric sin: 30.0]
+		answer = [Numeric tan: 30.0]
+
+		Exception try: {
+			Numeric log: 0.0
+			self fail: "log failed to raise an out of range error"
+		}
+
+		Exception try: {
+			Numeric log10: 0.0
+			self fail: "log10 failed to raise an out of range error"
+		}
+
+		self pass
+	}
+}
+

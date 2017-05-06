@@ -1,0 +1,63 @@
+# Text Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Test subClass: Test.Text body: {
+
+	method initialize {
+		super initialize
+		self setTitle: "Text objects"
+	}
+
+	method execute {
+		sample = "Hello World"
+		
+		# Test isEmpty method
+		["" isEmpty] isFalse: {
+			self fail: "Empty text says it's not empty"
+		}
+		[sample isEmpty] isTrue: {
+			self fail: "Sample text says it's empty when it's not"
+		}
+		
+		[[sample length] == 11] isFalse: {
+			self fail: "Sample text length is wrong"
+		}
+		
+		[[sample get: 1] == "H"] isFalse: {
+			self fail: "First index of 1 not returning first character"
+		}
+		
+		[[sample get: 7 to: 11] == "World"] isFalse: {
+			self fail: "Invalid sub text returned"
+		}
+
+		[["Hello " + "World"] == "Hello World] isFalse: {
+			self fail: "Text append operator returned invalid result"
+		}
+		
+		[["hi" * 3] == "hihihi"] isFalse: {
+			self fail: "Text repeat operator returned invalid result"
+		}
+				
+		self pass
+	}
+}
+

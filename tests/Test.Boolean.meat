@@ -1,0 +1,164 @@
+# Boolean Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+#
+#  These tests are sort of useless in the sense that testing the results rely
+# on the Boolean functionallity itself. So this becomes a test of "if it works
+# it works", but it really does need to work for all the other testing.
+
+Library import: UnitTest
+
+#==============================================================================
+#
+Test subClass: Test.BooleanTrueFalse body: {
+
+  method initialize {
+    super initialize
+    self setTitle: "Creating Boolean True/False objects"
+  }
+
+  method execute {
+    #self test: {
+      result = [Boolean true]
+      [result isType: Boolean] isFalse: {
+        self fail: "Boolean true didn't return a boolean value"
+      }
+      result isFalse: {
+        self fail: "Boolean true didn't return a true value"
+      }
+    #}
+
+    #self test: {
+      result = [Boolean false]
+      [result isType: Boolean] isFalse: {
+        self fail: "Boolean false didn't return a boolean value"
+      }
+      result isTrue: {
+        self fail: "Boolean false didn't return a false value"
+      }
+    #}
+  }
+}
+
+#==============================================================================
+#
+Test subClass: Test.BooleanFlow body: {
+
+  method initialize {
+    super initialize
+    self setTitle: "Boolean decision flow control"
+  }
+
+  method execute {
+    true = [Boolean true]
+    false = [Boolean false]
+
+    self test: {
+      Exception try: {
+        true isTrue: {
+        }
+      } catch: {
+        self fail: "Boolean message isTrue: is unresolved"
+      }
+    }
+
+    self test: {    
+      true isTrue: {
+      } else: {
+        self fail: "True ifTrue:else: ran else block"
+      }
+    }
+
+    self test: {
+      Exception try: {
+        true isFalse: {
+          self fail: "True ifFalse: ran the block"
+        }
+      } catch: {
+        self fail: "Boolean message isFalse: is unresolved"
+      }
+    }
+
+    true isFalse: {
+      self fail: "True ifFalse:else ran the false block"
+    } else: {
+    }
+
+    false isTrue: {
+      self fail: "False ifTrue: ran block"
+    }
+    
+    false isTrue: {
+      self fail: "False ifTrue:else: ran block"
+    } else: {
+    }
+
+    false isFalse: {
+    }
+
+    false isFalse: {
+    } else: {
+      self fail: "False ifFalse:else ran the else block"
+    }
+  }
+}
+
+#==============================================================================
+#
+
+Test subClass: Test.BooleanOperators body: {
+
+  method initialize {
+    super initialize
+    self setTitle: "Boolean operators"
+  }
+  
+  method execute {
+    true = [Boolean true]
+    false = [Boolean false]
+    
+    [true == [Boolean true]] isFalse: {
+      self fail: "Boolean equality test returned false"
+    }
+    
+    [true != [Boolean true]] isTrue: {
+      self fail: "Boolean inequality test returned true"
+    }
+    
+    # Logical AND testing
+    [false and: false] isTrue:  { self fail: "Logical AND 0 and 0 returned 1" }
+    [true and: false]  isTrue:  { self fail: "Logical AND 1 and 0 returned 1" }
+    [false and: true]  isTrue:  { self fail: "Logical AND 0 and 1 returned 1" }
+    [true and: true]   isFalse: { self fail: "Logical AND 1 and 1 returned 0" }
+    
+    # Logical OR testing
+    [false or: false] isTrue:  { self fail: "Logical OR 0 and 0 returned 1" }
+    [true or: false]  isFalse: { self fail: "Logical OR 1 and 0 returned 0" }
+    [false or: true]  isFalse: { self fail: "Logical OR 0 and 1 returned 0" }
+    [true or: true]   isFalse: { self fail: "Logical OR 1 and 1 returned 0" }
+    
+    # Logical XOR testing
+    [false xor: false] isTrue:  { self fail: "Logical XOR 0 and 0 returned 1" }
+    [true xor: false]  isFalse: { self fail: "Logical XOR 1 and 0 returned 0" }
+    [false xor: true]  isFalse: { self fail: "Logical XOR 0 and 1 returned 0" }
+    [true xor: true]   isTrue:  { self fail: "Logical XOR 1 and 1 returned 1" }
+    
+    self pass
+  }
+}
+

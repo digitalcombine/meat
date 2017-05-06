@@ -1,0 +1,159 @@
+# Object Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Object subClass: OTest1 body: {
+
+  method superTest {
+  }
+
+}
+
+OTest1 subClass: OTest2 body: {
+
+  method superTest {
+    super superTest
+  }
+
+}
+
+OTest2 subClass: OTest3 body: {
+
+  property initCalled
+  property isGood
+
+  class method new {
+    self newObject
+    context return: self
+  }
+
+  method initialize {
+    initCalled = [Boolean true]
+    super initialize
+    isGood = [Boolean true]
+  }
+
+  method superTest {
+    super superTest
+  }
+
+  method good {
+    context return: isGood
+  }
+}
+
+Test subClass: Test.Object body: {
+
+  method initialize {
+    super initialize
+    self setTitle: "Object basic functionallity"
+  }
+
+  method execute {
+    # Test the Object class
+    [Object isClass] isFalse: {
+      self fail: "[Object isClass] returned false"
+    }
+
+    [null isType: Null] isFalse: {
+      self fail: "[null isType: Null] returned false"
+    }
+    [null isNull] isFalse: {
+      self fail: "[null isNull] returned false"
+    }
+
+    # isObject and isClass method tests.
+    [Test isClass] isFalse: {
+      self fail: "[class isClass] returned false"
+    }
+    [Test isObject] isTrue: {
+      self fail: "[class isObject] returned true"
+    }
+    [self isClass] isTrue: {
+      self fail: "[object isClass] returned true"
+    }
+    [self isObject] isFalse: {
+      self fail: "[object isObject] returned false"
+    }
+
+    # Some tests for method itType:.
+    [self isType: Test] isFalse: {
+      self fail: "self type test failed as Test object"
+    }
+    [self isType: Object] isFalse: {
+      self fail: "self type test failed as Object object"
+    }
+    [self isType: Integer] isTrue: {
+      self fail: "Test type tested true as Integer object"
+    }
+
+    # Here we are kind of testing both the methods "type" and "==". It would
+    # be kind of hard to test "type" with out using the class method "==".
+    [[10 type] == Integer] isFalse: {
+      self fail: "Object type test failed to return Integer class"
+    }
+    [[self type] == TestSuite] isTrue: {
+      self fail: "TestSuite type tested true as Test class"
+    }
+
+    # Once again testing two methods at once; weak and "==".
+    weak_self = [self weak]
+    [weak_self == self] isFalse: {
+      self fail: "object == object failed to return true"
+    }
+    [weak_self == 10] isTrue: {
+      self fail: "object == object failed to return false"
+    }
+    [weak_self != self] isTrue: {
+      self fail: "object != object failed to return false"
+    }
+    [weak_self != 10] isFalse: {
+      self fail: "object != object failed to return true"
+    }
+
+    #  Now this is more a test of the bytecode generation. With the new
+    # compiler optimizations we just want to make sure that an assigment
+    # of a local variable to another local variable is not optimized out.
+    temp = weak_self
+    [temp == self] isFalse: {
+      self fail: "Assignment statement was optimized out"
+    }
+
+    # Messages to the super class used to cause infinite loops. Lets make
+    # sure that doesn't happen anymore.
+    #self test: {
+      obj = [OTest3 new]
+      obj superTest
+      res = [obj good]
+      [res isType: Boolean] isFalse: {
+        self fail: "Object initializers are not executing properly"
+      }
+      [obj good] isFalse: {
+        self fail: "Object initializers are not executing properly"
+      }
+    #}
+
+    #  We don't test method initialize. It would be kind of difficult to do so
+    # and if it was failing, the language would be kind of pooched anyways.
+
+    #self pass
+  }
+}
+

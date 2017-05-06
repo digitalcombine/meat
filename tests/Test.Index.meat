@@ -1,0 +1,59 @@
+# Index Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Test subClass: Test.Index body: {
+
+	method initialize {
+		super initialize
+		self setTitle: "Index basic functionallity"
+	}
+
+	method execute {
+		index = [Index new]
+	
+		index set: "One" to: 1
+		index set: "Two" to: 2
+		index set: "Three" to: 3
+		index set: "Four" to: 4
+		
+		[[index size] == 4] isFalse: {
+			self fail: "Index returned incorrect size"
+		}
+		
+		[[index get: "Two"] == 2] isFalse: {
+			self fail: "Unable to retreive value from index"
+		}
+		
+		[index has: "Four"] isFalse: {
+			self fail: "Unable to test for keys"
+		}
+		[index has: "Five"] isTrue: {
+			self fail: "Testing for key return false positive"
+		}
+		
+		index remove: "Two"
+		[index has: "Two"] isTrue: {
+			self fail: "Failed to remove key from index"
+		}
+		
+		self pass
+	}	
+}

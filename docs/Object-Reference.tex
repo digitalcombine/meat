@@ -1,0 +1,67 @@
+\subsection {Object Class}
+
+\indent{}The Object class is the base class for all objects and classes in the
+Meat virtual machine.
+
+\begin{lstlisting}
+Object subClass: Object body: {
+  class method == other
+  class method != other
+  class method isObject
+  class method isClass
+  class method isNull
+  class method type
+  method initialize
+  method == other
+  method != other
+  method isObject
+  method isClass
+  method isNull
+  method type
+  method isType: class
+  method weak
+}
+\end{lstlisting}
+
+\subsubsection {The == methods}
+\begin{lstlisting}
+  class method == other
+  method == other
+\end{lstlisting}
+\indent{}Tests if the \textit{other} object or class is the identical object to self.
+This does not test the equality of values. The result is to be either the True
+or False Boolean objects.
+
+\hfill
+\subsubsection {The != methods}
+\begin{lstlisting}
+  class method != other
+  method != other
+\end{lstlisting}
+Tests if the \textit{other} object or class is not identical object to self.
+This does not test the inequality of values. The result is to be either the
+True or False Boolean objects.
+
+\hfill
+\subsubsection {The isObject methods}
+
+Tests if the object is an object. The result is to be either the
+True or False Boolean objects.\\
+
+The class method with always return the False object and the object method will
+always return the True object.
+
+\hfill
+\subsubsection {The isClass methods}
+
+Tests if the object is a class. The result is to be either the
+True or False Boolean objects.\\
+
+The class method with always return the True object and the object method will
+always return the False object.
+
+\hfill
+\subsubsection {The type methods}
+
+\hfill
+\subsubsection {method weak}

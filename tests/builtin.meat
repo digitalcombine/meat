@@ -1,0 +1,1081 @@
+# Sample template of the internal builtin classes
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Notes
+#   Since we need gitgo to compile this file, the 'ᶲ' character found in all
+#  the class names is to prevent collisions with the builtin in classes. Once
+#  the cpp file is generated then the ᶲ characters can be stripped to give us
+#  a valid builtin class source file.
+
+Library include: {
+#include <meat/utilities.h>
+
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <sstream>
+#include <cmath>
+
+#ifdef TESTING
+#include <testing.h>
+#endif /* TESTING */
+}
+
+#==============================================================================
+# Class Class
+
+Object subClass: Classᶲ body: {
+
+  class function newObject {
+    meat::Reference uplevel = CONTEXT(context).get_uplevel();
+
+    // Create the new object and call the initialize method.
+    meat::Reference new_object = CLASS(self).new_object();
+    meat::Reference init_ctx = message(new_object, "initialize", context);
+    execute(init_ctx);
+
+    // We replace the self object to the new object.
+    CONTEXT(uplevel).reset_self(new_object);
+
+    return null;
+  }
+
+  class function subClass: name body: block {
+    if (class_compiler != 0) {
+      class_compiler(self, name->to_string(), block->to_string());
+    }
+    return null;
+  }
+
+  class function super {
+    return ((meat::Class &)(*self)).get_super();
+  }
+}
+
+#==============================================================================
+# Object Class
+
+Object subClass: Objectᶲ body: {
+
+  constructor {
+    return new meat::Object(klass, properties);
+  }
+
+  class function == other {
+    return (self == other ? meat::True() : meat::False());
+  }
+
+  class function != other {
+    return (!(self == other) ? meat::True() : meat::False());
+  }
+
+  class method isObject {
+    context return: [Boolean false]
+  }
+
+  class method isClass {
+    context return: [Boolean true]
+  }
+
+  class method isNull {
+    context return: [Boolean false]
+  }
+
+  class method type {
+    context return: Class
+  }
+
+  method initialize {
+  }
+
+  function == other {
+    return (self == other ? meat::True() : meat::False());
+  }
+
+  function != other {
+    return (!(self == other) ? meat::True() : meat::False());
+  }
+
+  method isObject {
+    context return: [Boolean true]
+  }
+
+  method isClass {
+    context return: [Boolean false]
+  }
+
+  function type {
+    return self->get_type();
+  }
+
+  function isType: type {
+    return (self->is_type(type) ? meat::True() : meat::False());
+  }
+
+  method isNull {
+    context return: [Boolean false]
+  }
+
+  function weak {
+    return self.weak();
+  }
+}
+
+#==============================================================================
+# Null Class
+#
+#  This class has only a single object to define null.
+
+Object subClass: Nullᶲ body: {
+
+  class property nullObject
+
+  class method newObject {
+    Exception throw: "Cannot create a new internal Null object" \
+      for: [context uplevel]
+  }
+
+  class method subClass: name body: block {
+    Exception throw: "Cannot subclass and internal Null class" \
+      for: [context uplevel]
+  }
+
+  class method isNull {
+    context return: [Boolean false]
+  }
+
+  method isNull {
+    context return: [Boolean true]
+  }
+}
+
+#==============================================================================
+# Exception Class
+
+Object subClass: Exceptionᶲ body: {
+
+  property mesg
+  property cntxt
+
+  constructor {
+    return new meat::Exception(cls, properties);
+  }
+
+  class function try: block {
+    CONTEXT(block).set_uplevel(context);
+
+    try {
+      execute(block);
+    } catch (meat::Exception &err) {
+    } catch (...) {
+    }
+    return null;
+  }
+
+  class function try: try_block catch: catch_block {
+    CONTEXT(try_block).set_uplevel(context);
+    CONTEXT(catch_block).set_uplevel(context);
+
+    try {
+      execute(try_block);
+    } catch (std::exception &err) {
+      execute(catch_block);
+    }
+    return null;
+  }
+
+  class function try: try_block catch: error do: catch_block {
+    CONTEXT(try_block).set_uplevel(context);
+    CONTEXT(catch_block).set_uplevel(context);
+
+    try {
+      execute(try_block);
+    } catch (meat::Exception &err) {
+      meat::Reference excp = new meat::Exception(err);
+      CONTEXT(catch_block).set_local((meat::int32_t)(*error), excp);
+      execute(catch_block);
+    }
+
+    return null;
+  }
+
+  class function throw {
+    meat::Reference ctx = CONTEXT(context).get_uplevel();
+    throw meat::Exception(null, ctx);
+  }
+
+  class function throw: message {
+    meat::Reference ctx = CONTEXT(context).get_uplevel();
+    throw meat::Exception(message, ctx);
+  }
+
+  class function throw: message for: ctx {
+    throw meat::Exception(message, ctx);
+  }
+
+  method message {
+    context return: mesg
+  }
+
+  method context {
+    context return: cntxt
+  }
+}
+
+#==============================================================================
+# Context Class
+
+Object subClass: Contextᶲ body: {
+
+  constructor {
+    return new meat::Context(properties);
+  }
+
+  class method subClass: name body: def {
+    Exception throw: "Cannot subclass and internal Context class"
+  }
+
+  class method newObject {
+    Exception throw: "Cannot create a new internal Context object" \
+      for: [context uplevel]
+  }
+
+  function uplevel {
+    return CONTEXT(self).get_uplevel();
+  }
+
+  function locals {
+    return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
+  }
+
+  function getLocal: index {
+    return CONTEXT(self).get_local((int32_t)(*index));
+  }
+
+  function return {
+    CONTEXT(self).finish();
+    return null;
+  }
+
+  function return: value {
+    CONTEXT(self).set_result(value); // Set the return value
+    CONTEXT(self).finish();          // Tell the context it's done.
+    return null;
+  }
+}
+
+#==============================================================================
+# BlockContext Class
+
+Object subClass: BlockContextᶲ body: {
+
+  function return {
+    // We need to get the actual context to message the return method from.
+    meat::Reference uplevel =
+      ((meat::BlockContext &)(*self)).get_operating_context();
+
+    meat::Reference up_context = message(uplevel, "return", context);
+    execute(up_context);
+
+    CONTEXT(self).finish(); // Tell the context it's done.
+
+    return null;
+  }
+
+  function return: value {
+    // We need to get the actual context to message the return method from.
+    meat::Reference uplevel =
+      ((meat::BlockContext &)(*self)).get_operating_context();
+
+    meat::Reference up_context = message(uplevel, "return:", context);
+    CONTEXT(up_context).set_param(0, value);
+    execute(up_context);
+
+    CONTEXT(self).finish(); // Tell the context it's done.
+
+    return null;
+  }
+}
+
+#==============================================================================
+# Numeric
+
+Object subClass: Numericᶲ body: {
+
+
+  class function cos: value {
+    return
+      new meat::Object((meat::float_t)std::cos(value->to_float()));
+  }
+
+  class function sin: value {
+    return
+      new meat::Object((meat::float_t)std::sin(value->to_float()));
+  }
+
+  class function tan: value {
+    return
+      new meat::Object((meat::float_t)std::tan(value->to_float()));
+  }
+
+  class function acos: value {
+    return
+      new meat::Object((meat::float_t)std::acos(value->to_float()));
+  }
+
+  class function asin: value {
+    return
+      new meat::Object((meat::float_t)std::asin(value->to_float()));
+  }
+
+  class function atan: value {
+    return
+      new meat::Object((meat::float_t)std::atan(value->to_float()));
+  }
+
+  class function atan2y: y x: x {
+    return
+      new meat::Object((meat::float_t)std::atan2(y->to_float(),
+                                                   x->to_float()));
+  }
+
+  class function cosh: value {
+    return
+      new meat::Object((meat::float_t)std::cosh(value->to_float()));
+  }
+
+  class function sinh: value {
+    return
+      new meat::Object((meat::float_t)std::sinh(value->to_float()));
+  }
+
+  class function tanh: value {
+    return
+      new meat::Object((meat::float_t)std::tanh(value->to_float()));
+  }
+
+  class function exp: value {
+    meat::float_t answer = (meat::float_t)std::exp(value->to_float());
+
+    if (answer == HUGE_VAL) throw meat::Exception("exp range error");
+
+    return new meat::Object(answer);
+  }
+
+  class function log: value {
+    if ((value->to_float()) <= 0.0)
+      throw meat::Exception("Log parameter out of range");
+
+    return
+      new meat::Object((meat::float_t)std::log(value->to_float()));
+  }
+
+  class function log10: value {
+    if ((value->to_float()) <= 0.0)
+      throw meat::Exception("Log10 parameter out of range");
+
+    return
+      new meat::Object((meat::float_t)std::log10(value->to_float()));
+  }
+
+  class function sqrt: value {
+    if ((value->to_float()) < 0.0)
+      throw meat::Exception("Square root parameter out of range");
+
+    return
+      new meat::Object((meat::float_t)std::sqrt(value->to_float()));
+  }
+
+  method + other {
+    Exception throw: "Method + undefined"
+  }
+
+  method - other {
+    Exception throw: "Method - undefined"
+  }
+
+  method * other {
+    Exception throw: "Method * undefined"
+  }
+
+  method / other {
+    Exception throw: "Method / undefined"
+  }
+
+  method % other {
+    Exception throw: "Method % undefined"
+  }
+
+  method ^ other {
+    Exception throw: "Method ^ undefined"
+  }
+
+  method == other {
+    Exception throw: "Method == undefined"
+  }
+
+  method != other {
+    Exception throw: "Method != undefined"
+  }
+
+  method < other {
+    Exception throw: "Method < undefined"
+  }
+
+  method <= other {
+    Exception throw: "Method <= undefined"
+  }
+
+  method > other {
+    Exception throw: "Method > undefined"
+  }
+
+  method >= other {
+    Exception throw: "Method >= undefined"
+  }
+
+  method neg {
+    Exception throw: "Method neg undefined"
+  }
+
+  method abs {
+    Exception throw: "Method abs undefined"
+  }
+
+  method asText {
+    Exception throw: "Unable to convert numeric value to Text"
+  }
+}
+
+#==============================================================================
+# Integer
+
+Numeric subClass: Integerᶲ body: {
+
+  function + other {
+    return new meat::Object(self->to_int() + other->to_int());
+  }
+
+  function - other {
+    return new meat::Object(self->to_int() - other->to_int());
+  }
+
+  function * other {
+    return new meat::Object(self->to_int() * other->to_int());
+  }
+
+  function / other {
+    return new meat::Object(self->to_int() / other->to_int());
+  }
+
+  function % other {
+    return new meat::Object(self->to_int() % other->to_int());
+  }
+
+  function ^ other {
+    return new meat::Object((meat::float_t)std::pow(self->to_float(),
+                other->to_float()));
+  }
+
+  function == other {
+    try {
+      if (self->to_int() == other->to_int())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function != other {
+    try {
+      if (self->to_int() != other->to_int())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function < other {
+    try {
+      if (self->to_int() < other->to_int())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function <= other {
+    try {
+      if (self->to_int() <= other->to_int())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function > other {
+    try {
+      if (self->to_int() > other->to_int())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function >= other {
+    try {
+      if (self->to_int() >= other->to_int())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function neg {
+    return new meat::Object(-self->to_int());
+  }
+
+  function abs {
+    return new meat::Object(std::abs(self->to_int()));
+  }
+
+  function or: other {
+    return new meat::Object(self->to_int() |
+      other->to_int());
+  }
+
+  function and: other {
+    return new meat::Object(self->to_int() &
+      other->to_int());
+  }
+
+  function xor: other {
+    return new meat::Object(self->to_int() ^
+      other->to_int());
+  }
+
+  function rshift {
+    return new meat::Object(self->to_int() >> 1);
+  }
+
+  function rshift: amount {
+    return new meat::Object(self->to_int() >>
+      (meat::int32_t)(*amount));
+  }
+
+  function lshift {
+    return new meat::Object(self->to_int() << 1);
+  }
+
+  function lshift: amount {
+    return new meat::Object(self->to_int() <<
+      (meat::int32_t)(*amount));
+  }
+
+  function timesDo: block {
+    meat::int32_t limit = self->to_int();
+    meat::uint8_t start_ip = CONTEXT(block).get_ip();
+
+    for (meat::int32_t c = 0; c < limit; c++) {
+      meat::execute(block);
+      CONTEXT(block).set_ip(start_ip);
+    }
+
+    return null;
+  }
+
+  function asText {
+    std::stringstream result;
+    result << (unsigned int)(self->to_int());
+    return new meat::Object(result.str().c_str());
+  }
+}
+
+#==============================================================================
+# Number
+
+Numeric subClass: Numberᶲ body: {
+
+  function + other {
+    return new meat::Object(self->to_float() +
+                             other->to_float());
+  }
+
+  function - other {
+    return new meat::Object(self->to_float() -
+                             other->to_float());
+  }
+
+  function * other {
+    return new meat::Object(self->to_float() *
+                             other->to_float());
+  }
+
+  function / other {
+    return new meat::Object(self->to_float() /
+                             other->to_float());
+  }
+
+  function % other {
+    return new meat::Object(std::fmod(self->to_float(),
+                                       other->to_float()));
+  }
+
+  function ^ other {
+    return new meat::Object((meat::float_t)std::pow(self->to_float(),
+                             other->to_float()));
+  }
+
+  function == other {
+    try {
+      if (self->to_float() == other->to_float())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function != other {
+    try {
+      if (self->to_float() != other->to_float())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function < other {
+    try {
+      if (self->to_float() < other->to_float())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function <= other {
+    try {
+      if (self->to_float() <= other->to_float())
+        return meat::True();
+    } catch (...) {}
+    return meat::False();
+  }
+
+  function > other {
+    try {
+      if (self->to_float() > other->to_float())
+        return meat::True();
+    } catch (...) {}
+    return null;
+  }
+
+  function >= other {
+    try {
+      if (self->to_float() >= other->to_float())
+        return meat::True();
+    } catch (...) {}
+    return null;
+  }
+
+  function neg {
+    return new meat::Object(-self->to_float());
+  }
+
+  function abs {
+    return new meat::Object(std::abs(self->to_float()));
+  }
+
+  function asText {
+    std::stringstream result;
+    result << (double)(self->to_float());
+    return new meat::Object(result.str().c_str());
+  }
+}
+
+#==============================================================================
+# Boolean
+
+Object subClass: Booleanᶲ body: {
+
+  class property trueObject
+  class property falseObject
+
+  class method true {
+    context return: trueObject
+  }
+
+  class method false {
+    context return: falseObject
+  }
+
+  function isTrue: block {
+    if (self == meat::True())
+      execute(block);
+    return null;
+  }
+
+  function isTrue: true_block else: else_block {
+    if (self == meat::True()) {
+      execute(true_block);
+    } else {
+      execute(else_block);
+    }
+    return null;
+  }
+
+  function isFalse: block {
+    if (self == meat::False())
+      execute(block);
+    return null;
+  }
+
+  function isFalse: true_block else: else_block {
+    if (self == meat::False()) {
+      execute(true_block);
+    } else {
+      execute(else_block);
+    }
+    return null;
+  }
+
+  method not {
+    [self == trueObject] isTrue: {
+      context return: falseObject
+    } else: {
+      context return: trueObject
+    }
+  }
+
+  function or: other {
+    if (self == meat::True() or other == meat::True())
+      return meat::True();
+    else
+      return meat::False();
+  }
+
+  function xor: other {
+    if (self == meat::True() xor other == meat::True())
+      return meat::True();
+    else
+      return meat::False();
+  }
+
+  function and: other {
+    if (self == meat::True() and other == meat::True())
+      return meat::True();
+    else
+      return meat::False();
+  }
+
+  method asText {
+    [self == trueObject] isTrue: {
+      context return: "true"
+    } else: {
+      context return: "false"
+    }
+  }
+}
+
+#==============================================================================
+# Text
+
+Object subClass: Textᶲ body: {
+
+  function length {
+    return new meat::Object((int32_t)std::strlen(self->to_string()));
+  }
+
+  function isEmpty {
+    if (std::strlen(self->to_string()) == 0)
+      return meat::True();
+    return meat::False();
+  }
+
+  function get: index {
+    char new_string[2] = " ";
+    new_string[0] = self->to_string()[(int32_t)(*index) - 1];
+    return new meat::Object(new_string);
+  }
+
+  function get: start to: end {
+    int32_t start_pos = (int32_t)(*start) - 1;
+    int32_t end_pos = (int32_t)(*end);
+    int32_t len = end_pos - start_pos;
+
+    char new_string[len + 1];
+    std::strncpy(new_string, &((self->to_string())[start_pos]), len);
+    new_string[len] = 0;
+    return new meat::Object(new_string);
+  }
+
+  function == other {
+    if (std::strcmp(self->to_string(), other->to_string()) == 0)
+      return meat::True();
+    return meat::False();
+  }
+
+  function != other {
+    if (std::strcmp(self->to_string(), other->to_string()) != 0)
+      return meat::True();
+    return meat::False();
+  }
+
+  function < other {
+    if (std::strcmp(self->to_string(), other->to_string()) < 0)
+      return meat::True();
+    return meat::False();
+  }
+
+  function <= other {
+    if (std::strcmp(self->to_string(), other->to_string()) <= 0)
+      return meat::True();
+    return meat::False();
+  }
+
+  function > other {
+    if (std::strcmp(self->to_string(), other->to_string()) > 0)
+      return meat::True();
+    return meat::False();
+  }
+
+  function >= other {
+    if (std::strcmp(self->to_string(), other->to_string()) >= 0)
+      return meat::True();
+    return meat::False();
+  }
+
+  function + other {
+    return new meat::Object(self->to_string(), other->to_string());
+  }
+
+  function * count {
+    meat::int32_t cnt_value = (int32_t)(*count);
+    meat::uint32_t self_len = strlen(self->to_string());
+    char result[(self_len * cnt_value) + 1]; // Could be nasty having on the stack
+
+    for (int c = 0; c < cnt_value; c++)
+      strcpy(&(result[self_len * c]), self->to_string());
+    result[self_len * cnt_value] = 0;
+
+    return new meat::Object(result);
+  }
+}
+
+#==============================================================================
+# List Class
+
+Object subClass: Listᶲ body: {
+
+  constructor {
+    return new meat::List(cls, properties);
+  }
+
+  class function new {
+    return new meat::List;
+  }
+
+  function get: index {
+    try {
+      return ((meat::List &)(*self)).at((int32_t)(*index) - 1);
+    } catch (std::out_of_range &err) {
+      throw meat::Exception("List index out of Range", context);
+    }
+  }
+
+  function set: index to: value {
+    try {
+      ((meat::List &)(*self)).at((int32_t)(*index) - 1) = value;
+    } catch (std::out_of_range &err) {
+      throw meat::Exception("Index out of Range", context);
+    }
+    return null;
+  }
+
+  function at: index insert: value {
+    ((meat::List &)(*self)).insert(((meat::List &)(*self)).begin() +
+      ((int32_t)(*index) - 1), value);
+    return null;
+  }
+
+  function remove: value {
+    meat::List::iterator it = ((meat::List &)(*self)).begin();
+    while (it != ((meat::List &)(*self)).end()) {
+      if (*it == value)
+        ((meat::List &)(*self)).erase(it);
+      it++;
+    }
+
+    return null;
+  }
+
+  function removeAt: index {
+    ((meat::List &)(*self)).erase(((meat::List &)(*self)).begin() +
+      ((int32_t)(*index) - 1));
+    return null;
+  }
+
+  function removeFrom: start to: end {
+    ((meat::List &)(*self)).erase(((meat::List &)(*self)).begin() +
+      ((int32_t)(*start) - 1),
+      ((meat::List &)(*self)).begin() +
+      ((int32_t)(*end) - 1));
+    return null;
+  }
+
+  function append: value {
+    if (other->is_type(meat::Class::resolve("List"))) {
+      ((meat::List &)(*self)).insert(((meat::List &)(*self)).end(),
+        ((meat::List &)(*value)).begin(),
+        ((meat::List &)(*value)).end());
+    } else {
+      ((meat::List &)(*self)).push_back(value);
+    }
+
+    return null;
+  }
+
+  function push: value {
+    ((meat::List &)(*self)).push_back(value);
+    return null;
+  }
+
+  function pop {
+    ((meat::List &)(*self)).pop_back();
+    return null;
+  }
+
+  function isEmpty {
+    return (((meat::List &)(*self)).empty() ? meat::True() : meat::False());
+  }
+
+  function swap: first with: second {
+    try {
+      meat::Reference temp = ((meat::List &)(*self)).at((int32_t)(*first) - 1);
+      ((meat::List &)(*self)).at((int32_t)(*first) - 1) =
+        ((meat::List &)(*self)).at((int32_t)(*second) - 1);
+      ((meat::List &)(*self)).at((int32_t)(*second) - 1) = temp;
+    } catch (std::out_of_range &err) {
+      throw meat::Exception("Index out of Range", context);
+    }
+
+    return null;
+  }
+
+  function last {
+    return ((meat::List &)(*self)).back();
+  }
+
+  function clear {
+    ((meat::List &)(*self)).clear();
+    return null;
+  }
+
+  function size {
+    return new meat::Object((int32_t)((meat::List &)(*self)).size());
+  }
+
+  function forEach: item do: block {
+    meat::uint16_t start_ip = CONTEXT(block).get_ip();
+    meat::uint8_t local_id = (int32_t)(*item);
+
+    CONTEXT(block).set_uplevel(context);
+
+    meat::List::iterator it = ((meat::List &)(*self)).begin();
+    for (; it != ((meat::List &)(*self)).end(); it++) {
+      CONTEXT(block).set_local(local_id, *it);
+      execute(block);
+      CONTEXT(block).set_ip(start_ip);
+      CONTEXT(block).unfinish();
+    }
+
+    return null;
+  }
+}
+
+#==============================================================================
+# Index
+
+Object subClass: Indexᶲ body: {
+
+  constructor {
+    return new meat::Index(cls, properties);
+  }
+
+  class function new {
+    return new meat::Index
+  }
+
+  function get: key {
+    if (((meat::Index &)(*self)).find(key) != ((meat::Index &)(*self)).end())
+      return ((meat::Index &)(*self))[key];
+
+    throw meat::Exception("Invalid key in index");
+  }
+
+  function set: key to: value {
+    ((meat::Index &)(*self))[key] = value;
+    return null;
+  }
+
+  function has: key {
+    if (((meat::Index &)(*self)).find(key) != ((meat::Index &)(*self)).end())
+      return meat::True();
+    return meat::False();
+  }
+
+  function remove: key {
+    ((meat::Index &)(*self)).erase(key);
+    return null;
+  }
+
+  function size {
+    int32_t size = ((meat::Index &)(*self)).size();
+    return new meat::Object(size);
+  }
+}
+
+#==============================================================================
+# Application 
+
+Object subClass: Applicationᶲ body: {
+
+  class function parameters {
+    return new meat::Object((meat::int32_t)arg_count());
+  }
+
+  class function parameter: index {
+    meat::int32_t idx = (int32_t)(*index);
+
+    if (idx > arg_count() or idx <= 0)
+      throw meat::Exception("Parameter index out of range");
+
+    const char **argv = args();
+    return new meat::Object(argv[idx - 1]);
+  }
+
+  class function getEnviron: key {
+#if defined(__WIN32__)
+#  error("TODO Environment access")
+#elif defined(__linux__)
+    char *value = getenv(key->to_string());
+    if (value != (char *)0)
+      return new meat::Object(value);
+    else
+      return new meat::Object("");
+#else
+#  error("Don't know how to read the system environment")
+#endif
+  }
+
+  method entry {
+    Exception throw: "Application method entry must be overridden"
+  }
+}
+
