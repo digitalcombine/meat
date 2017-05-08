@@ -18,7 +18,7 @@
  */
 
 #include <testing.h>
-#include <gitgo/utilities.h>
+#include <meat/utilities.h>
 
 #include <map>
 #include <iostream>
@@ -28,7 +28,7 @@ std::map<std::string, unsigned int> test_results;
 // misc.cpp
 void misc_tests();
 
-void Gitgo::Test::test(const char *id, bool show) {
+void meat::test::test(const char *id, bool show) {
   if (test_results.find(id) == test_results.end())
     test_results[id] = 0;
   /*if (show) {
@@ -36,7 +36,7 @@ void Gitgo::Test::test(const char *id, bool show) {
     }*/
 }
 
-void Gitgo::Test::passed(const char *id, bool show) {
+void meat::test::passed(const char *id, bool show) {
   if (test_results.find(id) != test_results.end()) {
     /*if (show) {
       std::cout << " passed" << std::endl;
@@ -46,7 +46,7 @@ void Gitgo::Test::passed(const char *id, bool show) {
   }
 }
 
-void Gitgo::Test::failed(const char *id, bool show) {
+void meat::test::failed(const char *id, bool show) {
   if (test_results.find(id) != test_results.end()) {
     test_results[id] = 1;
     /*if (show) {
@@ -59,7 +59,7 @@ void Gitgo::Test::failed(const char *id, bool show) {
   }
 }
 
-void Gitgo::Test::summary() {
+void meat::test::summary() {
   unsigned int failures = 0;
 
   if (failures == 0) {
@@ -89,6 +89,6 @@ void Gitgo::Test::summary() {
   }
 }
 
-void Gitgo::Test::run_tests() {
+void meat::test::run_tests() {
   misc_tests();
 }

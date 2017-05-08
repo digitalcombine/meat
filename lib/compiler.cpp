@@ -431,11 +431,11 @@ meat::compiler::Token &meat::compiler::Tokenizer::operator[] (size_t index) {
 void meat::compiler::Tokenizer::get_next_line() {
 
 #ifdef TESTING
-    meat::Test::test("Null code stream", false);
+    meat::test::test("Null code stream", false);
     if (code == (void *)0) {
       throw Exception("Attempting to parse a null code stream");
     } else {
-      meat::Test::passed("Null code stream");
+      meat::test::passed("Null code stream");
     }
 #endif // TESTING
 

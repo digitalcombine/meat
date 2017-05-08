@@ -42,9 +42,16 @@ namespace meat {
     typedef void* dlhandle;
 #endif
 
+		/** Internal command to initialize the Meat classes.
+		 */
     DECLSPEC void initialize();
 
     extern void (*compiler_import)(const char *name);
+
+		static const int FL_ARCHIVE = 1;
+		static const int FL_LIBRARY = 2;
+		static const int FL_UNKNOWN = -1;
+		DECLSPEC int fl_type(const std::string &fname);
 
     /** Access to class library files.
      */

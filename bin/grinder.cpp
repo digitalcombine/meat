@@ -106,7 +106,7 @@ int main(int argc, const char *argv[]) {
 	meat::initialize(argc, argv);
 
 #ifdef TESTING
-	meat::Test::run_tests();
+	meat::test::run_tests();
 #endif
 
 	/*********************************
@@ -164,7 +164,7 @@ int main(int argc, const char *argv[]) {
 			case 'h': // Help option
 				help();
 #ifdef TESTING
-				meat::Test::summary();
+				meat::test::summary();
 #endif
 				return 0;
 
@@ -248,14 +248,14 @@ int main(int argc, const char *argv[]) {
 		std::cerr << "UNCAUGHT EXCEPTION: " << err.what() << std::endl;
 
 #ifdef TESTING
-		meat::Test::summary();
+		meat::test::summary();
 #endif
 
 		return 1;
 	}
 
 #ifdef TESTING
-	meat::Test::summary();
+	meat::test::summary();
 #endif
 
 	return 0;

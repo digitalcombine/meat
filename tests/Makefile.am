@@ -26,23 +26,30 @@ CLEANFILES = UnitTest.mlib Test.Application.mlib Test.Boolean.mlib \
 	@cat $*.cpp | sed -e 's/ᶲ//g' > $*.cpp.fixed
 	@mv -f $*.cpp.fixed $*.cpp
 
-Test.Application.mlib: UnitTest.mlib
-Test.Boolean.mlib: UnitTest.mlib
-Test.Exception.mlib: UnitTest.mlib
-Test.Object.mlib: UnitTest.mlib
-Test.Class.mlib: UnitTest.mlib
-Test.Numeric.mlib: UnitTest.mlib
-Test.Number.mlib: UnitTest.mlib
-Test.Integer.mlib: UnitTest.mlib
-Test.Text.mlib: UnitTest.mlib
-Test.Index.mlib: UnitTest.mlib
-Test.List.mlib: UnitTest.mlib
-Test.Data.mlib: UnitTest.mlib
-Test.Compiler.mlib: UnitTest.mlib
+Test.Application.mlib: UnitTest.mlib @top_srcdir@/bin/grinder
+Test.Application.mlib: @top_srcdir@/bin/meat
+Test.Boolean.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Exception.mlib: UnitTest.mlib @top_srcdir@/bin/grinder
+Test.Exception.mlib: @top_srcdir@/bin/meat
+Test.Object.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Class.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Numeric.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Number.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Integer.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Text.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Index.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.List.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Data.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Compiler.mlib: UnitTest.mlib @top_srcdir@/bin/grinder
+Test.Compiler.mlib: @top_srcdir@/bin/meat
+Console.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+builtin.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Datastore.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 
 data.mar: Test.Data.mlib
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -a data.mar data.meat
 
+tests.mapp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 tests.mapp: UnitTest.mlib Test.Application.mlib
 tests.mapp: Test.Boolean.mlib Test.Exception.mlib Test.Object.mlib
 tests.mapp: Test.Class.mlib

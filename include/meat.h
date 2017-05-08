@@ -238,7 +238,7 @@ namespace meat {
 
 #define VTM_END      (0x00)
 #define VTM_BYTECODE (0x01) // Vtable entry points to bytecode
-#define VTM_NATIVE   (0x02) // Vtable entry points to a native function.
+#define VTM_NATIVE   (0x00) // Vtable entry points to a native function.
 #define VTM_SUPER    (0x04) // Vtable entry needs to be synced from super.
 
 	typedef struct _vtable_entry_s {

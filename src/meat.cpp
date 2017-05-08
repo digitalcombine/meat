@@ -40,12 +40,12 @@
 
 meat::Object::Object(Reference &type) {
 #ifdef TESTING
-	meat::Test::test("Object type setting", false);
+	meat::test::test("Object type setting", false);
 	if (!type.is_null()) {
 		if (!type->is_class())
 			throw Exception("An Object type must be a class.");
 	} else {
-		meat::Test::failed("Object type setting", false);
+		meat::test::failed("Object type setting", false);
 	}
 #endif
 	o_type = type;
@@ -64,13 +64,13 @@ meat::Object::Object(Reference &type, meat::uint8_t properties) {
 #ifdef TESTING
 	static bool first_fail = true;
 
-	meat::Test::test("Object type setting with properties", false);
+	meat::test::test("Object type setting with properties", false);
 	if (!type.is_null()) {
 		if (!type->is_class())
 			throw Exception("An Object type must be a class.");
 	} else {
 		if (not first_fail)
-			meat::Test::failed("Object type setting with properties", false);
+			meat::test::failed("Object type setting with properties", false);
 		first_fail = false;
 	}
 #endif
@@ -156,9 +156,9 @@ bool meat::Object::is_type(Reference &cls) const {
 	Reference my_type = o_type;
 
 #ifdef TESTING
-	meat::Test::test("Type testing against a class", false);
+	meat::test::test("Type testing against a class", false);
 	if (cls.is_null() or not cls->is_class())
-		meat::Test::failed("Type testing against a class", false);
+		meat::test::failed("Type testing against a class", false);
 #endif
 
 	while (!my_type.is_null()) {
@@ -475,7 +475,8 @@ const meat::vtable_entry_t *meat::Class::get_vtable(uint8_t &count) const {
  * meat::Class::get_class_vtable *
  *********************************/
 
-const meat::vtable_entry_t *meat::Class::get_class_vtable(uint8_t &count) const {
+const meat::vtable_entry_t *
+meat::Class::get_class_vtable(uint8_t &count) const {
 	count = vtable.no_centries;
 	return vtable.centries;
 }
@@ -696,7 +697,8 @@ meat::Reference &meat::Class::resolve(const char *id) {
 
 	class_registry_t &classes = class_registry();
 	if (classes.find(hash_id) == classes.end()) {
-		throw Exception(((std::string("Class ") + id) + " was not found.").c_str());
+		throw Exception((std::string("Class ") + id) +
+										 " was not found.");
 	}
 
 	return classes[hash_id];
@@ -776,10 +778,10 @@ void meat::Class::VTable::set_vtable(uint8_t entries, vtable_entry_t table[],
 
 #ifdef TESTING
 	// All we can really test here is the entries are sorted by the hash value.
-	meat::Test::test("Class virtual table validation", false);
+	meat::test::test("Class virtual table validation", false);
 	for (uint8_t c = 1; c < entries; c++) {
 		if (table[c - 1].hash_id >= table[c].hash_id) {
-			meat::Test::failed("Class virtual table validation", false);
+			meat::test::failed("Class virtual table validation", false);
 			break;
 		}
 	}
@@ -812,10 +814,10 @@ void meat::Class::VTable::set_class_vtable(uint8_t entries,
 																					 alloc_t table_alloc) {
 #ifdef TESTING
 	// All we can really test here is the entries are sorted by the hash value.
-	meat::Test::test("Class class virtual table validation", false);
+	meat::test::test("Class class virtual table validation", false);
 	for (uint8_t c = 1; c < entries; c++) {
 		if (table[c - 1].hash_id >= table[c].hash_id) {
-			meat::Test::failed("Class class virtual table validation", false);
+			meat::test::failed("Class class virtual table validation", false);
 			break;
 		}
 	}
@@ -823,7 +825,8 @@ void meat::Class::VTable::set_class_vtable(uint8_t entries,
 
 	no_centries = entries;
   switch (table_alloc) {
-	case STATIC: // The table is a part of the code and not deallocation is needed.
+	case STATIC:
+		// The table is a part of the code and deallocation is not needed.
 		this->centries = table;
 		ce_is_static = true;
 		break;
@@ -845,9 +848,9 @@ void meat::Class::VTable::set_class_vtable(uint8_t entries,
 
 void meat::Class::VTable::set(constructor_t constructor) {
 #ifdef TESTING
-	meat::Test::test("Setting vtable constructor procedure", false);
+	meat::test::test("Setting vtable constructor procedure", false);
 	if (constructor == 0)
-		meat::Test::failed("Setting vtable constructor procedure", false);
+		meat::test::failed("Setting vtable constructor procedure", false);
 #endif /* TESTING */
 	this->constructor = constructor;
 }
@@ -987,7 +990,8 @@ void meat::Class::VTable::write(std::ostream &lib_file) const {
 	lib_file.put(no_centries);
 
 	for (meat::uint8_t c = 0; c < no_entries; c++) {
-		if (entries[c].flags & VTM_NATIVE && !(entries[c].flags & VTM_SUPER)) {
+		if ((entries[c].flags & VTM_BYTECODE) == 0 &&
+				!(entries[c].flags & VTM_SUPER)) {
 			throw Exception("I can't serialize native classes.");
 		}
 
@@ -1011,7 +1015,8 @@ void meat::Class::VTable::write(std::ostream &lib_file) const {
 
 	// Write the class methods virtual table.
 	for (meat::uint8_t c = 0; c < no_centries; c++) {
-		if (centries[c].flags & VTM_NATIVE && !(centries[c].flags & VTM_SUPER)) {
+		if ((centries[c].flags & VTM_BYTECODE) == 0 &&
+				!(centries[c].flags & VTM_SUPER)) {
 			throw Exception("I can't serialize native classes.");
 		}
 
@@ -1548,9 +1553,9 @@ meat::Reference meat::message(meat::Reference &object,
 	const vtable_entry_t *m_entry = 0;
 
 #ifdef TESTING
-	meat::Test::test("Messaging Object", false);
+	meat::test::test("Messaging Object", false);
 	if (object.is_null()) {
-		meat::Test::failed("Messaging object", false);
+		meat::test::failed("Messaging object", false);
 		throw Exception("Unable to message a null Reference");
 	}
 #endif
@@ -1592,7 +1597,7 @@ meat::Reference meat::message(meat::Reference &object,
   ctx->locals[2] = new_context.weak(); // context
   ctx->locals[3] = meat::Null();      // null
 
-  if (m_entry->flags & VTM_NATIVE) {
+  if ((m_entry->flags & VTM_BYTECODE) == 0) {
     // Flag for native method.
     ctx->flags = meat::Context::PRIMATIVE;
     ctx->pointer = m_entry->method.pointer;
@@ -1664,7 +1669,7 @@ meat::Reference meat::message_super(meat::Reference &object,
 	ctx->locals[2] = new_context.weak();                      // context
 	ctx->locals[3] = meat::Null();                            // null
 
-	if (m_entry->flags & VTM_NATIVE) {
+	if ((m_entry->flags & VTM_BYTECODE) == 0) {
 		// Flag for native method.
 		ctx->flags = meat::Context::PRIMATIVE;
 		ctx->pointer = m_entry->method.pointer;

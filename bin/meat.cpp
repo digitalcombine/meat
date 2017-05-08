@@ -56,7 +56,7 @@ int main(int argc, const char *argv[]) {
 	meat::initialize(argc, argv); // Initialize the runtime environment.
 
 #ifdef TESTING
-	meat::Test::run_tests();
+	meat::test::run_tests();
 #endif
 
 	/*********************************
@@ -74,7 +74,7 @@ int main(int argc, const char *argv[]) {
 			case 'h': // Help option
 				help();
 #ifdef TESTING
-				meat::Test::summary();
+				meat::test::summary();
 #endif
 				return 0;
 
@@ -95,35 +95,38 @@ int main(int argc, const char *argv[]) {
 	}
 
 	try {
+		int fl_type = meat::data::fl_type(filename);
 
-		/* Open the archive and get the object from it. */
-		meat::data::Archive archive(filename);
-		meat::Reference app = archive.get_object();
+		if (fl_type == meat::data::FL_ARCHIVE) {
+			/* Open the archive and get the object from it. */
+			meat::data::Archive archive(filename);
+			meat::Reference app = archive.get_object();
 
-		/* Make sure the object is an application. */
-		if (!app->is_type("Application")) {
-			throw meat::Exception("Store does not contain an Application");
-		}
+			/* Make sure the object is an application. */
+			if (!app->is_type("Application")) {
+				throw meat::Exception("Store does not contain an Application");
+			}
 
 #ifdef DEBUG
-		std::cout << "DEBUG: Entering application..." << std::endl;
+			std::cout << "DEBUG: Entering application..." << std::endl;
 #endif /* DEBUG */
 
-		/* Message the application and get things rolling. */
-		meat::Reference context = meat::message(app, "entry",
+			/* Message the application and get things rolling. */
+			meat::Reference context = meat::message(app, "entry",
 																							meat::Null());
-		meat::Reference result = meat::execute(context);
+			meat::Reference result = meat::execute(context);
 
-		/*  Attempt to return the return value from the entry method. If the
-		 * value return from entry is not an integer then we return 1 (error).
-		 * If no value was returned then we return 0 (success).
-		 */
-		if (!result.is_null() || result == meat::Null()) {
+			/*  Attempt to return the return value from the entry method. If the
+			 * value return from entry is not an integer then we return 1 (error).
+			 * If no value was returned then we return 0 (success).
+			 */
+			if (!result.is_null() || result == meat::Null()) {
 #ifdef TESTING
-			meat::Test::summary();
+				meat::test::summary();
 #endif
-			try { return (result->to_int()); }
-			catch (...) { return 1; }
+				try { return (result->to_int()); }
+				catch (...) { return 1; }
+			}
 		}
 
 	} catch (std::exception &err) {
@@ -131,14 +134,14 @@ int main(int argc, const char *argv[]) {
 		std::cerr << "UNCAUGHT EXCEPTION: " << err.what() << std::endl;
 
 #ifdef TESTING
-		meat::Test::summary();
+		meat::test::summary();
 #endif
 		return 1;
 	}
 
 	/* We should never really get here, but incase we do... */
 #ifdef TESTING
-	meat::Test::summary();
+	meat::test::summary();
 #endif
 	return 0;
 }

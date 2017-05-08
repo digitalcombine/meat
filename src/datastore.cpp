@@ -83,8 +83,27 @@ static void *dl_load(nativelib_t handle, const char *funcname) {
 #endif
 }
 
+
+/***********************
+ * meat::data::fl_type *
+ ***********************/
+
+int meat::data::fl_type(const std::string &fname) {
+	std::ifstream fd(fname.c_str());
+	char magic[4] = {'X', 'X', 'X', 'X'};
+
+	fd.read(magic, 4);
+	if (fd) {
+		fd.close();
+		if (std::strncmp(magic, "MARC", 4) == 0) return FL_ARCHIVE;
+		if (std::strncmp(magic, "MLIB", 4) == 0) return FL_LIBRARY;
+	} else
+		fd.close();
+	return FL_UNKNOWN;
+}
+
 /******************************************************************************
- * Library Archives
+ * class meat:data::Library
  */
 
 /** Contains the library search path.
@@ -106,75 +125,18 @@ static std::string &get_includes() {
   return includes;
 }
 
-/*************************
- * data::Library::create *
- *************************/
+/********************************
+ * meat::data::Library::Library *
+ ********************************/
 
-meat::data::Library *meat::data::Library::create(const char *name) {
-  Library *new_lib = new Library(name);
-  new_lib->name = name;
-  new_lib->is_new = true;
-
-  get_libraries()[name] = new_lib;
-
-  return new_lib;
+meat::data::Library::Library(const char *name) {
+  this->name = name;
+  this->is_new = false;
 }
 
-/*************************
- * data::Library::import *
- *************************/
-
-meat::data::Library *meat::data::Library::import(const char *name) {
-  /* Check to see if we have already imported the library.
-   */
-  std::map<std::string, Library *>::iterator lib = get_libraries().find(name);
-  if (lib != get_libraries().end()) {
-    //std::cout << "Import hit" << std::endl;
-    return lib->second;
-  }
-
-  Library *imported_lib = new Library(name);
-  imported_lib->import();
-
-  //std::cout << "Recording import " << name << std::endl;
-  get_libraries()[name] = imported_lib;
-
-  return imported_lib;
-}
-
-/**************************
- * data::Library::include *
- **************************/
-
-void meat::data::Library::include(const std::string &includes) {
-  get_includes() = includes;
-}
-
-const std::string &meat::data::Library::include() {
-	return get_includes();
-}
-
-/*************************
- * data::Library::unload *
- *************************/
-
-void meat::data::Library::unload(const char *name) {
-
-#ifdef DEBUG
-  std::cout << "LIBRARY: Unloading " << name << std::endl;
-#endif
-
-  std::map<std::string, meat::data::Library *>::iterator it =
-    get_libraries().find(name);
-  if (it != get_libraries().end()) {
-    delete it->second;
-    get_libraries().erase(it);
-  }
-}
-
-/***************************
- * data::Library::~Library *
- ***************************/
+/*********************************
+ * meat::data::Library::~Library *
+ *********************************/
 
 meat::data::Library::~Library() throw() {
 
@@ -195,9 +157,75 @@ meat::data::Library::~Library() throw() {
   }
 }
 
-/*************************
- * data::Library::import *
- *************************/
+/*******************************
+ * meat::data::Library::create *
+ *******************************/
+
+meat::data::Library *meat::data::Library::create(const char *name) {
+  Library *new_lib = new Library(name);
+  new_lib->name = name;
+  new_lib->is_new = true;
+
+  get_libraries()[name] = new_lib;
+
+  return new_lib;
+}
+
+/*******************************
+ * meat::data::Library::import *
+ *******************************/
+
+meat::data::Library *meat::data::Library::import(const char *name) {
+  /* Check to see if we have already imported the library.
+   */
+  std::map<std::string, Library *>::iterator lib = get_libraries().find(name);
+  if (lib != get_libraries().end()) {
+    //std::cout << "Import hit" << std::endl;
+    return lib->second;
+  }
+
+  Library *imported_lib = new Library(name);
+  imported_lib->import();
+
+  //std::cout << "Recording import " << name << std::endl;
+  get_libraries()[name] = imported_lib;
+
+  return imported_lib;
+}
+
+/********************************
+ * meat::data::Library::include *
+ ********************************/
+
+void meat::data::Library::include(const std::string &includes) {
+  get_includes() = includes;
+}
+
+const std::string &meat::data::Library::include() {
+	return get_includes();
+}
+
+/*******************************
+ * meat::data::Library::unload *
+ *******************************/
+
+void meat::data::Library::unload(const char *name) {
+
+#ifdef DEBUG
+  std::cout << "LIBRARY: Unloading " << name << std::endl;
+#endif
+
+  std::map<std::string, meat::data::Library *>::iterator it =
+    get_libraries().find(name);
+  if (it != get_libraries().end()) {
+    delete it->second;
+    get_libraries().erase(it);
+  }
+}
+
+/*******************************
+ * meat::data::Library::import *
+ *******************************/
 
 void meat::data::Library::import() {
 
@@ -232,17 +260,17 @@ void meat::data::Library::import() {
   throw meat::Exception(std::string("Unable to find library ") + this->name);
 }
 
-/***************************
- * data::Library::add_path *
- ***************************/
+/*********************************
+ * meat::data::Library::add_path *
+ *********************************/
 
 void meat::data::Library::add_path(const char *name) {
   get_path().push_front(name);
 }
 
-/*****************************
- * data::Library::add_import *
- *****************************/
+/***********************************
+ * meat::data::Library::add_import *
+ ***********************************/
 
 void meat::data::Library::add_import(const char *name) {
   // Import the library.
@@ -254,9 +282,9 @@ void meat::data::Library::add_import(const char *name) {
   imports.push_back(name);
 }
 
-/**********************
- * data::Library::add *
- **********************/
+/****************************
+ * meat::data::Library::add *
+ ****************************/
 
 void meat::data::Library::add(Class *cls, const char *id) {
   if (!cls->is_class()) {
@@ -271,9 +299,9 @@ void meat::data::Library::add(Class *cls, const char *id) {
   Class::record(newcls, id);
 }
 
-/************************
- * data::Library::write *
- ************************/
+/******************************
+ * meat::data::Library::write *
+ ******************************/
 
 void meat::data::Library::write() {
   if (is_new == false or name.empty()) {
@@ -300,7 +328,7 @@ void meat::data::Library::write() {
 
   if (lib_file.is_open()) {
     sgelib_header_t header = {
-      {'G', 'L', 'I', 'B'},
+      {'M', 'L', 'I', 'B'},
       1, 0,
     };
 
@@ -308,7 +336,14 @@ void meat::data::Library::write() {
      * data after is in the right places. We have to rewrite this header with
      * all the offset filled in later.
      */
-    lib_file.write((char *)&header, sizeof(sgelib_header_t));
+    lib_file.write((const char *)&header, sizeof(sgelib_header_t));
+
+		// Reserved for future flags.
+		lib_file.put(0);
+
+		// The library is not executable.
+		uint32_t zero = 0;
+		lib_file.write((const char *)&zero, 4);
 
 #ifdef DEBUG
     std::cout << "LIBRARY: Adding " << (int)this->imports.size()
@@ -341,18 +376,9 @@ void meat::data::Library::write() {
   }
 }
 
-/**************************
- * data::Library::Library *
- **************************/
-
-meat::data::Library::Library(const char *name) {
-  this->name = name;
-  this->is_new = false;
-}
-
-/**************************************
- * data::Library::import_from_archive *
- **************************************/
+/********************************************
+ * meat::data::Library::import_from_archive *
+ ********************************************/
 
 void meat::data::Library::import_from_archive(const char *name) {
   sgelib_header_t header;
@@ -364,7 +390,17 @@ void meat::data::Library::import_from_archive(const char *name) {
 
   // Read in the file header and make sure the it's the right type of file.
   lib_file.read((char *)&header, sizeof(sgelib_header_t));
-  //if (strcmp(header.magic, "GLIB") != 0) throw
+	if (strncmp(header.magic, "MLIB", 4) != 0) {
+		throw meat::Exception(std::string("Attempting to import a non-library file ") + name);
+	}
+
+	// Library flags.
+	lib_file.get();
+
+	// Application class index.
+	uint32_t app_id;
+	lib_file.read((char *)&app_id, 4);
+	app_id = endian::read_be(app_id);
 
   // Read and import all the necessary libraries.
   int import_cnt = lib_file.get();
@@ -404,9 +440,9 @@ void meat::data::Library::import_from_archive(const char *name) {
   lib_file.close();
 }
 
-/*************************************
- * data::Library::import_from_native *
- *************************************/
+/*******************************************
+ * meat::data::Library::import_from_native *
+ *******************************************/
 
 void meat::data::Library::import_from_native(const char *filename,
                                               const char *name) {
@@ -430,7 +466,7 @@ void meat::data::Library::import_from_native(const char *filename,
 }
 
 /******************************************************************************
- * Library Object Class
+ * Library Class
  */
 
 // class method import:
@@ -464,29 +500,42 @@ static meat::Reference Library_cm_include_(meat::Reference &context) {
   return null;
 }
 
-static meat::vtable_entry_t LibraryCMethods[] = {
+/*static meat::vtable_entry_t LibraryCMethods[] = {
   {0x05614602, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_include_},
   {0x72cd0161, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_import_}
+	};*/
+static meat::vtable_entry_t LibraryCMethods[] = {
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x05614602, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_include_},
+  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x2c296348, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x72cd0161, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_import_},
+  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
 };
 
 /******************************************************************************
- * Object Archive Class
+ * class meat::data::Archive
  */
 
 #define OBJECT_PROP      0x00
 #define OBJECT_PROP_WEAK 0x01
 
 typedef struct _sgedat_header_t {
-  char magic[4];     // Should be GARC
+  char magic[4];     // Should be MARC
   meat::uint8_t major_ver;
   meat::uint8_t minor_ver;
   meat::uint32_t import_offset;
   meat::uint32_t index_offset;
 } sgedat_header_t;
 
-/**************************
- * data::Archive::Archive *
- **************************/
+/********************************
+ * meat::data::Archive::Archive *
+ ********************************/
 
 meat::data::Archive::Archive(const char *filename, bool create)
   : Object(Class::resolve("Archive")), name(filename), create(create)  {
@@ -505,7 +554,7 @@ meat::data::Archive::Archive(const char *filename, bool create)
 
       // Read the header and file magic ID.
       dat_file.read((char *)&header, sizeof(sgedat_header_t));
-      if (strncmp(header.magic, "GARC", 4) != 0) {
+      if (strncmp(header.magic, "MARC", 4) != 0) {
         throw meat::Exception("Archive attempting to open a non-archive"
                                " file.");
       }
@@ -571,16 +620,16 @@ meat::data::Archive::Archive(const char *filename, bool create)
   }
 }
 
-/***************************
- * data::Archive::~Archive *
- ***************************/
+/*********************************
+ * meat::data::Archive::~Archive *
+ *********************************/
 
 meat::data::Archive::~Archive() throw() {
 }
 
-/*****************************
- * data::Archive::add_import *
- *****************************/
+/***********************************
+ * meat::data::Archive::add_import *
+ ***********************************/
 
 void meat::data::Archive::add_import(const char *name) {
   // We can only add library imports when creating a new file.
@@ -588,9 +637,9 @@ void meat::data::Archive::add_import(const char *name) {
     imports.push_back(name);
 }
 
-/*****************************
- * data::Archive::set_object *
- *****************************/
+/***********************************
+ * meat::data::Archive::set_object *
+ ***********************************/
 
 void meat::data::Archive::set_object(Reference &object) {
   if (create) {
@@ -611,9 +660,9 @@ void meat::data::Archive::set_object(Reference &object) {
   }
 }
 
-/*******************************
- * data::Archive::add_property *
- *******************************/
+/*************************************
+ * meat::data::Archive::add_property *
+ *************************************/
 
 meat::uint32_t meat::data::Archive::add_property(Reference &property) {
   if (create) {
@@ -648,9 +697,9 @@ meat::uint32_t meat::data::Archive::add_property(Reference &property) {
   }
 }
 
-/*****************************
- * data::Archive::get_object *
- *****************************/
+/***********************************
+ * meat::data::Archive::get_object *
+ ***********************************/
 
 meat::Reference meat::data::Archive::get_object() {
   if (!create) {
@@ -676,9 +725,9 @@ meat::Reference meat::data::Archive::get_object() {
   }
 }
 
-/*****************************
- * data::Archive::get_object *
- *****************************/
+/***********************************
+ * meat::data::Archive::get_object *
+ ***********************************/
 
 meat::Reference meat::data::Archive::get_object(uint32_t index) {
 
@@ -785,9 +834,9 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
   return obj;
 }
 
-/***********************
- * data::Archive::sync *
- ***********************/
+/*****************************
+ * meat::data::Archive::sync *
+ *****************************/
 
 void meat::data::Archive::sync() {
   /* If we are not in create mode then do nothing. We shouldn't need to throw
@@ -805,7 +854,7 @@ void meat::data::Archive::sync() {
 
   if (data_stream.is_open()) {
     sgedat_header_t header = {
-      {'G', 'A', 'R', 'C'},
+      {'M', 'A', 'R', 'C'},
       1, 0,
       0, 0  // These are offsets in the file we don't have yet.
     };
@@ -828,9 +877,9 @@ void meat::data::Archive::sync() {
         uint8_t props = index[c].object->get_num_of_props();
 
 #ifdef TESTING
-        meat::Test::test("Serializing number of properties", false);
+        meat::test::test("Serializing number of properties", false);
         if (props != CLASS(index[c].object->get_type()).get_obj_properties()) {
-          meat::Test::failed("Serializing number of properties", false);
+          meat::test::failed("Serializing number of properties", false);
 #ifdef DEBUG
           std::cout << "      " << std::dec << (unsigned int)props << " != "
                     << (unsigned int)CLASS(index[c].object->get_type()).get_obj_properties()
@@ -896,9 +945,9 @@ void meat::data::Archive::sync() {
   }
 }
 
-/******************************
- * data::Archive::operator >> *
- ******************************/
+/************************************
+ * meat::data::Archive::operator >> *
+ ************************************/
 
 meat::data::Archive &
 meat::data::Archive::operator >>(meat::uint8_t &value) {
@@ -906,18 +955,18 @@ meat::data::Archive::operator >>(meat::uint8_t &value) {
   return *this;
 }
 
-/******************************
- * data::Archive::operator >> *
- ******************************/
+/************************************
+ * meat::data::Archive::operator >> *
+ ************************************/
 
 meat::data::Archive &meat::data::Archive::operator >>(meat::int8_t &value) {
   value = (meat::int8_t)data_stream.get();
   return *this;
 }
 
-/******************************
- * data::Archive::operator >> *
- ******************************/
+/************************************
+ * meat::data::Archive::operator >> *
+ ************************************/
 
 meat::data::Archive &meat::data::Archive::operator >>(meat::uint32_t &value)
 {
@@ -926,9 +975,9 @@ meat::data::Archive &meat::data::Archive::operator >>(meat::uint32_t &value)
   return *this;
 }
 
-/******************************
- * data::Archive::operator >> *
- ******************************/
+/************************************
+ * meat::data::Archive::operator >> *
+ ************************************/
 
 meat::data::Archive &meat::data::Archive::operator >>(meat::int32_t &value) {
   data_stream.read((char *)&value, sizeof(meat::uint32_t));
@@ -936,9 +985,9 @@ meat::data::Archive &meat::data::Archive::operator >>(meat::int32_t &value) {
   return *this;
 }
 
-/******************************
- * data::Archive::operator >> *
- ******************************/
+/************************************
+ * meat::data::Archive::operator >> *
+ ************************************/
 
 meat::data::Archive &meat::data::Archive::operator >>(meat::float_t &value) {
   data_stream.read((char *)&value, sizeof(meat::float_t));
@@ -946,9 +995,9 @@ meat::data::Archive &meat::data::Archive::operator >>(meat::float_t &value) {
   return *this;
 }
 
-/******************************
- * data::Archive::operator << *
- ******************************/
+/************************************
+ * meat::data::Archive::operator << *
+ ************************************/
 
 meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
                                                meat::uint8_t value) {
@@ -956,9 +1005,9 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
   return archive;
 }
 
-/******************************
- * data::Archive::operator << *
- ******************************/
+/************************************
+ * meat::data::Archive::operator << *
+ ************************************/
 
 meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
                                                meat::int8_t value) {
@@ -966,9 +1015,9 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
   return archive;
 }
 
-/******************************
- * data::Archive::operator << *
- ******************************/
+/************************************
+ * meat::data::Archive::operator << *
+ ************************************/
 
 meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
                                                meat::uint32_t value) {
@@ -977,9 +1026,9 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
   return archive;
 }
 
-/******************************
- * data::Archive::operator << *
- ******************************/
+/************************************
+ * meat::data::Archive::operator << *
+ ************************************/
 
 meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
                                                meat::int16_t value) {
@@ -988,9 +1037,9 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
   return archive;
 }
 
-/******************************
- * data::Archive::operator << *
- ******************************/
+/************************************
+ * meat::data::Archive::operator << *
+ ************************************/
 
 meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
                                                meat::uint16_t value) {
@@ -999,9 +1048,9 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
   return archive;
 }
 
-/******************************
- * data::Archive::operator << *
- ******************************/
+/************************************
+ * meat::data::Archive::operator << *
+ ************************************/
 
 meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
                                                meat::int32_t value) {
@@ -1010,9 +1059,9 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
   return archive;
 }
 
-/******************************
- * data::Archive::operator << *
- ******************************/
+/************************************
+ * meat::data::Archive::operator << *
+ ************************************/
 
 meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
                                                meat::float_t value) {
@@ -1022,7 +1071,7 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
 }
 
 /******************************************************************************
- * Archive Object Class
+ * Archive Class
  */
 
 // class method create:
@@ -1042,8 +1091,17 @@ static meat::Reference Archive_cm_open_(meat::Reference &context) {
 }
 
 static meat::vtable_entry_t ArchiveCMethods[] = {
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x0650a330, 0x36a178be, VTM_NATIVE, 1, Archive_cm_open_},
-  {0x3d4e7ee8, 0x36a178be, VTM_NATIVE, 1, Archive_cm_create_}
+  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x2c296348, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x3d4e7ee8, 0x36a178be, VTM_NATIVE, 1, Archive_cm_create_},
+  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
 };
 
 // method getObject
@@ -1084,10 +1142,19 @@ static meat::Reference Archive_om_sync(meat::Reference &context) {
 }
 
 static meat::vtable_entry_t ArchiveMethods[] = {
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x00361a9b, 0x36a178be, VTM_NATIVE, 0, Archive_om_sync},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x00379f78, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x28186b3f, 0x36a178be, VTM_NATIVE, 0, Archive_om_getObject},
+  {0x34003578, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x4e688b77, 0x36a178be, VTM_NATIVE, 1, Archive_om_setObject_},
-  {0x72cd0161, 0x36a178be, VTM_NATIVE, 1, Archive_om_import_}
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x72cd0161, 0x36a178be, VTM_NATIVE, 1, Archive_om_import_},
+  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x7b840562, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
 };
 
 /******************************************************************************
@@ -1101,12 +1168,12 @@ void meat::data::initialize() {
 
   /* Create the Library class. */
   cls = new Class(Class::resolve("Object"));
-  cls->set_class_vtable(1, LibraryCMethods, STATIC);
+  cls->set_class_vtable(11, LibraryCMethods, STATIC);
   Class::record(cls, "Library");
 
   /* Create the Archive class */
   cls = new Class(Class::resolve("Object"), 2);
-  cls->set_vtable(4, ArchiveMethods, STATIC);
-  cls->set_class_vtable(2, ArchiveCMethods, STATIC);
+  cls->set_vtable(13, ArchiveMethods, STATIC);
+  cls->set_class_vtable(11, ArchiveCMethods, STATIC);
   Class::record(cls, "Archive");
 }
