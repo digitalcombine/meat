@@ -1,6 +1,6 @@
 \subsection {Byte Interpretation}
 
-\subsubsection {Integer Endian}
+\subsubsection{Integer Endian}
 
 \begin{center}
   \begin{tabular}{ c r r }
@@ -11,7 +11,7 @@
   \end{tabular}
 \end{center}
 
-\subsection {Virtual Machine Bytecode}
+\subsection{Virtual Machine Bytecode}
 
 \begin{center}
   \begin{tabular}{ | p{6cm} | c | p{8cm} | }
@@ -35,3 +35,63 @@
     \hline
   \end{tabular}
 \end{center}
+
+\subsection{Library File Format}
+
+\begin{center}
+  \begin{tabular}{ |l|l|p{8cm}| }
+    \hline
+    \multirow{5}{*}{Header} & \texttt{unsigned bytes [4]} = ''MLIB'' & The magic file identifier\\ \cline{2-3}
+    & \texttt{unsigned byte} = 1 & Major Meat library format version\\ \cline{2-3}
+    & \texttt{unsigned byte} = 0 & Minor Meat library format version\\ \cline{2-3}
+    & \texttt{unsigned word} = 0 & Reserved for future flags.\\ \cline{2-3}
+    & \texttt{unsigned byte} & The index, starting from 0, of the serialized application class. This index should never be greater than the number of serialized classes in the library unless it's the value $\mathrm{FF_{16}}$ indicating the index is not pointing to a class.\par
+    If the library is being imported as a library, then this field can be ignored. Otherwise, when it is loaded by the virtual machine to be executed as an application, the index must point to a serialized application class with the appropriate overridden entry class method. When these requirements are not met, the virtual machine must raise an exception to indicate the error condition.\\ \hline
+
+    \multirow{2}{*}{Library Imports} & \texttt{unsigned byte} & The total number of libraries that need to be imported.\\ \cline{2-3}
+    & \texttt{unsigned byte arrays} & A list of ''0'' terminated strings of each library name to be imported.\\ \hline
+
+    \multirow{2}{*}{Serialized Class Objects} & \texttt{unsigned byte} & The total number of Classes serialized in the library.\\ \cline{2-3}
+    & \texttt{serialized class array} & An array of all the serialized classes. see \hyperref[sec:class_serial]{Class Serialization}.\\ \hline
+  \end{tabular}
+\end{center}
+
+\subsubsection{Class Serialization}
+\label{sec:class_serial}
+
+\textbf{Serialized Class Format}
+\begin{center}
+  \begin{tabular}{|l|l|p{8cm}|}
+    \hline
+    \multirow{3}{*}{Header} & \texttt{unsigned integer} & The hashed ID of the class name.\\ \cline{2-3}
+    & \texttt{unsigned byte} & The number of class properties.\\ \cline{2-3}
+    & \texttt{unsigned byte} & The number of object properties.\\ \hline
+
+    \multirow{2}{*}{Virtual Table} & \texttt{unsigned byte} & The number of virtual table entries.\\ \cline{2-3}
+    & \texttt{unsigned byte} & The number of class virtual table entries.\\ \hline
+
+    \multirow{2}{*}{Byte Code} & \texttt{unsigned word} & Size of the byte code array.\\ \cline{2-3}
+    & \texttt{unsigned byte array} & The byte code.\\ \hline
+  \end{tabular}
+\end{center}
+
+\textbf{Virtual Table Entries}
+\begin{center}
+  \begin{tabular}{|l|p{8cm}|}
+    \hline
+    \texttt{unsigned integer} & Hashed ID of the method name.\\ \hline
+    \texttt{unsigned integer} & Hashed ID of the class where the method is found.\\ \hline
+    \texttt{unsigned byte} & Entry flags.\\ \hline
+    \texttt{unsigned byte} & The number of local variables required during execution.\\ \hline
+    \texttt{unsigned word} & Byte code offset to the start of the method.\\ \hline
+  \end{tabular}
+\end{center}
+
+\textbf{Virtual Table Entry Flags}
+\begin{displaymath}
+  \xymatrix @-1pc {Bit &*+[F]{7} \ar @{-} [ddd]&*+[F]{6} \ar @{-} [dd] &*+[F]{5} \ar @{-} [dd] &*+[F]{4} \ar @{-} [dd] &*+[F]{3} \ar @{-} [dd] &*+[F]{2} \ar @{-} [dd]
+    &*+[F]{1} \ar @{-} [dd] &*+[F]{0} \ar @{-} [d] & \\
+    & & & & & & & & \ar [r] & \txt<6cm>{If set the virtual table entry is an offset into the byte code, otherwise it is an internal function pointer.}\\
+    & & \ar [rrrrrrr] & & & & & & & \txt<6cm>{Reserved for future use.}\\
+    & \ar [rrrrrrrr] & & & & & & & & \txt<6cm>{Method found in a super class.}}
+\end{displaymath}
