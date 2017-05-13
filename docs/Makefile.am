@@ -3,16 +3,19 @@
 dist_man1_MANS = meat.1 grinder.1
 pkgdata_DATA = Meat-Language-Reference.odt
 
-EXTRA_DIST = Meat-Standard.tex Class-Reference.tex Object-Reference.tex \
-	Component-Reference.tex FDL.tex \
+EXTRA_DIST = Meat-Standard.tex Component-Reference.tex \
+	Object-Reference.tex Class-Reference.tex \
+	Context-Reference.tex BlockContext-Reference.tex \
+	FDL.tex \
 	logo.svg meat-logo.jpg
 EXTRA_DIST += Meat-Language-Reference.odt
 
 if LATEXMK
 pkgdata_DATA +=  Meat-Standard.pdf
 
-Meat-Standard.pdf: Class-Reference.tex Object-Reference.tex
 Meat-Standard.pdf: Component-Reference.tex FDL.tex
+Meat-Standard.pdf: Object-Reference.tex Class-Reference.tex
+Meat-Standard.pdf: Context-Reference.tex BlockContext-Reference.tex
 Meat-Standard.pdf: Meat-Standard.tex
 	latexmk -pdf Meat-Standard.tex
 	latexmk -c

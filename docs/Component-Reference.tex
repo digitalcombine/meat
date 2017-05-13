@@ -1,13 +1,14 @@
 \subsection {Byte Interpretation}
 
-\subsubsection{Integer Endian}
+\subsubsection{Integer Values}
 
 \begin{center}
-  \begin{tabular}{ c r r }
-    Size (bits) & Original Value & Endian Swapped Value\\ \hline
-    8 & $12_{16}$ & $12_{16}$ \\
-    16 & $1234_{16}$ & $3412_{16}$ \\
-    32 & $12345678_{16}$ & $56781234_{16}$ \\
+  \begin{tabular}{ r | c r r }
+    & Size (bits) & Original Value & Endian Swapped Value\\ \hline
+    Byte & 8 & $12_{16}$ & $12_{16}$ \\
+    Word & 16 & $1234_{16}$ & $3412_{16}$ \\
+    Integer & 32 & $12345678_{16}$ & $56781234_{16}$ \\
+    Long & 64 & $\mathrm{123456789ABCDEF0}_{16}$ & \\
   \end{tabular}
 \end{center}
 
@@ -25,8 +26,8 @@
                                             local variable. \\
     Message Object's Super Class & $03_{16}$ & Nothing is \\
     Message Object's Super Class with Result & $04_{16}$ & Nothing is \\
-    Beginning of Block Context & $0A_{16}$ & Nothing is \\
-    End of Context & $0B_{16}$ & Nothing is \\
+    Beginning of Block Context & $\mathrm{0A}_{16}$ & Nothing is \\
+    End of Context & $\mathrm{0B}_{16}$ & Nothing is \\
     Assign Local Variable & $10_{16}$ & ...\\
     Assign Object Property & $11_{16}$ & ...\\
     Assign Class Property & $12_{16}$ & ...\\
@@ -41,12 +42,22 @@
 \begin{center}
   \begin{tabular}{ |l|l|p{8cm}| }
     \hline
-    \multirow{5}{*}{Header} & \texttt{unsigned bytes [4]} = ''MLIB'' & The magic file identifier\\ \cline{2-3}
-    & \texttt{unsigned byte} = 1 & Major Meat library format version\\ \cline{2-3}
-    & \texttt{unsigned byte} = 0 & Minor Meat library format version\\ \cline{2-3}
+    \multirow{5}{*}{Header} & \texttt{unsigned bytes [4]} = ''MLIB'' & The
+    magic file identifier\\ \cline{2-3}
+    & \texttt{unsigned byte} = 1 & Major Meat library format version\\
+    \cline{2-3}
+    & \texttt{unsigned byte} = 0 & Minor Meat library format version\\
+    \cline{2-3}
     & \texttt{unsigned word} = 0 & Reserved for future flags.\\ \cline{2-3}
-    & \texttt{unsigned byte} & The index, starting from 0, of the serialized application class. This index should never be greater than the number of serialized classes in the library unless it's the value $\mathrm{FF_{16}}$ indicating the index is not pointing to a class.\par
-    If the library is being imported as a library, then this field can be ignored. Otherwise, when it is loaded by the virtual machine to be executed as an application, the index must point to a serialized application class with the appropriate overridden entry class method. When these requirements are not met, the virtual machine must raise an exception to indicate the error condition.\\ \hline
+    & \texttt{unsigned integer} = 0 & A hash ID for an application class for
+    the virtual interpreter to message if the library is being executed.
+    If this field is set to zero, then the library is not considered an
+    executable application, but can still be loaded as a library.
+
+    The hash ID must refer to an Application class within the same library.
+    Any other reference is considered invalid and an Exception must be
+    thrown to indicate the error by the virtual interpreter.\\
+    \hline
 
     \multirow{2}{*}{Library Imports} & \texttt{unsigned byte} & The total number of libraries that need to be imported.\\ \cline{2-3}
     & \texttt{unsigned byte arrays} & A list of ''0'' terminated strings of each library name to be imported.\\ \hline
