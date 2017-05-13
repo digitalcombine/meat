@@ -20,8 +20,9 @@
 # Notes
 #   Since we need gitgo to compile this file, the 'ᶲ' character found in all
 #  the class names is to prevent collisions with the builtin in classes. Once
-#  the cpp file is generated then the ᶲ characters can be stripped to give us
-#  a valid builtin class source file.
+#  the cpp file is generated then the ᶲ characters are stripped out.
+#   The generate cpp file is still not valid because all the hash values are
+#  included in the name hashing...
 
 Library include: {
 #include <meat/utilities.h>
@@ -35,6 +36,91 @@ Library include: {
 #ifdef TESTING
 #include <testing.h>
 #endif /* TESTING */
+}
+
+#==============================================================================
+# Object Class
+
+Object subClass: Objectᶲ body: {
+
+  constructor {
+    return new meat::Object(klass, properties);
+  }
+
+  class method == other {
+    context return: [self is: other]
+  }
+
+  class method != other {
+    context return: [self isNot: other]
+  }
+  
+  class function is: other {
+  	return (self == other ? meat::True() : meat::False());
+  }
+  
+  class function isNot: other {
+    return (!(self == other) ? meat::True() : meat::False());
+  }
+
+  class method isObject {
+    context return: [Boolean false]
+  }
+
+  class method isClass {
+    context return: [Boolean true]
+  }
+
+  class method isNull {
+    context return: [Boolean false]
+  }
+
+  class method type {
+    context return: Class
+  }
+
+  method initialize {
+  }
+
+  method == other {
+    context return: [self is: other]
+  }
+
+  method != other {
+    context return: [self isNot: other]
+  }
+
+	function is: other {
+    return (self == other ? meat::True() : meat::False());
+  }
+
+  function isNot: other {
+    return (!(self == other) ? meat::True() : meat::False());
+  }
+
+  method isObject {
+    context return: [Boolean true]
+  }
+
+  method isClass {
+    context return: [Boolean false]
+  }
+
+  function type {
+    return self->get_type();
+  }
+
+  function isType: type {
+    return (self->is_type(type) ? meat::True() : meat::False());
+  }
+
+  method isNull {
+    context return: [Boolean false]
+  }
+
+  function weak {
+    return self.weak();
+  }
 }
 
 #==============================================================================
@@ -66,74 +152,83 @@ Object subClass: Classᶲ body: {
   class function super {
     return ((meat::Class &)(*self)).get_super();
   }
+  
+  class method initialize {
+  }
 }
 
 #==============================================================================
-# Object Class
+# Context Class
 
-Object subClass: Objectᶲ body: {
+Object subClass: Contextᶲ body: {
 
   constructor {
-    return new meat::Object(klass, properties);
+    return new meat::Context(properties);
   }
 
-  class function == other {
-    return (self == other ? meat::True() : meat::False());
+  class method subClass: name body: def {
+    Exception throw: "Cannot subclass and internal Context class"
   }
 
-  class function != other {
-    return (!(self == other) ? meat::True() : meat::False());
+  class method newObject {
+    Exception throw: "Cannot create a new internal Context object" \
+      for: [context uplevel]
   }
 
-  class method isObject {
-    context return: [Boolean false]
+  function uplevel {
+    return CONTEXT(self).get_uplevel();
   }
 
-  class method isClass {
-    context return: [Boolean true]
+  function locals {
+    return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
   }
 
-  class method isNull {
-    context return: [Boolean false]
+  function getLocal: index {
+    return CONTEXT(self).get_local((int32_t)(*index));
   }
 
-  class method type {
-    context return: Class
+  function return {
+    CONTEXT(self).finish();
+    return null;
   }
 
-  method initialize {
+  function return: value {
+    CONTEXT(self).set_result(value); // Set the return value
+    CONTEXT(self).finish();          // Tell the context it's done.
+    return null;
+  }
+}
+
+#==============================================================================
+# BlockContext Class
+
+Object subClass: BlockContextᶲ body: {
+
+  function return {
+    // We need to get the actual context to message the return method from.
+    meat::Reference uplevel =
+      ((meat::BlockContext &)(*self)).get_operating_context();
+
+    meat::Reference up_context = message(uplevel, "return", context);
+    execute(up_context);
+
+    CONTEXT(self).finish(); // Tell the context it's done.
+
+    return null;
   }
 
-  function == other {
-    return (self == other ? meat::True() : meat::False());
-  }
+  function return: value {
+    // We need to get the actual context to message the return method from.
+    meat::Reference uplevel =
+      ((meat::BlockContext &)(*self)).get_operating_context();
 
-  function != other {
-    return (!(self == other) ? meat::True() : meat::False());
-  }
+    meat::Reference up_context = message(uplevel, "return:", context);
+    CONTEXT(up_context).set_param(0, value);
+    execute(up_context);
 
-  method isObject {
-    context return: [Boolean true]
-  }
+    CONTEXT(self).finish(); // Tell the context it's done.
 
-  method isClass {
-    context return: [Boolean false]
-  }
-
-  function type {
-    return self->get_type();
-  }
-
-  function isType: type {
-    return (self->is_type(type) ? meat::True() : meat::False());
-  }
-
-  method isNull {
-    context return: [Boolean false]
-  }
-
-  function weak {
-    return self.weak();
+    return null;
   }
 }
 
@@ -235,81 +330,6 @@ Object subClass: Exceptionᶲ body: {
 
   method context {
     context return: cntxt
-  }
-}
-
-#==============================================================================
-# Context Class
-
-Object subClass: Contextᶲ body: {
-
-  constructor {
-    return new meat::Context(properties);
-  }
-
-  class method subClass: name body: def {
-    Exception throw: "Cannot subclass and internal Context class"
-  }
-
-  class method newObject {
-    Exception throw: "Cannot create a new internal Context object" \
-      for: [context uplevel]
-  }
-
-  function uplevel {
-    return CONTEXT(self).get_uplevel();
-  }
-
-  function locals {
-    return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
-  }
-
-  function getLocal: index {
-    return CONTEXT(self).get_local((int32_t)(*index));
-  }
-
-  function return {
-    CONTEXT(self).finish();
-    return null;
-  }
-
-  function return: value {
-    CONTEXT(self).set_result(value); // Set the return value
-    CONTEXT(self).finish();          // Tell the context it's done.
-    return null;
-  }
-}
-
-#==============================================================================
-# BlockContext Class
-
-Object subClass: BlockContextᶲ body: {
-
-  function return {
-    // We need to get the actual context to message the return method from.
-    meat::Reference uplevel =
-      ((meat::BlockContext &)(*self)).get_operating_context();
-
-    meat::Reference up_context = message(uplevel, "return", context);
-    execute(up_context);
-
-    CONTEXT(self).finish(); // Tell the context it's done.
-
-    return null;
-  }
-
-  function return: value {
-    // We need to get the actual context to message the return method from.
-    meat::Reference uplevel =
-      ((meat::BlockContext &)(*self)).get_operating_context();
-
-    meat::Reference up_context = message(uplevel, "return:", context);
-    CONTEXT(up_context).set_param(0, value);
-    execute(up_context);
-
-    CONTEXT(self).finish(); // Tell the context it's done.
-
-    return null;
   }
 }
 

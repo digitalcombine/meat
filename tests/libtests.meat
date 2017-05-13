@@ -18,44 +18,16 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 Library import: "UnitTest"
-Library import: "Test.Application"
-Library import: "Test.Boolean"
-Library import: "Test.Exception"
 Library import: "Test.Object"
-Library import: "Test.Class"
-Library import: "Test.Numeric"
-Library import: "Test.Number"
-Library import: "Test.Integer"
-Library import: "Test.Text"
-Library import: "Test.Index"
-Library import: "Test.List"
-Library import: "Test.Data"
-Library import: "Test.Compiler"
 
 Application subClass: Tests body: {
 
 	class method entry {
-	  # Create the Test Suite.
-		suite = [TestSuite new]
-
-		# Add all our tests to the test suite
-		suite add: [Test.Application new]
-		suite add: [Test.BooleanTrueFalse new]
-		suite add: [Test.BooleanFlow new]
-		suite add: [Test.BooleanOperators new]
-		suite add: [Test.Exception new]
-		suite add: [Test.Object new]
-		suite add: [Test.Class new]
-		suite add: [Test.Numeric new]
-		suite add: [Test.Integer new]
-		suite add: [Test.NumberBadness new]
-		suite add: [Test.Text new]
-		suite add: [Test.Index new]
-		suite add: [Test.List new]
-		suite add: [Test.Data new]
-		suite add: [Test.Compiler new]
-
-		context return: [suite entry]
+		summary = [Test.Summary new]
+		
+		summary addSuite: [Test.Object new]
+		
+		context return: [summary runAndSummarize]	
 	}
 
 }

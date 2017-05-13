@@ -21,7 +21,6 @@ archive import: "UnitTest"
 archive import: "Test.Application"
 archive import: "Test.Boolean"
 archive import: "Test.Exception"
-archive import: "Test.Object"
 archive import: "Test.Class"
 archive import: "Test.Numeric"
 archive import: "Test.Number"
@@ -41,7 +40,6 @@ suite add: [Test.BooleanTrueFalse new]
 suite add: [Test.BooleanFlow new]
 suite add: [Test.BooleanOperators new]
 suite add: [Test.Exception new]
-suite add: [Test.Object new]
 suite add: [Test.Class new]
 suite add: [Test.Numeric new]
 suite add: [Test.Integer new]
