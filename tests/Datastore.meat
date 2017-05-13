@@ -16,8 +16,8 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 Library include: {
-#include <gitgo/datastore.h>
-#include <gitgo/utilities.h>
+#include <meat/datastore.h>
+#include <meat/utilities.h>
 }
 
 #==============================================================================
@@ -31,22 +31,26 @@ Object subClass: Libraryᶲ body: {
   	          << std::endl;
 #endif /* DEBUG */
 
-		if (Gitgo::Data::compiler_import != 0)
-			Gitgo::Data::compiler_import(filename->to_string());
+		if (meat::data::compiler_import != 0)
+			meat::data::compiler_import(filename->to_string());
 		else {
-			Gitgo::Data::Library::import(filename->to_string());
+			meat::data::Library::import(filename->to_string());
 		}
 
 		return null;
 	}
 
 	class function include: cpp_includes {
-		if (Gitgo::Data::compiler_import != 0)
-		  Gitgo::Data::Library::include(cpp_includes->to_string());
+		if (meat::data::compiler_import != 0)
+		  meat::data::Library::include(cpp_includes->to_string());
 		else
 		  throw Exception("Method Library include is only with the compiler");
-		  
+
 		return null;
+	}
+
+	class function setApplication: class_name {
+		((meat::data::Library &)(*self)).set_application(class_name->to_string());
 	}
 }
 
@@ -56,36 +60,35 @@ Object subClass: Libraryᶲ body: {
 Object subClass: Archiveᶲ body: {
 
 	class function open: filename {
-		return new Gitgo::Data::Archive(filename->to_string());
+		return new meat::data::Archive(filename->to_string());
 	}
 
 	class function create: filename {
-		return new Gitgo::Data::Archive(filename->to_string(), true);
+		return new meat::data::Archive(filename->to_string(), true);
 	}
-	
+
 	function import: filename {
-		Gitgo::Data::Archive &archive_obj = (Gitgo::Data::Archive &)(*self);
-		
-		Gitgo::Data::Library::import(filename->to_string());
+		meat::data::Archive &archive_obj = (meat::Data::Archive &)(*self);
+
+		meat::data::Library::import(filename->to_string());
 		archive_obj.add_import(filename->to_string());
 
 		return null;
 	}
-	
+
 	function getObject {
-		Gitgo::Data::Archive &store_obj = (Gitgo::Data::Archive &)(*self);
+		meat::data::Archive &store_obj = (meat::Data::Archive &)(*self);
 		return store_obj.get_object();
 	}
-	
+
 	function setObject: value {
-		Gitgo::Data::Archive &archive_obj = (Gitgo::Data::Archive &)(*self);
+		meat::data::Archive &archive_obj = (meat::Data::Archive &)(*self);
 		archive_obj.set_object(obj);
 		return null;
 	}
-	
+
 	function sync {
-		((Gitgo::Data::Archive &)(*self)).sync();
+		((meat::data::Archive &)(*self)).sync();
 		return null;
 	}
 }
-

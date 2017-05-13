@@ -55,6 +55,7 @@ static void help() {
 	std::cout << "grinder -h\n";
 	std::cout << "  -i path      Include path to the library search\n";
 	std::cout << "  -l libname   Compile a library\n";
+	std::cout << "  -c appclass  Compile a library\n";
 	std::cout << "  -a archname  Compile an archive\n";
 	std::cout << "  -# text      Return a hash value for the text\n";
 	std::cout << "  -h           Displays this help" << std::endl;
@@ -87,7 +88,7 @@ static void libcomp_import(const char *name) {
 int main(int argc, const char *argv[]) {
 
 	std::deque<const char *> meat_files;
-	std::string lib_name;
+	std::string lib_name, cls_name;
 	meat::compiler::ArchiveBuilder arch_builder;
 
 	/* The compiler state specified by the command line options. */
@@ -138,6 +139,11 @@ int main(int argc, const char *argv[]) {
 				c++;
 				break;
 
+			case 'c':
+				cls_name = argv[c + 1];
+				c++;
+				break;
+
 			case 'a': // Build archive option
 				if (state != UNSET) {
 					std::cerr << "FATAL: option -l/-a cannot be used more that once."
@@ -161,6 +167,7 @@ int main(int argc, const char *argv[]) {
 				std::cout << hash(argv[c + 1]) << std::endl;
 				return 0;
 
+			case '?':
 			case 'h': // Help option
 				help();
 #ifdef TESTING
@@ -209,6 +216,10 @@ int main(int argc, const char *argv[]) {
 					class_compiler = classbuilder_int;
 
 					LIBRARY.execute(meat_file);
+
+					if (!cls_name.empty())
+						LIBRARY.set_application(cls_name);
+
 					break;
 				}
 				case BUILD_ARCHIVE:

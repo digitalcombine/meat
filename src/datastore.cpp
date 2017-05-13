@@ -194,6 +194,28 @@ meat::data::Library *meat::data::Library::import(const char *name) {
 }
 
 /********************************
+ * meat::data::Library::execute *
+ ********************************/
+
+meat::Reference meat::data::Library::execute(const char *name) {
+	Library *imported_lib = new Library(name);
+  imported_lib->import_from_archive(name);
+
+	if (!imported_lib->application.is_null()) {
+		get_libraries()[name] = imported_lib;
+
+		/* Message the application and get things rolling. */
+		meat::Reference context = meat::message(imported_lib->application,
+																						"entry", meat::Null());
+		meat::Reference result = meat::execute(context);
+
+		return result;
+	}
+	throw meat::Exception(std::string("Library ") + name +
+												" is not executable.");
+}
+
+/********************************
  * meat::data::Library::include *
  ********************************/
 
@@ -299,6 +321,18 @@ void meat::data::Library::add(Class *cls, const char *id) {
   Class::record(newcls, id);
 }
 
+/****************************************
+ * meat::data::Library::set_application *
+ ****************************************/
+
+/** @todo This is a rather dumb method. It should check to make sure
+ *        the class exists in this library, not just in any of the
+ *        loaded libraries.
+ */
+void meat::data::Library::set_application(const std::string &name) {
+	application = Class::resolve(name.c_str());
+}
+
 /******************************
  * meat::data::Library::write *
  ******************************/
@@ -342,8 +376,11 @@ void meat::data::Library::write() {
 		lib_file.put(0);
 
 		// The library is not executable.
-		uint32_t zero = 0;
-		lib_file.write((const char *)&zero, 4);
+		uint32_t app_hash_id = 0;
+		if (!application.is_null()) {
+			app_hash_id = endian::write_be(CLASS(application).get_hash_id());
+		}
+		lib_file.write((const char *)&app_hash_id, 4);
 
 #ifdef DEBUG
     std::cout << "LIBRARY: Adding " << (int)this->imports.size()
@@ -391,7 +428,8 @@ void meat::data::Library::import_from_archive(const char *name) {
   // Read in the file header and make sure the it's the right type of file.
   lib_file.read((char *)&header, sizeof(sgelib_header_t));
 	if (strncmp(header.magic, "MLIB", 4) != 0) {
-		throw meat::Exception(std::string("Attempting to import a non-library file ") + name);
+		throw meat::Exception(std::string("Attempting to import a non-library"
+																			" file ") + name);
 	}
 
 	// Library flags.
@@ -435,9 +473,17 @@ void meat::data::Library::import_from_archive(const char *name) {
     Reference cls = meat::Class::import(lib_file);
     classes.push_back(cls);
     Class::record(cls);
+		if (app_id && CLASS(cls).get_hash_id() == app_id)
+			application = cls;
   }
 
   lib_file.close();
+
+	/*  Now that we have loaded all the class we can resolve the application
+	 * class if it was set.
+	 */
+	if (app_id)
+		application = Class::resolve(app_id);
 }
 
 /*******************************************
@@ -468,6 +514,18 @@ void meat::data::Library::import_from_native(const char *filename,
 /******************************************************************************
  * Library Class
  */
+
+static meat::vtable_entry_t LibraryMethods[] = {
+  {0x0000043c, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x000007a0, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x00379f78, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x34003578, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+  {0x7b840562, 0x00000000, VTM_SUPER, 0, {.offset = 0}}
+};
 
 // class method import:
 static meat::Reference Library_cm_import_(meat::Reference &context) {
@@ -500,16 +558,21 @@ static meat::Reference Library_cm_include_(meat::Reference &context) {
   return null;
 }
 
-/*static meat::vtable_entry_t LibraryCMethods[] = {
-  {0x05614602, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_include_},
-  {0x72cd0161, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_import_}
-	};*/
+// class method setApplication:
+static meat::Reference Library_cm_setApplication_(meat::Reference &context) {
+  meat::Reference self = CONTEXT(context).get_self();
+  //meat::Reference klass = CONTEXT(context).get_class();
+  meat::Reference class_name = CONTEXT(context).get_param(0);
+	return null;
+}
+
 static meat::vtable_entry_t LibraryCMethods[] = {
   {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x05614602, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_include_},
   {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+	{0x1c461870, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_setApplication_},
   {0x2c296348, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
@@ -1168,7 +1231,8 @@ void meat::data::initialize() {
 
   /* Create the Library class. */
   cls = new Class(Class::resolve("Object"));
-  cls->set_class_vtable(11, LibraryCMethods, STATIC);
+	cls->set_vtable(9, LibraryMethods, STATIC);
+  cls->set_class_vtable(12, LibraryCMethods, STATIC);
   Class::record(cls, "Library");
 
   /* Create the Archive class */

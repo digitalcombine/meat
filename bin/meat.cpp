@@ -97,6 +97,8 @@ int main(int argc, const char *argv[]) {
 	try {
 		int fl_type = meat::data::fl_type(filename);
 
+		meat::Reference result;
+
 		if (fl_type == meat::data::FL_ARCHIVE) {
 			/* Open the archive and get the object from it. */
 			meat::data::Archive archive(filename);
@@ -114,19 +116,25 @@ int main(int argc, const char *argv[]) {
 			/* Message the application and get things rolling. */
 			meat::Reference context = meat::message(app, "entry",
 																							meat::Null());
-			meat::Reference result = meat::execute(context);
+			result = meat::execute(context);
 
-			/*  Attempt to return the return value from the entry method. If the
-			 * value return from entry is not an integer then we return 1 (error).
-			 * If no value was returned then we return 0 (success).
-			 */
-			if (!result.is_null() || result == meat::Null()) {
+		} else if (fl_type == meat::data::FL_LIBRARY) {
+#ifdef DEBUG
+			std::cout << "DEBUG: Entering application..." << std::endl;
+#endif /* DEBUG */
+			result = meat::data::Library::execute(filename);
+		}
+
+		/*  Attempt to return the return value from the entry method. If the
+		 * value return from entry is not an integer then we return 1 (error).
+		 * If no value was returned then we return 0 (success).
+		 */
+		if (!result.is_null() || result == meat::Null()) {
 #ifdef TESTING
-				meat::test::summary();
+			meat::test::summary();
 #endif
-				try { return (result->to_int()); }
-				catch (...) { return 1; }
-			}
+			try { return (result->to_int()); }
+			catch (...) { return 1; }
 		}
 
 	} catch (std::exception &err) {

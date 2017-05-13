@@ -59,6 +59,9 @@ namespace meat {
     public:
       static Library *create(const char *name);
       static Library *import(const char *name);
+			/**
+			 */
+			static Reference execute(const char *name);
       static void include(const std::string &includes);
       static const std::string &include();
       static void unload(const char *name);
@@ -72,6 +75,8 @@ namespace meat {
       void add_import(const char *name);
 
       void add(Class *cls, const char *id);
+
+			void set_application(const std::string &name);
 
       const char *get_name() { return name.c_str(); }
 
@@ -96,6 +101,7 @@ namespace meat {
 
       bool is_native;
       nativelib_t dlhandle;
+			Reference application;
 
       Library(const char *name);
 

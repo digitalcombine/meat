@@ -45,3 +45,5 @@ Makefile.in
 .libs/
 .deps/
 meat-*.tar.gz
+/tests/*.log
+/tests/*.trs

@@ -45,6 +45,7 @@ namespace meat {
 		class MethodBuilder;
 
 		/** Parser location tracking.
+		 * @todo Finish this class and use it.
 		 */
 		class DECLSPEC Location {
 		public:
@@ -298,6 +299,10 @@ namespace meat {
 			virtual void command(Tokenizer &tokens);
 
 			void add_import(const char *name) { library->add_import(name); }
+
+			void set_application(const std::string &name) {
+				library->set_application(name);
+			}
 
 			/** Actually create the new library file.
 			 * XXX Rename to compile

@@ -1,6 +1,6 @@
 #                                                           -*- Makefile.am -*-
 
-TESTS = tests.mapp
+TESTS = tests.mapp libtests.mlib
 LOG_COMPILER = @top_srcdir@/bin/meat
 AM_LOG_FLAGS = -i ../lib/.libs/
 
@@ -16,7 +16,7 @@ CLEANFILES = UnitTest.mlib Test.Application.mlib Test.Boolean.mlib \
 			 Test.Text.mlib Test.Index.mlib Test.List.mlib Test.Data.mlib \
 			 Test.Compiler.mlib \
 			 Console.cpp builtin.cpp Datastore.cpp \
-			 data.mar tests.app
+			 data.mar tests.mapp libtests.mlib
 
 .meat.mlib:
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -l $* $<
@@ -59,3 +59,6 @@ tests.mapp: Console.cpp builtin.cpp Datastore.cpp
 tests.mapp: data.mar
 tests.mapp: tests.meat
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -a tests.mapp tests.meat
+
+libtests.mlib: libtests.meat
+	@top_srcdir@/bin/grinder -i ../lib/.libs/ -c Tests -l libtests libtests.meat
