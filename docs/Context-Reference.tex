@@ -1,0 +1,19 @@
+\subsection {Context Class}
+
+\indent{}A context is the execution context when a method answers a message.
+
+\begin{lstlisting}
+Object subClass: Context body: {
+  method messenger
+  method localVariables
+  method getLocal: index
+  method setLocal: index to: value
+  method return
+  method return: result
+}
+\end{lstlisting}
+
+\subsubsection {method messenger}
+\indent{}This method returns the context object where the message was
+initiated. The null object can be returned if it was the very first context
+created to start execution.
