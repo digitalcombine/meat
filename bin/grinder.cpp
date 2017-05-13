@@ -256,6 +256,7 @@ int main(int argc, const char *argv[]) {
 		}
 
 	} catch (std::exception &err) {
+		library = NULL;
 		std::cerr << "UNCAUGHT EXCEPTION: " << err.what() << std::endl;
 
 #ifdef TESTING
