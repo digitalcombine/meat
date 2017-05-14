@@ -61,132 +61,130 @@ OTest2 subClass: OTest3 body: {
 
 Test.Suite subClass: Test.Object body: {
 
-	# Creates a new TestSuite object.
-	class method new {
-		self newObject
-		context return: self
-	}
+  # Creates a new TestSuite object.
+  class method new {
+    self newObject
+    context return: self
+  }
 
-	method setup {
-		other = ""
-	
-		self title: "4.1.1 The == methods" test: {
-			other = ""
-		
-			[self == self] isFalse: {
-				self fail: "self == self returned false."
-			}
-			[self == other] isTrue: {
-				self fail: "self == other returned true."
-			}
-		
-			# Test the class methods.
-    	[[10 type] == Integer] isFalse: {
-      	self fail: "Object type test failed to return Integer class"
-    	}
-    	[[self type] == Exception] isTrue: {
-      	self fail: "TestSuite type tested true as Test class"
-    	}
-    	self pass
-		}
-		
-		self title: "4.1.2 The != methods" test: {
-			[self != self] isTrue: {
-				self fail: "self != self returned true."
-			}
-			[self != other] isTrue: {
-				self fail: "self != other returned false."
-			}
-			
-			# Test the class methods.
-    	[[10 type] != Integer] isTrue: {
-      	self fail: "10 != Integer returned true."
-    	}
-    	[[self type] != Exception] isFalse: {
-      	self fail: "self type != Exception return false."
-    	}
-			self pass
-		}
-		
-		self title: "4.1.3 The is: methods" test: {
-			[self is: self] isFalse: {
-				self fail: "self is: self returned false."
-			}
-			[self is: other] isTrue: {
-				self fail: "self is: other returned true."
-			}
+  method setup {
+    other = ""
+  
+    self title: "4.1.1 The == methods" test: {
+      [self == self] isFalse: {
+        self fail: "self == self returned false."
+      }
+      [self == other] isTrue: {
+        self fail: "self == other returned true."
+      }
+    
+      # Test the class methods.
+      [[10 type] == Integer] isFalse: {
+        self fail: "Object type test failed to return Integer class"
+      }
+      [[self type] == Exception] isTrue: {
+        self fail: "TestSuite type tested true as Test class"
+      }
+      self pass
+    }
+    
+    self title: "4.1.2 The != methods" test: {
+      [self != self] isTrue: {
+        self fail: "self != self returned true."
+      }
+      [self != other] isTrue: {
+        self fail: "self != other returned false."
+      }
+      
+      # Test the class methods.
+      [[10 type] != Integer] isTrue: {
+        self fail: "10 != Integer returned true."
+      }
+      [[self type] != Exception] isFalse: {
+        self fail: "self type != Exception return false."
+      }
+      self pass
+    }
+    
+    self title: "4.1.3 The is: methods" test: {
+      [self is: self] isFalse: {
+        self fail: "self is: self returned false."
+      }
+      [self is: other] isTrue: {
+        self fail: "self is: other returned true."
+      }
 
-			# Test the class methods.
-    	[[10 type] is: Integer] isFalse: {
-      	self fail: "10 is: Integer returned false."
-    	}
-    	[[self type] is: Exception] isTrue: {
-      	self fail: "self type is: Exception returned true."
-    	}
-			self pass
-		}
-		
-		self title: "4.1.4 The isNot: methods" test: {
-			[self isNot: self] isTrue: {
-				self fail: "self isNot: self returned true."
-			}
-			[self isNot: other] isTrue: {
-				self fail: "self isNot: other returned false."
-			}
-			
-			# Test the class methods.
-    	[[10 type] isNot: Integer] isTrue: {
-      	self fail: "10 isNot: Integer returned true."
-    	}
-    	[[self type] isNot: Exception] isFalse: {
-      	self fail: "self type isNot: Exception return false."
-    	}
-			self pass
-		}
-		
-		self title: "4.1.5 The isObject methods" test: {
-			[self isObject] isFalse: {
-				self fail: "Object isObject didn't return true"
-			}
-			
-			[Integer isObject] isTrue: {
-				self fail: "Class isObject didn't return false"
-			}
-			self pass
-		}
-		
-		self title: "4.1.6 The isClass methods" test: {
-			[self isClass] isTrue: {
-				self fail: "Object isClass didn't return false"
-			}
-			
-			[Integer isClass] isFalse: {
-				self fail: "Class isClass didn't return true"
-			}
-			self pass
-		}
-		
-		self title: "4.1.7 The isNull methods" test: {
-			[self isNull] isTrue: {
-				self fail: "Object isNull method return true."
-			}
-			
-			[[self type] isNull] isTrue: {
-				self fail: "Class isNull method return true."
-			}
-			self pass
-		}
-		
-		self title: "4.1.8 The type methods" test: {
-			self pass
-		}
-		
-		self title: "4.1.9 method initialize" test: {
-			self pass
-		}
-		
-		self title: "4.1.10 method weak" test: {
-			self pass
-		}
-	}
+      # Test the class methods.
+      [[10 type] is: Integer] isFalse: {
+        self fail: "10 is: Integer returned false."
+      }
+      [[self type] is: Exception] isTrue: {
+        self fail: "self type is: Exception returned true."
+      }
+      self pass
+    }
+    
+    self title: "4.1.4 The isNot: methods" test: {
+      [self isNot: self] isTrue: {
+        self fail: "self isNot: self returned true."
+      }
+      [self isNot: other] isTrue: {
+        self fail: "self isNot: other returned false."
+      }
+      
+      # Test the class methods.
+      [[10 type] isNot: Integer] isTrue: {
+        self fail: "10 isNot: Integer returned true."
+      }
+      [[self type] isNot: Exception] isFalse: {
+        self fail: "self type isNot: Exception return false."
+      }
+      self pass
+    }
+    
+    self title: "4.1.5 The isObject methods" test: {
+      [self isObject] isFalse: {
+        self fail: "Object isObject didn't return true"
+      }
+      
+      [Integer isObject] isTrue: {
+        self fail: "Class isObject didn't return false"
+      }
+      self pass
+    }
+    
+    self title: "4.1.6 The isClass methods" test: {
+      [self isClass] isTrue: {
+        self fail: "Object isClass didn't return false"
+      }
+      
+      [Integer isClass] isFalse: {
+        self fail: "Class isClass didn't return true"
+      }
+      self pass
+    }
+    
+    self title: "4.1.7 The isNull methods" test: {
+      [self isNull] isTrue: {
+        self fail: "Object isNull method return true."
+      }
+      
+      [[self type] isNull] isTrue: {
+        self fail: "Class isNull method return true."
+      }
+      self pass
+    }
+    
+    self title: "4.1.8 The type methods" test: {
+      self pass
+    }
+    
+    self title: "4.1.9 method initialize" test: {
+      self pass
+    }
+    
+    self title: "4.1.10 method weak" test: {
+      self pass
+    }
+  }
 }

@@ -576,7 +576,11 @@ LocalVariable Value::gen_result(bool prelim) {
 #endif
             vtype = CLASS_REFERENCE;
             set_result_dest();
-          }
+          } else {
+#ifdef DEBUG
+            std::cout << "STAGE: " << value << " is unresolved." << std::endl;
+#endif
+					}
         }
       }
     }
@@ -666,7 +670,8 @@ LocalVariable Value::gen_result(bool prelim) {
       }
       break;
 		default:
-      throw Exception("Unknown result destination in assignment.");
+      throw Exception(std::string("Unknown result destination in assignment"
+																	" for ") + value);
     }
   }
 

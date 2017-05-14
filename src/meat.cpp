@@ -712,7 +712,7 @@ meat::Reference &meat::Class::resolve(meat::uint32_t hash_id) {
 	msg << std::setw(8) << std::setfill('0') << std::setbase(16);
 	msg << hash_id << " failed.";
 	if (classes.find(hash_id) == classes.end()) {
-		throw Exception(msg.str().c_str());
+		throw Exception(msg.str());
 	}
 
 	return classes[hash_id];
@@ -1379,12 +1379,16 @@ meat::uint8_t meat::BlockContext::get_num_of_locals() const {
  *******************************/
 
 bool meat::BlockContext::is_done() {
-	return (Context::is_done() or CONTEXT(context).is_done());
+	return (Context::is_done() or CONTEXT(up_level).is_done());
 };
 
 /******************************************************************************
  * meat::Exception Class
  */
+
+/******************************
+ * meat::Exception::Exception *
+ ******************************/
 
 meat::Exception::Exception()
 	: Object(Class::resolve("Exception"), 2) {
@@ -1432,6 +1436,10 @@ meat::Exception::Exception(Reference &message, Reference &context)
 	this->property(1) = context;
 }
 
+/*************************
+ * meat::Exception::what *
+ *************************/
+
 const char* meat::Exception::what() const throw() {
 	try {
 		// Attempt to get the error message from property 0.
@@ -1449,12 +1457,20 @@ const char* meat::Exception::what() const throw() {
  * List Class Implemenation
  */
 
+/********************
+ * meat::List::List *
+ ********************/
+
 meat::List::List() : Object(Class::resolve("List")) {
 }
 
 meat::List::List(Reference &cls, meat::uint8_t properties)
 	: Object(cls, properties) {
 }
+
+/*************************
+ * meat::List::serialize *
+ *************************/
 
 void meat::List::serialize(data::Archive &store,
 													 std::ostream &data_stream) const {
@@ -1467,6 +1483,10 @@ void meat::List::serialize(data::Archive &store,
 		store << store.add_property(obj);
 	}
 }
+
+/***************************
+ * meat::List::unserialize *
+ ***************************/
 
 void meat::List::unserialize(data::Archive &store,
 														 std::istream &data_stream) {
@@ -1496,12 +1516,20 @@ bool meat::obj_less::operator()(const Reference &first,
 	return false;
 }
 
+/**********************
+ * meat::Index::Index *
+ **********************/
+
 meat::Index::Index() : Object(Class::resolve("Index")) {
 }
 
 meat::Index::Index(Reference &cls, meat::uint8_t properties)
 	: Object(cls, properties) {
 }
+
+/**************************
+ * meat::Index::serialize *
+ **************************/
 
 void meat::Index::serialize(data::Archive &store,
 														std::ostream &data_stream) const {
@@ -1541,9 +1569,9 @@ void meat::Index::unserialize(data::Archive &store,
 /******************************************************************************
  */
 
-/******************
+/*****************
  * meat::message *
- ******************/
+ *****************/
 
 meat::Reference meat::message(meat::Reference &object,
 															meat::uint32_t hash_id,
@@ -1611,19 +1639,15 @@ meat::Reference meat::message(meat::Reference &object,
   return new_context;
 }
 
-/******************
- * meat::message *
- ******************/
-
 meat::Reference meat::message(meat::Reference &object,
 															const char *method,
 															meat::Reference &context) {
 	return message(object, hash(method), context);
 }
 
-/************************
+/***********************
  * meat::message_super *
- ************************/
+ ***********************/
 
 meat::Reference meat::message_super(meat::Reference &object,
 																		meat::uint32_t hash_id,
@@ -1689,9 +1713,9 @@ std::ostream &meat::operator <<(std::ostream &out, Class &cls) {
 }
 #endif
 
-/*********************
+/********************
  * meat::ClassClass *
- *********************/
+ ********************/
 
 meat::Reference &meat::ClassClass(bool initializing) {
 	static Reference cls;
@@ -1703,9 +1727,9 @@ meat::Reference &meat::ClassClass(bool initializing) {
 	return cls;
 }
 
-/***************
+/**************
  * meat::True *
- ***************/
+ **************/
 
 meat::Reference &meat::True() {
 	static Reference true_object;
@@ -1717,9 +1741,9 @@ meat::Reference &meat::True() {
 	return true_object;
 }
 
-/****************
+/***************
  * meat::False *
- ****************/
+ ***************/
 
 meat::Reference &meat::False() {
 	static Reference false_object;
@@ -1731,9 +1755,9 @@ meat::Reference &meat::False() {
 	return false_object;
 }
 
-/***************
+/**************
  * meat::Null *
- ***************/
+ **************/
 
 meat::Reference &meat::Null() {
 	static Reference null_object;

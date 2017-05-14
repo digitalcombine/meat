@@ -135,7 +135,7 @@ namespace meat {
 		private:
 			token_t value_type;  /**< The type of token parsed */
 			std::string value;   /**< The value of the token. */
-			Location start, end;
+			Location start, end; /**< Location of the token in the original text. */
 		};
 
 		/** Collection of tokens parsed from a given command or text.

@@ -1,9 +1,22 @@
 \subsection {Context Class}
 
-\indent{}A context is the execution context when a method answers a message.
+A context is the execution context when a method answers a message.
+\begin{center}
+  \begin{tabular}{ c | l }
+    Local Variable & Value\\ \hline
+    0 & self \\
+    1 & class \\
+    2 & context (weak reference) \\
+    3 & null \\
+    4 \dots & message parameters \\
+    \dots last & local variables \\
+  \end{tabular}
+\end{center}
 
 \begin{lstlisting}
 Object subClass: Context body: {
+  class method subClass: name body: definition
+  class method newObject
   method messenger
   method localVariables
   method getLocal: index
@@ -13,7 +26,17 @@ Object subClass: Context body: {
 }
 \end{lstlisting}
 
+\subsubsection {class method subClass: name body: definition}
+The Context class should never be sub-classed therefore this method always
+raises an exception.
+
+\hfill
+\subsubsection {class method newObject}
+Context classes are only created internally when an object is messaged
+therefore this method always raises an exception.
+
+\hfill
 \subsubsection {method messenger}
-\indent{}This method returns the context object where the message was
+This method returns the context object where the message was
 initiated. The null object can be returned if it was the very first context
 created to start execution.

@@ -70,6 +70,10 @@ meat::compiler::Location::operator =(const Location &other) {
  * Token Class
  */
 
+/********************************
+ * meat::compiler::Token::Token *
+ ********************************/
+
 meat::compiler::Token::Token(const std::string &value,
 															meat::compiler::Token::token_t value_type,
 															Location &start, Location &end)
@@ -82,8 +86,16 @@ meat::compiler::Token::Token(const Token &other)
 		end(other.end) {
 }
 
+/*********************************
+ * meat::compiler::Token::~Token *
+ *********************************/
+
 meat::compiler::Token::~Token() throw() {
 }
+
+/********************************
+ * meat::compiler::Token::subst *
+ ********************************/
 
 void meat::compiler::Token::subst() {
 #ifdef DEBUG
@@ -141,7 +153,7 @@ void meat::compiler::Token::subst() {
 }
 
 meat::compiler::Token &
-meat::compiler::Token::operator = (const Token &other) {
+meat::compiler::Token::operator =(const Token &other) {
 	if (this != &other) {
 		value_type = other.value_type;
 		value = other.value;
@@ -149,7 +161,7 @@ meat::compiler::Token::operator = (const Token &other) {
 	return *this;
 }
 
-bool meat::compiler::Token::operator == (const char *value) const {
+bool meat::compiler::Token::operator ==(const char *value) const {
 	return (this->value == value);
 }
 
@@ -292,8 +304,9 @@ void meat::compiler::Tokenizer::parse(const Location &position,
 					t_end += 1;
 
 					if (command[t_end] == '\n')
-						throw meat::Exception("Syntax error: Missing closing bracket "
-																	 "\"]\"");
+						throw meat::Exception(
+							std::string("Syntax error: Missing closing bracket "
+													"\"]\""));
 
 					if (command[t_end] == '[') {
 						count += 1;

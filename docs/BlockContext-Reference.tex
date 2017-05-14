@@ -1,0 +1,19 @@
+\subsection {BlockContext Class}
+
+\begin{displaymath}
+  \xymatrix @-1pc {
+    \txt{Initial Context} \ar [r] & \txt{Block Context} \\
+    \txt{Execution Context} \ar [ur] & \\
+  }
+\end{displaymath}
+
+\begin{lstlisting}
+Context subClass: BlockContext body: {
+  method execute
+  method localVariables
+  method getLocal: index
+  method setLocal: index to: value
+  method return
+  method return: result
+}
+\end{lstlisting}

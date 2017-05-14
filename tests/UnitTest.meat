@@ -70,13 +70,13 @@ Object subClass: Test body: {
 
 	method pass {
 		passed = [Boolean true]
-		[context uplevel] return
+		[context messenger] return
 	}
 
 	method fail: reason {
 		passed = [Boolean false]
 		failExplanation append: reason
-		[context uplevel] return
+		[context messenger] return
 	}
 
 	method hasPassed {
@@ -200,7 +200,7 @@ Object subClass: Test.Test body: {
 	}
 	
 	method initialize {
-		passed = [Boolean true]
+		passed = [Boolean false]
 		title = ""
 		failedReason = ""
 	}
@@ -211,7 +211,8 @@ Object subClass: Test.Test body: {
 			Console write: [["TEST: " + title] + "... "]
 			test execute
 		} catch: .error do: {
-			failedReasons = [.error message]
+			failedReason = [.error message]
+			passed = [Boolean false]
 		}
 		
 		passed isTrue: {
@@ -229,14 +230,14 @@ Object subClass: Test.Test body: {
 	# Pass and exit the test.
 	method pass {
 		passed = [Boolean true]
-		[context uplevel] return
+		[context messenger] return
 	}
 
 	# Fail and exit the test, setting the reason why.
 	method fail: reason {
 		passed = [Boolean false]
 		failReason = reason
-		[context uplevel] return
+		[context messenger] return
 	}
 }
 

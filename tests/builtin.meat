@@ -167,7 +167,7 @@ Object subClass: Contextᶲ body: {
   }
 
   class method subClass: name body: def {
-    Exception throw: "Cannot subclass and internal Context class"
+    Exception throw: "Cannot subclass an internal Context class"
   }
 
   class method newObject {
@@ -175,11 +175,11 @@ Object subClass: Contextᶲ body: {
       for: [context uplevel]
   }
 
-  function uplevel {
+  function messenger {
     return CONTEXT(self).get_uplevel();
   }
 
-  function locals {
+  function localVariables {
     return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
   }
 
@@ -203,6 +203,19 @@ Object subClass: Contextᶲ body: {
 # BlockContext Class
 
 Object subClass: BlockContextᶲ body: {
+
+	function execute {
+	  meat::uint16_t start_ip = CONTEXT(self).get_ip();
+    
+    CONTEXT(block).set_uplevel(context);
+    execute(self);
+    
+    // Reset the block context incase it's executed again.
+    CONTEXT(self).set_ip(start_ip);
+    CONTEXT(self).unfinish();
+
+    return null;
+	}
 
   function return {
     // We need to get the actual context to message the return method from.
@@ -997,7 +1010,7 @@ Object subClass: Listᶲ body: {
     return null;
   }
 
-  function size {
+  function items {
     return new meat::Object((int32_t)((meat::List &)(*self)).size());
   }
 
