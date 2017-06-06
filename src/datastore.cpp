@@ -46,7 +46,7 @@
 
 extern "C" {
   typedef struct _sgelib_header_t {
-    char magic[4];     // Should always be GLIB
+    char magic[4];            // File type magic
     meat::uint8_t major_ver;
     meat::uint8_t minor_ver;
   } sgelib_header_t;
@@ -153,7 +153,7 @@ meat::data::Library::~Library() throw() {
     Class::unrecord(*it);
 
   if (is_native) {
-    //dl_close(dlhandle);
+    dl_close(dlhandle);
   }
 }
 
