@@ -59,8 +59,6 @@ meat::Reference meat::execute(Reference context) {
                   << "," << itohex(ip, 4) << ")"
 #endif
 
-		//std::cout << "CONTEXT: " << ((void *)&(*context)) << std::endl;
-
 		while (not context.is_null()) {
 
 			/* Execute the byte code.
@@ -435,9 +433,6 @@ meat::Reference meat::execute(Reference context) {
 			 * look for the next upper level not done context.
 			 */
 			while (CONTEXT(context).is_done()) {
-				//std::cout << "CONTEXT: " << ((void *)&(*context))
-				//					<< std::endl;
-
 				Reference result = CONTEXT(context).get_result();
 				context = CONTEXT(context).get_messenger();
 
