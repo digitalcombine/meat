@@ -57,16 +57,6 @@ static std::string to_string(unsigned int value) {
   return convert.str();
 }
 
-/** Converts an hexidecimal integer value to a string.
- */
-static std::string to_hex_string(unsigned int value, size_t width = 8) {
-  std::ostringstream convert;
-	convert << std::setw(width) << std::setfill('0') << std::setbase(16);
-  convert << value;
-	return ("0x" + convert.str());
-}
-
-
 /** Changes the gitgo function name to a name more suitable for c++.
  */
 static std::string cook_c_name(const char *value) {
@@ -153,7 +143,7 @@ compiler::LibraryBuilder::LibraryBuilder(const char *name)
   library = data::Library::create(name);
 
   this->property(0) = new Object(name);
-  this->property(1) = new List();
+	this->property(1) = new List();
 }
 
 compiler::LibraryBuilder::~LibraryBuilder() throw() {
@@ -167,7 +157,8 @@ compiler::LibraryBuilder::~LibraryBuilder() throw() {
 Reference compiler::LibraryBuilder::new_class(Reference &super,
                                               const char *name) {
   Reference cls = new ClassBuilder(*this, super, name);
-  ((List &)(*(this->property(1)))).push_back(cls);
+	Reference &classes = this->property(1);
+	(dynamic_cast<meat::List &>(*classes)).push_back(cls);
   return cls;
 }
 
@@ -268,7 +259,7 @@ void compiler::LibraryBuilder::command(Tokenizer &tokens) {
     // Build the context and execute it.
     context = meat::message(obj, message.c_str(), context);
     result = meat::execute(context);
-    context = ((Context &)(*context)).get_uplevel();
+    context = ((Context &)(*context)).get_messenger();
 
   } else if (tokens.count() > 2 && tokens.count() % 2 == 1) {
     /* A message with parameters. */
@@ -314,7 +305,7 @@ void compiler::LibraryBuilder::command(Tokenizer &tokens) {
 
     // Execute the new context.
     result = meat::execute(context);
-    context = ((Context &)(*context)).get_uplevel();
+    context = ((Context &)(*context)).get_messenger();
 
   } else {
     throw Exception("Syntax error");
@@ -359,11 +350,11 @@ meat::compiler::ClassBuilder::ClassBuilder(LibraryBuilder &library,
   cpp_bytecode = 0;
 
   this->property(0) = new Object(cls_name);
-  this->property(1) = new List();  // Properties
+	this->property(1) = new List();  // Properties
   this->property(2) = new List();  // Class properties
   this->property(3) = new Index(); // Methods
   this->property(4) = new Index(); // Class methods
-  this->property(5) = meat::Null();
+  //this->property(5, meat::Null());
 }
 
 /******************************
@@ -452,7 +443,7 @@ void compiler::ClassBuilder::create_class() const {
     new meat::Class((Reference &)super,
                      (uint8_t)cls_properties.size(),
                      (uint8_t)properties.size() +
-                     CLASS(super).get_obj_properties());
+                     CONST_CLASS(super).get_obj_properties());
 
   std::vector<uint8_t> bytecode;
 
@@ -465,7 +456,7 @@ void compiler::ClassBuilder::create_class() const {
   /* Generate the bytecode for the object methods and record it in the
    * virtual table.
    */
-	vt = CLASS(super).get_vtable(vt_size);
+	vt = CONST_CLASS(super).get_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it)
 		vtable_it->flags = VTM_SUPER;
@@ -492,7 +483,7 @@ void compiler::ClassBuilder::create_class() const {
   /* Generate the bytecode for the class methods and record it in the class
    * virtual table.
    */
-	vt = CLASS(super).get_class_vtable(vt_size);
+	vt = CONST_CLASS(super).get_class_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it)
 		vtable_it->flags = VTM_SUPER;
@@ -604,7 +595,7 @@ std::string meat::compiler::ClassBuilder::cpp_methods() {
 	vt = CLASS(super).get_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it) {
-		vtable_it->str_hash = to_hex_string(vtable_it->hash_id);
+		vtable_it->str_hash = itohex(vtable_it->hash_id);
 		vtable_it->str_class_hash = "0x00000000";
 		vtable_it->flags = "VTM_SUPER";
 		vtable_it->func_name = "{.offset = 0}";
@@ -685,7 +676,7 @@ std::string meat::compiler::ClassBuilder::cpp_methods() {
 	vt = CLASS(super).get_class_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it) {
-		vtable_it->str_hash = to_hex_string(vtable_it->hash_id);
+		vtable_it->str_hash = itohex(vtable_it->hash_id);
 		vtable_it->str_class_hash = "0x00000000";
 		vtable_it->flags = "VTM_SUPER";
 		vtable_it->func_name = "{.offset = 0}";
@@ -771,7 +762,7 @@ std::string meat::compiler::ClassBuilder::cpp_methods() {
           cppcode += ", ";
       } else first = false;
 
-      cppcode += ::to_hex_string(bytecode[c], 2);
+      cppcode += itohex(bytecode[c], 2);
     }
     cppcode += "\n};\n\n";
   }
@@ -796,7 +787,7 @@ std::string meat::compiler::ClassBuilder::cpp_new_class() const {
   cppcode += "\n  cls = new meat::Class(meat::Class::resolve(" + hex.str() +
     "), " + ::to_string(((List &)*(this->property(2))).size()) + ", " +
     ::to_string(((List &)*(this->property(1))).size() +
-                CLASS(super).get_obj_properties()) + ");\n";
+                CONST_CLASS(super).get_obj_properties()) + ");\n";
 
   if (!(this->property(5) == meat::Null())) {
       cppcode += "  cls->set_constructor(" + cooked_name + "_constructor);\n";
@@ -976,9 +967,9 @@ uint8_t meat::compiler::ClassBuilder::class_method_count() const {
 
 meat::compiler::MethodBuilder::MethodBuilder(ClassBuilder &cb, bool is_cpp)
   : Object(Class::resolve("Compiler.Method"), 3), cb(&cb), is_cpp(is_cpp) {
-  this->property(0) = meat::Null(); // Method name
+  //this->property(0) = meat::Null(); // Method name
   this->property(1) = new List();    // Parameters
-  this->property(2) = meat::Null(); // Code
+  //this->property(2) = meat::Null(); // Code
 };
 
 /**************************
@@ -1066,7 +1057,7 @@ std::string meat::compiler::MethodBuilder::cpp_method(const char *prelim) {
     std::string code;
 
     code += "static meat::Reference " + cpp_name(prelim) +
-      "(meat::Reference &context) {\n";
+      "(meat::Reference context) {\n";
 
     code += "  meat::Reference self = CONTEXT(context).get_self();\n";
     code += "  meat::Reference klass = CONTEXT(context).get_class();\n";
@@ -1152,7 +1143,7 @@ void meat::compiler::MethodBuilder::command(Tokenizer &tokens) {
  ********************************/
 
 void compiler::MethodBuilder::add_parameter(const std::string &name) {
-  List &parameters = (List &)(*(this->property(1)));
+  List &parameters = dynamic_cast<List &>(*(this->property(1)));
   parameters.push_back(new Object(name.c_str()));
 }
 

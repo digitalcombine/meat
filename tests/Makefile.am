@@ -1,20 +1,20 @@
 #                                                           -*- Makefile.am -*-
 
-TESTS = tests.mapp libtests.mlib
+TESTS = tests.mapp libtests.mlib hello.mlib
 LOG_COMPILER = @top_srcdir@/bin/meat
 AM_LOG_FLAGS = -i ../lib/.libs/
 
-EXTRA_DIST = UnitTest.meat Test.Application.meat Test.Boolean.meat \
-			 Test.Exception.meat Test.Object.meat Test.Class.meat \
+EXTRA_DIST = UnitTest.meat Test.Object.meat Test.Boolean.meat \
+			 Test.Exception.meat Test.Class.meat Test.BlockContext \
 			 Test.Numeric.meat Test.Number.meat Test.Integer.meat \
 			 Test.Text.meat Test.Index.meat Test.List.meat Test.Data.meat \
-			 Test.Compiler.meat \
+			 Test.Application.meat Test.Compiler.meat \
 			 tests.meat data.meat Console.meat builtin.meat Datastore.meat
-CLEANFILES = UnitTest.mlib Test.Application.mlib Test.Boolean.mlib \
-			 Test.Exception.mlib Test.Object.mlib Test.Class.mlib \
+CLEANFILES = UnitTest.mlib Test.Boolean.mlib Test.Object.mlib \
+			 Test.Exception.mlib Test.Class.mlib  Test.BlockContext.mlib\
 			 Test.Numeric.mlib Test.Number.mlib Test.Integer.mlib \
 			 Test.Text.mlib Test.Index.mlib Test.List.mlib Test.Data.mlib \
-			 Test.Compiler.mlib \
+			 Test.Application.mlib Test.Compiler.mlib \
 			 Console.cpp builtin.cpp Datastore.cpp \
 			 data.mar tests.mapp libtests.mlib
 
@@ -26,13 +26,14 @@ CLEANFILES = UnitTest.mlib Test.Application.mlib Test.Boolean.mlib \
 	@cat $*.cpp | sed -e 's/ᶲ//g' > $*.cpp.fixed
 	@mv -f $*.cpp.fixed $*.cpp
 
+Test.Object.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.Class.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+Test.BlockContext.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.Application.mlib: UnitTest.mlib @top_srcdir@/bin/grinder
 Test.Application.mlib: @top_srcdir@/bin/meat
 Test.Boolean.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.Exception.mlib: UnitTest.mlib @top_srcdir@/bin/grinder
 Test.Exception.mlib: @top_srcdir@/bin/meat
-Test.Object.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
-Test.Class.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.Numeric.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.Number.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.Integer.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
@@ -52,7 +53,7 @@ data.mar: Test.Data.mlib
 tests.mapp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 tests.mapp: UnitTest.mlib Test.Application.mlib
 tests.mapp: Test.Boolean.mlib Test.Exception.mlib Test.Object.mlib
-tests.mapp: Test.Class.mlib
+tests.mapp: Test.Class.mlib Test.BlockContext.mlib
 tests.mapp: Test.Numeric.mlib Test.Number.mlib Test.Integer.mlib Test.Text.mlib
 tests.mapp: Test.Index.mlib Test.List.mlib Test.Data.mlib Test.Compiler.mlib
 tests.mapp: Console.cpp builtin.cpp Datastore.cpp
@@ -62,3 +63,6 @@ tests.mapp: tests.meat
 
 libtests.mlib: libtests.meat
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -c Tests -l libtests libtests.meat
+
+hello.mlib: hello.meat
+	@top_srcdir@/bin/grinder -i ../lib/.libs/ -c Hello -l hello hello.meat

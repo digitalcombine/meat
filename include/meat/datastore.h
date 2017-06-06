@@ -135,7 +135,7 @@ namespace meat {
        * @param property reference to the parameter to add to the file.
        * @return The index offset of the object with the file.
        */
-      uint32_t add_property(Reference &property);
+      uint32_t add_property(Reference property);
 
       Archive &operator>>(meat::uint8_t &value);
       Archive &operator>>(meat::int8_t &value);

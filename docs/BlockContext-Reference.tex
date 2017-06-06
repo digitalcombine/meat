@@ -2,18 +2,78 @@
 
 \begin{displaymath}
   \xymatrix @-1pc {
-    \txt{Initial Context} \ar [r] & \txt{Block Context} \\
-    \txt{Execution Context} \ar [ur] & \\
+    & \txt{Origin Context} \ar [dl] \ar@{<=>}[dd] \\
+    \txt{Messaging Context} \ar@{<->}[dr] & \\
+    & \txt{Block Context}\\
   }
 \end{displaymath}
+
+The origin context is the context in which the block context byte
+code was found and the block context was created. The local variables for
+the origin context are prepended to the block context local variables.\\
+
+The messaging context is the context where one of the \textit{execute}
+method is messaged.
+
+\begin{center}
+  \begin{tabular}{ c | l }
+    Variable & Context \\ \hline
+    self & Origin Context \\
+    class & Origin Context \\
+    context & Block Context \\
+    null & Origin Context \\
+    4 \dots & Origin Context \\
+    \dots last & Block Context \\
+  \end{tabular}
+\end{center}
+
 
 \begin{lstlisting}
 Context subClass: BlockContext body: {
   method execute
+  method executeOnBreak: block
+  method executeOnBreak: breakBlock onContinue: continueBlock
+  method executeOnContinue: block
   method localVariables
   method getLocal: index
   method setLocal: index to: value
   method return
   method return: result
+  method continue
+  method break
 }
 \end{lstlisting}
+
+\subsubsection{method execute}
+
+\subsubsection{method executeOnBreak: block}
+
+\subsubsection{method executeOnBreak: breakBlock onContinue: continueBlock}
+
+\subsubsection{method executeOnContinue: block}
+
+\subsubsection{method localVariables}
+
+\subsubsection{method getLocal: index}
+
+\subsubsection{method setLocal: index to: value}
+
+\subsubsection{method return}
+Stops execution of this context and messages the \textit{return} method of the
+origin context.
+
+\subsubsection{method return: result}
+Stops execution of this context and messages the \textit{return: value}
+method of the origin context. The \textit{result} is not set to the
+block context.
+
+\subsubsection{continue}
+
+\subsubsection{break}
+If the Block Context was messaged with \textit{executeOnBreak:} or
+\textit{executeOnBreak:onContinue:} then the Block Context ends execution
+and returns to the Messaging Context to execute appropriate break block.
+
+If the Block Context was messaged with \textit{execute} or
+\textit{executeonContinue:} then \textit{break} is messaged to the origin
+context.

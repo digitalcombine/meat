@@ -162,9 +162,9 @@ int main(int argc, const char *argv[]) {
 
 			case '#': // Display a hash value used in the vtables.
 				std::cout << "Hash value for \"" << argv[c + 1] << "\":\n  ";
-				std::cout << std::setw(8) << std::setfill('0') << std::setbase(16)
-									<< std::showbase;
-				std::cout << hash(argv[c + 1]) << std::endl;
+				//std::cout << std::setw(8) << std::setfill('0') << std::setbase(16)
+				//					<< std::showbase;
+				std::cout << itohex(hash(argv[c + 1])) << std::endl;
 				return 0;
 
 			case '?':

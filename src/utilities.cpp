@@ -19,9 +19,11 @@
 
 #include <meat/utilities.h>
 #include <cstring>
-#ifdef DEBUG
+//#ifdef DEBUG
 #include <iostream>
-#endif
+//#endif
+#include <sstream>
+#include <iomanip>
 
 using namespace meat;
 
@@ -146,10 +148,14 @@ float_t endian::write_be(float_t value) {
 
 #endif
 
-uint32_t hash(const char *word, size_t table_size) {
+/********
+ * hash *
+ ********/
+
+uint32_t hash(const std::string &word, size_t table_size) {
   uint32_t seed = 31;
   uint64_t hvalue = 0;
-  size_t len = std::strlen(word);
+  size_t len = word.size();
 
   /*  We add all the characters together with a seed. The seed ensures that
    * ab != ba.
@@ -162,4 +168,15 @@ uint32_t hash(const char *word, size_t table_size) {
    * equivalent to inserting the new hash value into the table.
    */
   return (hvalue % table_size);
+}
+
+/**********
+ * itohex *
+ **********/
+
+std::string itohex(unsigned int value, size_t width) {
+  std::ostringstream convert;
+	convert << std::setw(width) << std::setfill('0') << std::setbase(16);
+  convert << value;
+	return ("0x" + convert.str());
 }

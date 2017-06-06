@@ -86,7 +86,7 @@ void meat::compiler::ArchiveBuilder::command(Tokenizer &tokens) {
 
       context = meat::message(obj, message.c_str(), context);
       result = meat::execute(context);
-      context = ((Context &)(*context)).get_uplevel();
+      context = ((Context &)(*context)).get_messenger();
 
 #ifdef DEBUG
       if (not result.is_null())
@@ -117,7 +117,7 @@ void meat::compiler::ArchiveBuilder::command(Tokenizer &tokens) {
       context = new_ctx;
 
       result = meat::execute(context);
-      context = CONTEXT(context).get_uplevel();
+      context = CONTEXT(context).get_messenger();
 
 #ifdef DEBUG
       if (not result.is_null())

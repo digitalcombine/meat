@@ -45,7 +45,7 @@ static meat::Reference object_constructor(meat::Reference &klass,
 }
 
 // method is:
-static meat::Reference Object_om_is_(meat::Reference &context) {
+static meat::Reference Object_om_is_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
@@ -55,7 +55,7 @@ static meat::Reference Object_om_is_(meat::Reference &context) {
 }
 
 // method isNot:
-static meat::Reference Object_om_isNot_(meat::Reference &context) {
+static meat::Reference Object_om_isNot_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
@@ -65,7 +65,7 @@ static meat::Reference Object_om_isNot_(meat::Reference &context) {
 }
 
 // method isType:
-static meat::Reference Object_om_isType_(meat::Reference &context) {
+static meat::Reference Object_om_isType_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference type = CONTEXT(context).get_param(0);
 
@@ -73,14 +73,14 @@ static meat::Reference Object_om_isType_(meat::Reference &context) {
 }
 
 // method type
-static meat::Reference Object_om_type(meat::Reference &context) {
+static meat::Reference Object_om_type(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   return self->get_type();
 }
 
 // method weak
-static meat::Reference Object_om_weak(meat::Reference &context) {
+static meat::Reference Object_om_weak(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
 
@@ -102,7 +102,7 @@ static meat::vtable_entry_t ObjectMethods[] = {
 };
 
 // class method is:
-static meat::Reference Object_cm_is_(meat::Reference &context) {
+static meat::Reference Object_cm_is_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
@@ -112,29 +112,13 @@ static meat::Reference Object_cm_is_(meat::Reference &context) {
 }
 
 // class method isNot:
-static meat::Reference Object_cm_isNot_(meat::Reference &context) {
+static meat::Reference Object_cm_isNot_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
 
     return (!(self == other) ? meat::True() : meat::False());
 
-}
-
-// class method != other
-static meat::Reference Object_cm_nequals(meat::Reference &context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference other = CONTEXT(context).get_param(0);
-
-  return (!(self == other) ? meat::True() : meat::False());
-}
-
-// class method == other
-static meat::Reference Object_cm_equals(meat::Reference &context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference other = CONTEXT(context).get_param(0);
-
-  return (self == other ? meat::True() : meat::False());
 }
 
 static meat::vtable_entry_t ObjectCMethods[] = {
@@ -195,9 +179,9 @@ static meat::vtable_entry_t ClassMethods[] = {
 };
 
 // class method newObject
-static meat::Reference Class_cm_newObject(meat::Reference &context) {
+static meat::Reference Class_cm_newObject(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
-	meat::Reference uplevel = CONTEXT(context).get_uplevel();
+	meat::Reference uplevel = CONTEXT(context).get_messenger();
 
 	// Create the new object and call the initialize method.
 	meat::Reference new_object = CLASS(self).new_object();
@@ -211,7 +195,7 @@ static meat::Reference Class_cm_newObject(meat::Reference &context) {
 }
 
 // class method subClass:body:
-static meat::Reference Class_cm_subClass_body_(meat::Reference &context) {
+static meat::Reference Class_cm_subClass_body_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference name = CONTEXT(context).get_param(0);
   meat::Reference block = CONTEXT(context).get_param(1);
@@ -224,7 +208,7 @@ static meat::Reference Class_cm_subClass_body_(meat::Reference &context) {
 }
 
 // class method super
-static meat::Reference Class_cm_super(meat::Reference &context) {
+static meat::Reference Class_cm_super(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	return ((meat::Class &)(*self)).get_super();
@@ -259,7 +243,7 @@ static meat::Reference context_constructor(meat::Reference &cls,
 }
 
 // method getLocal:
-static meat::Reference Context_om_getLocal_(meat::Reference &context) {
+static meat::Reference Context_om_getLocal_(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
 
@@ -267,25 +251,47 @@ static meat::Reference Context_om_getLocal_(meat::Reference &context) {
 }
 
 // method localVariables
-static meat::Reference Context_om_localVariables(meat::Reference &context) {
+static meat::Reference Context_om_localVariables(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference klass = CONTEXT(context).get_class();
 
-    return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
-
+	return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
 }
 
-// method messenger
-static meat::Reference Context_om_messenger(meat::Reference &context) {
+// method repeat:
+static meat::Reference Context_om_repeat_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference klass = CONTEXT(context).get_class();
+  meat::Reference block = CONTEXT(context).get_param(0);
 
-    return CONTEXT(self).get_uplevel();
+	CONTEXT(block).set_messenger(context);
 
+	for (;;) {
+		dynamic_cast<meat::BlockContext &>(*block).set_break_trap();
+		dynamic_cast<meat::BlockContext &>(*block).set_continue_trap();
+		execute(block);
+
+		if (dynamic_cast<meat::BlockContext &>(*block).break_called()) {
+			break;
+		} else if (dynamic_cast<meat::BlockContext &>(*block).continue_called()) {
+		} else if (CONTEXT(block).is_done()) {
+			break;
+		}
+		dynamic_cast<meat::BlockContext &>(*block).reset();
+	}
+	dynamic_cast<meat::BlockContext &>(*block).reset();
+
+	return null;
+}
+
+
+// method messenger
+static meat::Reference Context_om_messenger(meat::Reference context) {
+  meat::Reference self = CONTEXT(context).get_self();
+
+	return CONTEXT(self).get_messenger();
 }
 
 // method return
-static meat::Reference Context_om_return(meat::Reference &context) {
+static meat::Reference Context_om_return(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	CONTEXT(self).finish();
@@ -293,32 +299,54 @@ static meat::Reference Context_om_return(meat::Reference &context) {
 }
 
 // method return:
-static meat::Reference Context_om_return_(meat::Reference &context) {
+static meat::Reference Context_om_return_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference value = CONTEXT(context).get_param(0);
+
+	// std::cout << "Context return: " << (self == context)
+	// 					<< std::endl;
+	// std::cout << "Context return: " << (self == CONTEXT(context).get_messenger())
+	// 					<< std::endl;
+	// std::cout << "Context return: "
+	// 					<< (self == CONTEXT(CONTEXT(context).get_messenger()).get_messenger())
+	// 					<< std::endl;
 
 	CONTEXT(self).set_result(value); // Set the return value
 	CONTEXT(self).finish();          // Tell the context it's done.
 	return null;
 }
 
+// method setLocal:to:
+static meat::Reference Context_om_setLocal_to_(meat::Reference context) {
+  meat::Reference self = CONTEXT(context).get_self();
+  meat::Reference index = CONTEXT(context).get_param(0);
+  meat::Reference value = CONTEXT(context).get_param(1);
+
+  CONTEXT(self).set_local(index->to_int(), value);
+  return null;
+}
+
 static meat::vtable_entry_t ContextMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x00019850, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x00379f78, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x23add62f, 0x1befcdac, VTM_NATIVE, 1, Context_om_getLocal_},
-  {0x2a67696c, 0x1befcdac, VTM_NATIVE, 0, Context_om_messenger},
-  {0x34003578, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x39a68c12, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x4179693a, 0x1befcdac, VTM_NATIVE, 1, Context_om_return_},
-  {0x47206ce4, 0x1befcdac, VTM_NATIVE, 0, Context_om_localVariables},
-  {0x484e3d31, 0x1befcdac, VTM_NATIVE, 0, Context_om_return},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x7b840562, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
+  {0x0000043c, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x00019850, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x00379f78, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x059a58ff, 0x1befcdac, VTM_BYTECODE, 4, {.offset = 0}},
+  {0x23add62f, 0x1befcdac, VTM_NATIVE,   1, Context_om_getLocal_},
+  {0x2a67696c, 0x1befcdac, VTM_NATIVE,   0, Context_om_messenger},
+  {0x34003578, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+	{0x4139862f, 0x1befcdac, VTM_NATIVE,   1, Context_om_repeat_},
+  {0x4179693a, 0x1befcdac, VTM_NATIVE,   1, Context_om_return_},
+  {0x47206ce4, 0x1befcdac, VTM_NATIVE,   0, Context_om_localVariables},
+  {0x484e3d31, 0x1befcdac, VTM_NATIVE,   0, Context_om_return},
+  {0x5e3131ca, 0x1befcdac, VTM_BYTECODE, 4, {.offset = 1}},
+  {0x675bde74, 0x1befcdac, VTM_NATIVE,   2, Context_om_setLocal_to_},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x7b840562, 0x00000000, VTM_SUPER,    0, {.offset = 0}}
 };
 
 static meat::vtable_entry_t ContextCMethods[] = {
@@ -327,71 +355,167 @@ static meat::vtable_entry_t ContextCMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
   {0x00368f3a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
   {0x068b6f7b, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
-  {0x2c296348, 0x1befcdac, VTM_BYTECODE, 8, {.offset = 70}},
+  {0x2c296348, 0x1befcdac, VTM_BYTECODE, 8, {.offset = 72}},
   {0x39a68c12, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
-  {0x54aa30e6, 0x1befcdac, VTM_BYTECODE, 7, {.offset = 0}},
+  {0x54aa30e6, 0x1befcdac, VTM_BYTECODE, 7, {.offset = 2}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER,    0, {.offset = 0}}
 };
 
 static meat::uint8_t ContextBytecode[] = {
-  0x13, 0x04, 0x4f, 0xc2, 0x61, 0x66, 0x16, 0x05, 0x43, 0x61, 0x6e, 0x6e, 0x6f,
-  0x74, 0x20, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x20, 0x61, 0x20, 0x6e, 0x65,
-  0x77, 0x20, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x20, 0x43, 0x6f,
-  0x6e, 0x74, 0x65, 0x78, 0x74, 0x20, 0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x00,
-  0x02, 0x02, 0x06, 0x72, 0x79, 0x75, 0xfa, 0x00, 0x01, 0x04, 0x6d, 0xb6, 0x8a,
-  0xb6, 0x02, 0x05, 0x06, 0x0b, 0x13, 0x06, 0x4f, 0xc2, 0x61, 0x66, 0x16, 0x07,
-  0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x20, 0x73, 0x75, 0x62, 0x63, 0x6c, 0x61,
-  0x73, 0x73, 0x20, 0x61, 0x6e, 0x20, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61,
-  0x6c, 0x20, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x20, 0x63, 0x6c, 0x61,
-  0x73, 0x73, 0x00, 0x01, 0x06, 0x4b, 0xe1, 0x36, 0x15, 0x01, 0x07, 0x0b
+  0x0b, 0x0b, 0x13, 0x04, 0x4f, 0xc2, 0x61, 0x66, 0x16, 0x05, 0x43, 0x61, 0x6e,
+  0x6e, 0x6f, 0x74, 0x20, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x20, 0x61, 0x20,
+  0x6e, 0x65, 0x77, 0x20, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x20,
+  0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x20, 0x6f, 0x62, 0x6a, 0x65, 0x63,
+  0x74, 0x00, 0x02, 0x02, 0x06, 0x72, 0x79, 0x75, 0xfa, 0x00, 0x01, 0x04, 0x6d,
+  0xb6, 0x8a, 0xb6, 0x02, 0x05, 0x06, 0x0b, 0x13, 0x06, 0x4f, 0xc2, 0x61, 0x66,
+  0x16, 0x07, 0x43, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x20, 0x73, 0x75, 0x62, 0x63,
+  0x6c, 0x61, 0x73, 0x73, 0x20, 0x61, 0x6e, 0x20, 0x69, 0x6e, 0x74, 0x65, 0x72,
+  0x6e, 0x61, 0x6c, 0x20, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x20, 0x63,
+  0x6c, 0x61, 0x73, 0x73, 0x00, 0x01, 0x06, 0x4b, 0xe1, 0x36, 0x15, 0x01, 0x07,
+  0x0b
 };
 
 /******************************************************************************
  * BlockContext Class
  */
 
-// method execute
-static meat::Reference BlockContext_om_execute(meat::Reference &context) {
+// method break
+static meat::Reference BlockContext_om_break(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
-  //meat::Reference klass = CONTEXT(context).get_class();
 
-	meat::uint16_t start_ip = CONTEXT(self).get_ip();
+	std::clog << "BlockContext break" << std::endl;
 
-	CONTEXT(self).set_uplevel(context);
+  (dynamic_cast<meat::BlockContext &>(*self)).c_break();
+	if (!dynamic_cast<meat::BlockContext &>(*self).break_trap_set()) {
+		meat::Reference init_ctx =
+			dynamic_cast<meat::BlockContext &>(*self).get_origin();
+		meat::Reference up_context = message(init_ctx, "break", context);
+    execute(up_context);
+	}
+  return null;
+}
+
+// method continue
+static meat::Reference BlockContext_om_continue(meat::Reference context) {
+  meat::Reference self = CONTEXT(context).get_self();
+
+  (dynamic_cast<meat::BlockContext &>(*self)).c_continue();
+	if (!dynamic_cast<meat::BlockContext &>(*self).continue_trap_set()) {
+		meat::Reference init_ctx =
+			dynamic_cast<meat::BlockContext &>(*self).get_origin();
+		meat::Reference up_context = message(init_ctx, "continue", context);
+    execute(up_context);
+	}
+  return null;
+}
+
+// method execute
+static meat::Reference BlockContext_om_execute(meat::Reference context) {
+  meat::Reference self = CONTEXT(context).get_self();
+
+	meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+	block.set_messenger(context);
 	execute(self);
-
-	// Reset the block context incase it's executed again.
-	CONTEXT(self).set_ip(start_ip);
-	CONTEXT(self).unfinish();
+	block.reset();
 
 	return null;
 }
 
+// method executeOnBreak:
+static meat::Reference BlockContext_om_executeOnBreak_(meat::Reference context) {
+  meat::Reference self = CONTEXT(context).get_self();
+  meat::Reference breakBlock = CONTEXT(context).get_param(0);
+
+	meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+	block.set_break_trap();
+	block.set_messenger(context);
+	execute(self);
+
+	if (block.break_called()) {
+		meat::Reference up_context = message(breakBlock, "execute", context);
+		execute(up_context);
+	}
+
+	block.reset();
+
+	return null;
+}
+
+// method executeOnBreak:onContinue:
+static meat::Reference BlockContext_om_executeOnBreak_onContinue_(meat::Reference context) {
+  meat::Reference self = CONTEXT(context).get_self();
+  meat::Reference breakBlock = CONTEXT(context).get_param(0);
+  meat::Reference continueBlock = CONTEXT(context).get_param(1);
+
+	meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+	block.set_break_trap();
+	block.set_continue_trap();
+	block.set_messenger(context);
+	execute(self);
+
+	if (block.break_called()) {
+		meat::Reference up_context = message(breakBlock, "execute", context);
+		execute(up_context);
+	} else if (block.continue_called()) {
+		meat::Reference up_context = message(continueBlock, "execute", context);
+		execute(up_context);
+	}
+
+	block.reset();
+
+	return null;
+}
+
+// method executeOnContinue:
+static meat::Reference BlockContext_om_executeOnContinue_(meat::Reference context) {
+  meat::Reference self = CONTEXT(context).get_self();
+  meat::Reference continueBlock = CONTEXT(context).get_param(0);
+
+	meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+	block.set_continue_trap();
+	block.set_messenger(context);
+	execute(self);
+
+	if (block.continue_called()) {
+		meat::Reference up_context = message(continueBlock, "execute", context);
+		execute(up_context);
+	}
+
+	block.reset();
+
+	return null;
+}
+
+
 // method return
-static meat::Reference BlockContext_om_return(meat::Reference &context) {
+static meat::Reference BlockContext_om_return(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 
 	// We need to get the actual context to message the return method from.
-	meat::Reference uplevel =
-		((meat::BlockContext &)(*self)).get_operating_context();
-	meat::Reference up_context = message(uplevel, "return", context);
+	meat::Reference messenger =
+		((meat::BlockContext &)(*self)).get_messenger();
+	meat::Reference up_context = message(messenger, "return", context);
 	execute(up_context);
+
 	CONTEXT(self).finish(); // Tell the context it's done.
+
 	return null;
 }
 
 // method return:
-static meat::Reference BlockContext_om_return_(meat::Reference &context) {
+static meat::Reference BlockContext_om_return_(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 	meat::Reference value = CONTEXT(context).get_param(0);
 
-	// We need to get the actual context to message the return method from.
-	meat::Reference uplevel =
-		((meat::BlockContext &)(*self)).get_operating_context();
-
-	meat::Reference up_context = message(uplevel, "return:", context);
+	meat::Reference messenger =
+		((meat::BlockContext &)(*self)).get_messenger();
+	meat::Reference up_context = message(messenger, "return:", context);
 	CONTEXT(up_context).set_param(0, value);
 	execute(up_context);
 
@@ -406,13 +530,23 @@ static meat::vtable_entry_t BlockContextMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x00379f78, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x059a58ff, 0x46ba8a20, VTM_NATIVE, 0, BlockContext_om_break},
+  {0x23add62f, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x290a0d52, 0x46ba8a20, VTM_NATIVE, 1, BlockContext_om_executeOnContinue_},
+  {0x2a67696c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x3158f7a0, 0x46ba8a20, VTM_NATIVE, 0, BlockContext_om_execute},
   {0x34003578, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x39a68c12, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+	{0x4139862f, 0x00000000, VTM_SUPER, 1, {.offset = 0}},
   {0x4179693a, 0x46ba8a20, VTM_NATIVE, 1, BlockContext_om_return_},
+  {0x47206ce4, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x484e3d31, 0x46ba8a20, VTM_NATIVE, 0, BlockContext_om_return},
+  {0x5a7f66e9, 0x46ba8a20, VTM_NATIVE, 1, BlockContext_om_executeOnBreak_},
+  {0x5e3131ca, 0x46ba8a20, VTM_NATIVE, 0, BlockContext_om_continue},
+  {0x675bde74, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x71828805, 0x46ba8a20, VTM_NATIVE, 2, BlockContext_om_executeOnBreak_onContinue_},
   {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x7b840562, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
 };
@@ -494,30 +628,30 @@ static meat::vtable_entry_t ExceptionMethods[] = {
 };
 
 // class method throw
-static meat::Reference Exception_cm_throw(meat::Reference &context) {
-	meat::Reference ctx = CONTEXT(context).get_uplevel();
+static meat::Reference Exception_cm_throw(meat::Reference context) {
+	meat::Reference ctx = CONTEXT(context).get_messenger();
 	throw meat::Exception(null, ctx);
 }
 
 // class method throw:
-static meat::Reference Exception_cm_throw_(meat::Reference &context) {
+static meat::Reference Exception_cm_throw_(meat::Reference context) {
   meat::Reference message = CONTEXT(context).get_param(0);
-	meat::Reference ctx = CONTEXT(context).get_uplevel();
+	meat::Reference ctx = CONTEXT(context).get_messenger();
 	throw meat::Exception(message, ctx);
 }
 
 // class method throw:for:
-static meat::Reference Exception_cm_throw_for_(meat::Reference &context) {
+static meat::Reference Exception_cm_throw_for_(meat::Reference context) {
   meat::Reference message = CONTEXT(context).get_param(0);
   meat::Reference ctx = CONTEXT(context).get_param(1);
 	throw meat::Exception(message, ctx);
 }
 
 // class method try:
-static meat::Reference Exception_cm_try_(meat::Reference &context) {
+static meat::Reference Exception_cm_try_(meat::Reference context) {
   meat::Reference block = CONTEXT(context).get_param(0);
 
-	CONTEXT(block).set_uplevel(context);
+	CONTEXT(block).set_messenger(context);
 	try {
 		execute(block);
 	} catch (meat::Exception &err) {
@@ -527,12 +661,12 @@ static meat::Reference Exception_cm_try_(meat::Reference &context) {
 }
 
 // class method try:catch:
-static meat::Reference Exception_cm_try_catch_(meat::Reference &context) {
+static meat::Reference Exception_cm_try_catch_(meat::Reference context) {
   meat::Reference try_block = CONTEXT(context).get_param(0);
   meat::Reference catch_block = CONTEXT(context).get_param(1);
 
-	CONTEXT(try_block).set_uplevel(context);
-	CONTEXT(catch_block).set_uplevel(context);
+	CONTEXT(try_block).set_messenger(context);
+	CONTEXT(catch_block).set_messenger(context);
 	try {
 		execute(try_block);
 	} catch (std::exception &err) {
@@ -542,13 +676,13 @@ static meat::Reference Exception_cm_try_catch_(meat::Reference &context) {
 }
 
 // class method try:catch:do
-static meat::Reference Exception_cm_try_catch_do_(meat::Reference &context) {
+static meat::Reference Exception_cm_try_catch_do_(meat::Reference context) {
   meat::Reference try_block = CONTEXT(context).get_param(0);
   meat::Reference error = CONTEXT(context).get_param(1);
   meat::Reference catch_block = CONTEXT(context).get_param(2);
 
-	CONTEXT(try_block).set_uplevel(context);
-	CONTEXT(catch_block).set_uplevel(context);
+	CONTEXT(try_block).set_messenger(context);
+	CONTEXT(catch_block).set_messenger(context);
 	try {
 		execute(try_block);
 	} catch (meat::Exception &err) {
@@ -609,7 +743,7 @@ static meat::vtable_entry_t NumericMethods[] = {
 };
 
 // class method acos:
-static meat::Reference Numeric_cm_acos_(meat::Reference &context) {
+static meat::Reference Numeric_cm_acos_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
@@ -617,7 +751,7 @@ static meat::Reference Numeric_cm_acos_(meat::Reference &context) {
 }
 
 // class method asin:
-static meat::Reference Numeric_cm_asin_(meat::Reference &context) {
+static meat::Reference Numeric_cm_asin_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
@@ -625,7 +759,7 @@ static meat::Reference Numeric_cm_asin_(meat::Reference &context) {
 }
 
 // class method atan2y:x:
-static meat::Reference Numeric_cm_atan2y_x_(meat::Reference &context) {
+static meat::Reference Numeric_cm_atan2y_x_(meat::Reference context) {
   meat::Reference y = CONTEXT(context).get_param(0);
   meat::Reference x = CONTEXT(context).get_param(1);
 
@@ -635,7 +769,7 @@ static meat::Reference Numeric_cm_atan2y_x_(meat::Reference &context) {
 }
 
 // class method atan:
-static meat::Reference Numeric_cm_atan_(meat::Reference &context) {
+static meat::Reference Numeric_cm_atan_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
@@ -643,7 +777,7 @@ static meat::Reference Numeric_cm_atan_(meat::Reference &context) {
 }
 
 // class method cos:
-static meat::Reference Numeric_cm_cos_(meat::Reference &context) {
+static meat::Reference Numeric_cm_cos_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
@@ -651,7 +785,7 @@ static meat::Reference Numeric_cm_cos_(meat::Reference &context) {
 }
 
 // class method cosh:
-static meat::Reference Numeric_cm_cosh_(meat::Reference &context) {
+static meat::Reference Numeric_cm_cosh_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
   return
@@ -659,7 +793,7 @@ static meat::Reference Numeric_cm_cosh_(meat::Reference &context) {
 }
 
 // class method exp:
-static meat::Reference Numeric_cm_exp_(meat::Reference &context) {
+static meat::Reference Numeric_cm_exp_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
   meat::float_t answer = (meat::float_t)std::exp(value->to_float());
@@ -668,7 +802,7 @@ static meat::Reference Numeric_cm_exp_(meat::Reference &context) {
 }
 
 // class method log10:
-static meat::Reference Numeric_cm_log10_(meat::Reference &context) {
+static meat::Reference Numeric_cm_log10_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	if (value->to_float() <= 0.0)
@@ -678,7 +812,7 @@ static meat::Reference Numeric_cm_log10_(meat::Reference &context) {
 }
 
 // class method log:
-static meat::Reference Numeric_cm_log_(meat::Reference &context) {
+static meat::Reference Numeric_cm_log_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	if (value->to_float() <= 0.0)
@@ -688,7 +822,7 @@ static meat::Reference Numeric_cm_log_(meat::Reference &context) {
 }
 
 // class method sin:
-static meat::Reference Numeric_cm_sin_(meat::Reference &context) {
+static meat::Reference Numeric_cm_sin_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
@@ -696,7 +830,7 @@ static meat::Reference Numeric_cm_sin_(meat::Reference &context) {
 }
 
 // class method sinh:
-static meat::Reference Numeric_cm_sinh_(meat::Reference &context) {
+static meat::Reference Numeric_cm_sinh_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
@@ -704,7 +838,7 @@ static meat::Reference Numeric_cm_sinh_(meat::Reference &context) {
 }
 
 // class method sqrt:
-static meat::Reference Numeric_cm_sqrt_(meat::Reference &context) {
+static meat::Reference Numeric_cm_sqrt_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	if (value->to_float() < 0.0)
@@ -714,7 +848,7 @@ static meat::Reference Numeric_cm_sqrt_(meat::Reference &context) {
 }
 
 // class method tan:
-static meat::Reference Numeric_cm_tan_(meat::Reference &context) {
+static meat::Reference Numeric_cm_tan_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
   return
@@ -722,7 +856,7 @@ static meat::Reference Numeric_cm_tan_(meat::Reference &context) {
 }
 
 // class method tanh:
-static meat::Reference Numeric_cm_tanh_(meat::Reference &context) {
+static meat::Reference Numeric_cm_tanh_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
   return
@@ -807,7 +941,7 @@ static meat::uint8_t NumericBytecode[] = {
  */
 
 // method !=
-static meat::Reference Integer_om_nequals(meat::Reference &context) {
+static meat::Reference Integer_om_nequals(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -819,7 +953,7 @@ static meat::Reference Integer_om_nequals(meat::Reference &context) {
 }
 
 // method %
-static meat::Reference Integer_om_mod(meat::Reference &context) {
+static meat::Reference Integer_om_mod(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -827,7 +961,7 @@ static meat::Reference Integer_om_mod(meat::Reference &context) {
 }
 
 // method *
-static meat::Reference Integer_om_mult(meat::Reference &context) {
+static meat::Reference Integer_om_mult(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -835,7 +969,7 @@ static meat::Reference Integer_om_mult(meat::Reference &context) {
 }
 
 // method +
-static meat::Reference Integer_om_add(meat::Reference &context) {
+static meat::Reference Integer_om_add(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -843,7 +977,7 @@ static meat::Reference Integer_om_add(meat::Reference &context) {
 }
 
 // method -
-static meat::Reference Integer_om_sub(meat::Reference &context) {
+static meat::Reference Integer_om_sub(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -851,7 +985,7 @@ static meat::Reference Integer_om_sub(meat::Reference &context) {
 }
 
 // method /
-static meat::Reference Integer_om_div(meat::Reference &context) {
+static meat::Reference Integer_om_div(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -859,7 +993,7 @@ static meat::Reference Integer_om_div(meat::Reference &context) {
 }
 
 // method <
-static meat::Reference Integer_om_less(meat::Reference &context) {
+static meat::Reference Integer_om_less(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -871,7 +1005,7 @@ static meat::Reference Integer_om_less(meat::Reference &context) {
 }
 
 // method <=
-static meat::Reference Integer_om_less_equal(meat::Reference &context) {
+static meat::Reference Integer_om_less_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -883,7 +1017,7 @@ static meat::Reference Integer_om_less_equal(meat::Reference &context) {
 }
 
 // method ==
-static meat::Reference Integer_om_equals(meat::Reference &context) {
+static meat::Reference Integer_om_equals(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -895,7 +1029,7 @@ static meat::Reference Integer_om_equals(meat::Reference &context) {
 }
 
 // method >
-static meat::Reference Integer_om_greater(meat::Reference &context) {
+static meat::Reference Integer_om_greater(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -907,7 +1041,7 @@ static meat::Reference Integer_om_greater(meat::Reference &context) {
 }
 
 // method >=
-static meat::Reference Integer_om_greater_equal(meat::Reference &context) {
+static meat::Reference Integer_om_greater_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -919,7 +1053,7 @@ static meat::Reference Integer_om_greater_equal(meat::Reference &context) {
 }
 
 // method ^
-static meat::Reference Integer_om_pow(meat::Reference &context) {
+static meat::Reference Integer_om_pow(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -928,7 +1062,7 @@ static meat::Reference Integer_om_pow(meat::Reference &context) {
 }
 
 // method and:
-static meat::Reference Integer_om_and_(meat::Reference &context) {
+static meat::Reference Integer_om_and_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -936,7 +1070,7 @@ static meat::Reference Integer_om_and_(meat::Reference &context) {
 }
 
 // method asText
-static meat::Reference Integer_om_asText(meat::Reference &context) {
+static meat::Reference Integer_om_asText(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   std::stringstream result;
@@ -945,14 +1079,14 @@ static meat::Reference Integer_om_asText(meat::Reference &context) {
 }
 
 // method lshift
-static meat::Reference Integer_om_lshift(meat::Reference &context) {
+static meat::Reference Integer_om_lshift(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   return new meat::Object(self->to_int() << 1);
 }
 
 // method lshift:
-static meat::Reference Integer_om_lshift_(meat::Reference &context) {
+static meat::Reference Integer_om_lshift_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference amount = CONTEXT(context).get_param(0);
 
@@ -960,21 +1094,21 @@ static meat::Reference Integer_om_lshift_(meat::Reference &context) {
 }
 
 // method neg
-static meat::Reference Integer_om_neg(meat::Reference &context) {
+static meat::Reference Integer_om_neg(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   return new meat::Object(-self->to_int());
 }
 
 // method abs
-static meat::Reference Integer_om_abs(meat::Reference &context) {
+static meat::Reference Integer_om_abs(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   return new meat::Object(std::abs(self->to_int()));
 }
 
 // method or:
-static meat::Reference Integer_om_or_(meat::Reference &context) {
+static meat::Reference Integer_om_or_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -982,14 +1116,14 @@ static meat::Reference Integer_om_or_(meat::Reference &context) {
 }
 
 // method rshift
-static meat::Reference Integer_om_rshift(meat::Reference &context) {
+static meat::Reference Integer_om_rshift(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   return new meat::Object(self->to_int() >> 1);
 }
 
 // method rshift:
-static meat::Reference Integer_om_rshift_(meat::Reference &context) {
+static meat::Reference Integer_om_rshift_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference amount = CONTEXT(context).get_param(0);
 
@@ -997,7 +1131,7 @@ static meat::Reference Integer_om_rshift_(meat::Reference &context) {
 }
 
 // method timesDo:
-static meat::Reference Integer_om_timesDo_(meat::Reference &context) {
+static meat::Reference Integer_om_timesDo_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference block = CONTEXT(context).get_param(0);
 
@@ -1011,7 +1145,7 @@ static meat::Reference Integer_om_timesDo_(meat::Reference &context) {
 }
 
 // method xor:
-static meat::Reference Integer_om_xor_(meat::Reference &context) {
+static meat::Reference Integer_om_xor_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1049,7 +1183,7 @@ static meat::vtable_entry_t IntegerMethods[] = {
  */
 
 // method !=
-static meat::Reference Number_cm_nequal(meat::Reference &context) {
+static meat::Reference Number_cm_nequal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1061,7 +1195,7 @@ static meat::Reference Number_cm_nequal(meat::Reference &context) {
 }
 
 // method %
-static meat::Reference Number_cm_mod(meat::Reference &context) {
+static meat::Reference Number_cm_mod(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1069,7 +1203,7 @@ static meat::Reference Number_cm_mod(meat::Reference &context) {
 }
 
 // method *
-static meat::Reference Number_cm_mult(meat::Reference &context) {
+static meat::Reference Number_cm_mult(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1077,7 +1211,7 @@ static meat::Reference Number_cm_mult(meat::Reference &context) {
 }
 
 // method +
-static meat::Reference Number_cm_add(meat::Reference &context) {
+static meat::Reference Number_cm_add(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1085,7 +1219,7 @@ static meat::Reference Number_cm_add(meat::Reference &context) {
 }
 
 // method -
-static meat::Reference Number_cm_sub(meat::Reference &context) {
+static meat::Reference Number_cm_sub(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1093,7 +1227,7 @@ static meat::Reference Number_cm_sub(meat::Reference &context) {
 }
 
 // method /
-static meat::Reference Number_cm_div(meat::Reference &context) {
+static meat::Reference Number_cm_div(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1104,7 +1238,7 @@ static meat::Reference Number_cm_div(meat::Reference &context) {
 }
 
 // method <
-static meat::Reference Number_cm_less(meat::Reference &context) {
+static meat::Reference Number_cm_less(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1116,7 +1250,7 @@ static meat::Reference Number_cm_less(meat::Reference &context) {
 }
 
 // method <=
-static meat::Reference Number_cm_less_equal(meat::Reference &context) {
+static meat::Reference Number_cm_less_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1128,7 +1262,7 @@ static meat::Reference Number_cm_less_equal(meat::Reference &context) {
 }
 
 // method ==
-static meat::Reference Number_cm_equal(meat::Reference &context) {
+static meat::Reference Number_cm_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 	meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1140,7 +1274,7 @@ static meat::Reference Number_cm_equal(meat::Reference &context) {
 }
 
 // method >
-static meat::Reference Number_cm_greater(meat::Reference &context) {
+static meat::Reference Number_cm_greater(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1152,7 +1286,7 @@ static meat::Reference Number_cm_greater(meat::Reference &context) {
 }
 
 // method >=
-static meat::Reference Number_cm_greater_equal(meat::Reference &context) {
+static meat::Reference Number_cm_greater_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1164,7 +1298,7 @@ static meat::Reference Number_cm_greater_equal(meat::Reference &context) {
 }
 
 // method ^
-static meat::Reference Number_cm_pow(meat::Reference &context) {
+static meat::Reference Number_cm_pow(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1173,14 +1307,14 @@ static meat::Reference Number_cm_pow(meat::Reference &context) {
 }
 
 // method abs
-static meat::Reference Number_cm_abs(meat::Reference &context) {
+static meat::Reference Number_cm_abs(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	return new meat::Object(std::abs(self->to_float()));
 }
 
 // method asText
-static meat::Reference Number_cm_asText(meat::Reference &context) {
+static meat::Reference Number_cm_asText(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	std::stringstream result;
@@ -1189,7 +1323,7 @@ static meat::Reference Number_cm_asText(meat::Reference &context) {
 }
 
 // method neg
-static meat::Reference Number_cm_neg(meat::Reference &context) {
+static meat::Reference Number_cm_neg(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	return new meat::Object(-self->to_float());
@@ -1243,7 +1377,7 @@ static meat::vtable_entry_t NumberCMethods[] = {
 #define falseObject (klass->property(1))
 
 // method and:
-static meat::Reference Boolean_om_and_(meat::Reference &context) {
+static meat::Reference Boolean_om_and_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
@@ -1255,7 +1389,7 @@ static meat::Reference Boolean_om_and_(meat::Reference &context) {
 }
 
 // method isFalse:
-static meat::Reference Boolean_om_isFalse_(meat::Reference &context) {
+static meat::Reference Boolean_om_isFalse_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference block = CONTEXT(context).get_param(0);
@@ -1266,7 +1400,7 @@ static meat::Reference Boolean_om_isFalse_(meat::Reference &context) {
 }
 
 // method isFalse:else:
-static meat::Reference Boolean_om_isFalse_else_(meat::Reference &context) {
+static meat::Reference Boolean_om_isFalse_else_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference true_block = CONTEXT(context).get_param(0);
@@ -1281,7 +1415,7 @@ static meat::Reference Boolean_om_isFalse_else_(meat::Reference &context) {
 }
 
 // method isTrue:
-static meat::Reference Boolean_om_isTrue_(meat::Reference &context) {
+static meat::Reference Boolean_om_isTrue_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference block = CONTEXT(context).get_param(0);
@@ -1292,7 +1426,7 @@ static meat::Reference Boolean_om_isTrue_(meat::Reference &context) {
 }
 
 // method isTrue:else:
-static meat::Reference Boolean_om_isTrue_else_(meat::Reference &context) {
+static meat::Reference Boolean_om_isTrue_else_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference true_block = CONTEXT(context).get_param(0);
@@ -1307,7 +1441,7 @@ static meat::Reference Boolean_om_isTrue_else_(meat::Reference &context) {
 }
 
 // method or:
-static meat::Reference Boolean_om_or_(meat::Reference &context) {
+static meat::Reference Boolean_om_or_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
@@ -1319,7 +1453,7 @@ static meat::Reference Boolean_om_or_(meat::Reference &context) {
 }
 
 // method xor:
-static meat::Reference Boolean_om_xor_(meat::Reference &context) {
+static meat::Reference Boolean_om_xor_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
@@ -1334,21 +1468,21 @@ static meat::vtable_entry_t BooleanMethods[] = {
   {0x0000043c, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
   {0x000007a0, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
   {0x0001aad3, 0x67140424, VTM_BYTECODE, 8, {.offset = 65}},
-  {0x0001aeb7, 0x67140424, VTM_NATIVE, 1, Boolean_om_or_},
-  {0x002dc143, 0x67140424, VTM_NATIVE, 1, Boolean_om_and_},
-	{0x00368f3a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x00379f78, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x00383b3f, 0x67140424, VTM_NATIVE, 1, Boolean_om_xor_},
+  {0x0001aeb7, 0x67140424, VTM_NATIVE,   1, Boolean_om_or_},
+  {0x002dc143, 0x67140424, VTM_NATIVE,   1, Boolean_om_and_},
+	{0x00368f3a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x00379f78, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x00383b3f, 0x67140424, VTM_NATIVE,   1, Boolean_om_xor_},
   {0x2c025c80, 0x67140424, VTM_BYTECODE, 8, {.offset = 0}},
-	{0x34003578, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x47607971, 0x67140424, VTM_NATIVE, 2, Boolean_om_isTrue_else_},
-  {0x57c628fe, 0x67140424, VTM_NATIVE, 2, Boolean_om_isFalse_else_},
-  {0x5bc502b2, 0x67140424, VTM_NATIVE, 1, Boolean_om_isFalse_},
-	{0x6b2d9a7a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x7b80e98e, 0x67140424, VTM_NATIVE, 1, Boolean_om_isTrue_},
-	{0x7b840562, 0x00000000, VTM_SUPER, 0, {.offset = 0}}
+	{0x34003578, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x47607971, 0x67140424, VTM_NATIVE,   2, Boolean_om_isTrue_else_},
+  {0x57c628fe, 0x67140424, VTM_NATIVE,   2, Boolean_om_isFalse_else_},
+  {0x5bc502b2, 0x67140424, VTM_NATIVE,   1, Boolean_om_isFalse_},
+	{0x6b2d9a7a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER,    0, {.offset = 0}},
+  {0x7b80e98e, 0x67140424, VTM_NATIVE,   1, Boolean_om_isTrue_},
+	{0x7b840562, 0x00000000, VTM_SUPER,    0, {.offset = 0}}
 };
 
 static meat::vtable_entry_t BooleanCMethods[] = {
@@ -1388,7 +1522,7 @@ static meat::uint8_t BooleanBytecode[] = {
  */
 
 // method !=
-static meat::Reference Text_om_nequal(meat::Reference &context) {
+static meat::Reference Text_om_nequal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1398,7 +1532,7 @@ static meat::Reference Text_om_nequal(meat::Reference &context) {
 }
 
 // method *
-static meat::Reference Text_om_mult(meat::Reference &context) {
+static meat::Reference Text_om_mult(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference count = CONTEXT(context).get_param(0);
 
@@ -1412,7 +1546,7 @@ static meat::Reference Text_om_mult(meat::Reference &context) {
 }
 
 // method +
-static meat::Reference Text_om_add(meat::Reference &context) {
+static meat::Reference Text_om_add(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1420,7 +1554,7 @@ static meat::Reference Text_om_add(meat::Reference &context) {
 }
 
 // method <
-static meat::Reference Text_om_less(meat::Reference &context) {
+static meat::Reference Text_om_less(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1430,7 +1564,7 @@ static meat::Reference Text_om_less(meat::Reference &context) {
 }
 
 // method <=
-static meat::Reference Text_om_less_equal(meat::Reference &context) {
+static meat::Reference Text_om_less_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1440,7 +1574,7 @@ static meat::Reference Text_om_less_equal(meat::Reference &context) {
 }
 
 // method ==
-static meat::Reference Text_om_equal(meat::Reference &context) {
+static meat::Reference Text_om_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1450,7 +1584,7 @@ static meat::Reference Text_om_equal(meat::Reference &context) {
 }
 
 // method >
-static meat::Reference Text_om_greater(meat::Reference &context) {
+static meat::Reference Text_om_greater(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1460,7 +1594,7 @@ static meat::Reference Text_om_greater(meat::Reference &context) {
 }
 
 // method >=
-static meat::Reference Text_om_greater_equal(meat::Reference &context) {
+static meat::Reference Text_om_greater_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
@@ -1470,7 +1604,7 @@ static meat::Reference Text_om_greater_equal(meat::Reference &context) {
 }
 
 // method get:
-static meat::Reference Text_om_get_(meat::Reference &context) {
+static meat::Reference Text_om_get_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
 
@@ -1480,7 +1614,7 @@ static meat::Reference Text_om_get_(meat::Reference &context) {
 }
 
 // method get:to:
-static meat::Reference Text_om_get_to_(meat::Reference &context) {
+static meat::Reference Text_om_get_to_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference start = CONTEXT(context).get_param(0);
   meat::Reference end = CONTEXT(context).get_param(1);
@@ -1495,7 +1629,7 @@ static meat::Reference Text_om_get_to_(meat::Reference &context) {
 }
 
 // method isEmpty
-static meat::Reference Text_om_isEmpty(meat::Reference &context) {
+static meat::Reference Text_om_isEmpty(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   if (std::strlen(self->to_string()) == 0)
@@ -1504,7 +1638,7 @@ static meat::Reference Text_om_isEmpty(meat::Reference &context) {
 }
 
 // method length
-static meat::Reference Text_om_length(meat::Reference &context) {
+static meat::Reference Text_om_length(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   return new meat::Object((int32_t)std::strlen(self->to_string()));
@@ -1551,7 +1685,7 @@ static meat::Reference list_constructor(meat::Reference &cls,
 }
 
 // method append:
-static meat::Reference List_cm_append_(meat::Reference &context) {
+static meat::Reference List_cm_append_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference value = CONTEXT(context).get_param(0);
 
@@ -1566,7 +1700,7 @@ static meat::Reference List_cm_append_(meat::Reference &context) {
 }
 
 // method at:insert:
-static meat::Reference List_cm_at_insert_(meat::Reference &context) {
+static meat::Reference List_cm_at_insert_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
@@ -1577,7 +1711,7 @@ static meat::Reference List_cm_at_insert_(meat::Reference &context) {
 }
 
 // method clear
-static meat::Reference List_cm_clear(meat::Reference &context) {
+static meat::Reference List_cm_clear(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   ((meat::List &)(*self)).clear();
@@ -1585,26 +1719,25 @@ static meat::Reference List_cm_clear(meat::Reference &context) {
 }
 
 // method forEach:do:
-static meat::Reference List_cm_forEach_do_(meat::Reference &context) {
+static meat::Reference List_cm_forEach_do_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference item = CONTEXT(context).get_param(0);
   meat::Reference block = CONTEXT(context).get_param(1);
 
-  meat::uint16_t start_ip = CONTEXT(block).get_ip();
   meat::uint8_t local_id = item->to_int();
-  CONTEXT(block).set_uplevel(context);
+  CONTEXT(block).set_messenger(context);
+
   meat::List::iterator it = ((meat::List &)(*self)).begin();
   for (; it != ((meat::List &)(*self)).end(); it++) {
     CONTEXT(block).set_local(local_id, *it);
     execute(block);
-    CONTEXT(block).set_ip(start_ip);
-    CONTEXT(block).unfinish();
+    (dynamic_cast<meat::BlockContext &>(*block)).reset();
   }
   return null;
 }
 
 // method get:
-static meat::Reference List_cm_get_(meat::Reference &context) {
+static meat::Reference List_cm_get_(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 	meat::Reference index = CONTEXT(context).get_param(0);
 
@@ -1616,21 +1749,21 @@ static meat::Reference List_cm_get_(meat::Reference &context) {
 }
 
 // method isEmpty
-static meat::Reference List_cm_isEmpty(meat::Reference &context) {
+static meat::Reference List_cm_isEmpty(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 
 	return (((meat::List &)(*self)).empty() ? meat::True() : meat::False());
 }
 
 // method last
-static meat::Reference List_cm_last(meat::Reference &context) {
+static meat::Reference List_cm_last(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	return ((meat::List &)(*self)).back();
 }
 
 // method pop
-static meat::Reference List_cm_pop(meat::Reference &context) {
+static meat::Reference List_cm_pop(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	((meat::List &)(*self)).pop_back();
@@ -1638,7 +1771,7 @@ static meat::Reference List_cm_pop(meat::Reference &context) {
 }
 
 // method push:
-static meat::Reference List_cm_push_(meat::Reference &context) {
+static meat::Reference List_cm_push_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference value = CONTEXT(context).get_param(0);
 
@@ -1647,7 +1780,7 @@ static meat::Reference List_cm_push_(meat::Reference &context) {
 }
 
 // method remove:
-static meat::Reference List_cm_remove_(meat::Reference &context) {
+static meat::Reference List_cm_remove_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference value = CONTEXT(context).get_param(0);
 
@@ -1661,7 +1794,7 @@ static meat::Reference List_cm_remove_(meat::Reference &context) {
 }
 
 // method removeAt:
-static meat::Reference List_cm_removeAt_(meat::Reference &context) {
+static meat::Reference List_cm_removeAt_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
 
@@ -1671,7 +1804,7 @@ static meat::Reference List_cm_removeAt_(meat::Reference &context) {
 }
 
 // method removeFrom:to:
-static meat::Reference List_cm_removeFrom_to_(meat::Reference &context) {
+static meat::Reference List_cm_removeFrom_to_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference start = CONTEXT(context).get_param(0);
   meat::Reference end = CONTEXT(context).get_param(1);
@@ -1684,7 +1817,7 @@ static meat::Reference List_cm_removeFrom_to_(meat::Reference &context) {
 }
 
 // method set:to:
-static meat::Reference List_cm_set_to_(meat::Reference &context) {
+static meat::Reference List_cm_set_to_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
@@ -1698,7 +1831,7 @@ static meat::Reference List_cm_set_to_(meat::Reference &context) {
 }
 
 // method size
-static meat::Reference List_cm_size(meat::Reference &context) {
+static meat::Reference List_cm_size(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
 
@@ -1706,7 +1839,7 @@ static meat::Reference List_cm_size(meat::Reference &context) {
 }
 
 // method swap:with:
-static meat::Reference List_cm_swap_with_(meat::Reference &context) {
+static meat::Reference List_cm_swap_with_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference first = CONTEXT(context).get_param(0);
   meat::Reference second = CONTEXT(context).get_param(1);
@@ -1747,7 +1880,7 @@ static meat::vtable_entry_t ListMethods[] = {
 };
 
 // class method new
-static meat::Reference List_cm_new(meat::Reference &context) {
+static meat::Reference List_cm_new(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 
 	return new meat::List;
@@ -1777,7 +1910,7 @@ static meat::Reference index_constructor(meat::Reference &cls,
 }
 
 // method get:
-static meat::Reference Index_om_get_(meat::Reference &context) {
+static meat::Reference Index_om_get_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference key = CONTEXT(context).get_param(0);
 
@@ -1787,7 +1920,7 @@ static meat::Reference Index_om_get_(meat::Reference &context) {
 }
 
 // method has:
-static meat::Reference Index_om_has_(meat::Reference &context) {
+static meat::Reference Index_om_has_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference key = CONTEXT(context).get_param(0);
 
@@ -1797,7 +1930,7 @@ static meat::Reference Index_om_has_(meat::Reference &context) {
 }
 
 // method remove:
-static meat::Reference Index_om_remove_(meat::Reference &context) {
+static meat::Reference Index_om_remove_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference key = CONTEXT(context).get_param(0);
 
@@ -1806,7 +1939,7 @@ static meat::Reference Index_om_remove_(meat::Reference &context) {
 }
 
 // method set:to:
-static meat::Reference Index_om_set_to_(meat::Reference &context) {
+static meat::Reference Index_om_set_to_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference key = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
@@ -1816,7 +1949,7 @@ static meat::Reference Index_om_set_to_(meat::Reference &context) {
 }
 
 // method size
-static meat::Reference Index_om_size(meat::Reference &context) {
+static meat::Reference Index_om_size(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   int32_t size = ((meat::Index &)(*self)).size();
@@ -1838,7 +1971,7 @@ static meat::vtable_entry_t IndexMethods[] = {
 };
 
 // class method new
-static meat::Reference Index_cm_new(meat::Reference &context) {
+static meat::Reference Index_cm_new(meat::Reference context) {
   return new meat::Index;
 }
 
@@ -1882,12 +2015,12 @@ static meat::vtable_entry_t ApplicationMethods[] = {
 };
 
 // class method parameters
-static meat::Reference Application_cm_parameters(meat::Reference &context) {
+static meat::Reference Application_cm_parameters(meat::Reference context) {
   return new meat::Object((meat::int32_t)arg_count());
 }
 
 // class method parameter: index
-static meat::Reference Application_cm_parameter_(meat::Reference &context) {
+static meat::Reference Application_cm_parameter_(meat::Reference context) {
   meat::Reference index = CONTEXT(context).get_param(0);
   meat::int32_t idx = index->to_int();
 
@@ -1900,7 +2033,7 @@ static meat::Reference Application_cm_parameter_(meat::Reference &context) {
 }
 
 // class method getEnviron: key
-static meat::Reference Application_cm_getEnviron_(meat::Reference &context) {
+static meat::Reference Application_cm_getEnviron_(meat::Reference context) {
   meat::Reference key = CONTEXT(context).get_param(0);
 
 #if defined(__WIN32__)
@@ -1917,7 +2050,7 @@ static meat::Reference Application_cm_getEnviron_(meat::Reference &context) {
 }
 
 // class method setEnviron: key to: value
-static meat::Reference Application_cm_setEnviron_to_(meat::Reference &context) {
+static meat::Reference Application_cm_setEnviron_to_(meat::Reference context) {
   meat::Reference key = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
 
@@ -1933,19 +2066,19 @@ static meat::Reference Application_cm_setEnviron_to_(meat::Reference &context) {
 }
 
 static meat::vtable_entry_t ApplicationCMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+	{0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x0462f057, 0x419df72b, VTM_NATIVE, 1, Application_cm_getEnviron_},
-	{0x068b6f7b, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+	{0x068b6f7b, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x1b6d6881, 0x419df72b, VTM_NATIVE, 1, Application_cm_parameter_},
   {0x1b6d68ba, 0x419df72b, VTM_NATIVE, 0, Application_cm_parameters},
-	{0x2c296348, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
+	{0x2c296348, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
   {0x50b30a5d, 0x419df72b, VTM_NATIVE, 1, Application_cm_setEnviron_to_},
-	{0x54aa30e6, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER, 0, {.offset = 0}}
+	{0x54aa30e6, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
 };
 
 static meat::uint8_t ApplicationBytecode[] = {
@@ -2010,14 +2143,14 @@ void meat::initialize(int argc, const char *argv[]) {
   /* Create the Context class. */
   cls = new Class("Object");
   cls->set_constructor(context_constructor);
-  cls->set_vtable(16, ContextMethods, STATIC);
+  cls->set_vtable(20, ContextMethods, STATIC);
   cls->set_class_vtable(11, ContextCMethods, STATIC);
-  cls->set_bytecode(129, ContextBytecode, STATIC);
+  cls->set_bytecode(131, ContextBytecode, STATIC);
   Class::record(cls, "Context");
 
   /* Create the BlockContext class. */
   cls = new Class("Context");
-  cls->set_vtable(14, BlockContextMethods, STATIC);
+  cls->set_vtable(24, BlockContextMethods, STATIC);
 	cls->set_class_vtable(11, BlockContextCMethods, STATIC);
   Class::record(cls, "BlockContext");
 

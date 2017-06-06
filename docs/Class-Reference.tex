@@ -1,1 +1,27 @@
-\subsection {Class Class}
+\subsection{Class Class}
+
+\begin{lstlisting}
+Object subClass: Class body: {
+  class method subClass: name body: definition
+  class method newObject
+  class method super
+}
+\end{lstlisting}
+
+\subsubsection{class method subClass: name body: definition}
+
+
+\subsubsection{class method newObject}
+Method used for creating constructor methods. This method creates a new
+object and sets the self object to it then messages \textit{self initialize}.\\
+Constructor methods should follow the following template:
+
+\begin{lstlisting}
+class method new {
+  self newObject
+  # Add any additional object initialization here.
+  context return: self
+}
+\end{lstlisting}
+
+\subsubsection{class method super}

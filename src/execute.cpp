@@ -34,33 +34,37 @@
  * meat::execute *
  *****************/
 
-meat::Reference meat::execute(Reference &ctx) {
+meat::Reference meat::execute(Reference context) {
 
-	if (CONTEXT(ctx).flags == meat::Context::PRIMATIVE) {
+	if (context.is_null()) {
+		throw Exception("Unable to execute a Null object");
+	} else	if (CONTEXT(context).flags == meat::Context::PRIMATIVE) {
 		/* Here we execute a c++ native function */
 
-		CONTEXT(ctx).locals[2] = ctx.weak(); // context
-		Reference result = CONTEXT(ctx).pointer(ctx);
-		CONTEXT(ctx).set_result(result);
+		CONTEXT(context).locals[2] = context.weak(); // context
+		Reference result = CONTEXT(context).pointer(context);
+		CONTEXT(context).set_result(result);
 		return result;
 
 	} else {
 		/* The bytecode interpreter starts here */
 
-		Reference context = ctx;
 		meat::uint16_t ip = CONTEXT(context).ip;
 		const uint8_t *code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-		CONTEXT(context).locals[2] = context.weak(); // context
+		CONTEXT(context).set_local(2, context.weak()); // context
 
 #ifdef DEBUG
 // Adds the class hash id and ip to debugging messages.
-#define BCLOC "(" << std::hex \
-									<< (unsigned int)CLASS(CONTEXT(context).get_class()).get_hash_id() \
-                  << "," << ip << ")"
+#define BCLOC "(" << itohex(CLASS(CONTEXT(context).get_class()).get_hash_id()) \
+                  << "," << itohex(ip, 4) << ")"
 #endif
 
-		while (not ctx.is_null()) {
+		//std::cout << "CONTEXT: " << ((void *)&(*context)) << std::endl;
 
+		while (not context.is_null()) {
+
+			/* Execute the byte code.
+			 */
 			switch (code[ip]) {
 
 			case meat::bytecode::NOOP:
@@ -78,9 +82,13 @@ meat::Reference meat::execute(Reference &ctx) {
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": MESSAGE " << std::dec
 									<< (unsigned int)code[ip + 1] << " "
-									<< std::hex << endian::read_be(*mesg_id) << " "
-									<< std::dec << (unsigned int)params
-									<< std::endl;
+									<< itohex(endian::read_be(*mesg_id)) << " ";
+					if (params) {
+						for (uint8_t c = 0; c < params; c++) {
+							std::cout << " " << (unsigned int)code[ip + 7 + c];
+						}
+					}
+				std::cout << std::endl;
 #endif /* DEBUG */
 
 				Reference obj = CONTEXT(context).get_local(code[ip + 1]);
@@ -100,13 +108,13 @@ meat::Reference meat::execute(Reference &ctx) {
 				CONTEXT(context).ip = ip;
 
 				// Execute the message.
-				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE)
+				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
 					execute(new_ctx);
-				else {
+				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-					CONTEXT(context).locals[2] = context.weak(); // context
+					CONTEXT(context).set_local(2, context.weak()); // context
 				}
 
 				break;
@@ -124,9 +132,15 @@ meat::Reference meat::execute(Reference &ctx) {
 				std::cout << "BC" << BCLOC << ": MSGRES " << std::dec
 									<< (unsigned int)code[ip + 1] << " "
 									<< (unsigned int)result_idx << " "
-									<< std::hex << endian::read_be(*mesg_id) << " "
-									<< std::dec << (unsigned int)params
-									<< std::endl;
+									<< itohex(endian::read_be(*mesg_id)) << " ";
+				if (params) {
+					//std::cout << "(";
+					for (uint8_t c = 0; c < params; c++) {
+						std::cout << (unsigned int)code[ip + 8 + c] << " ";
+					}
+					//std::cout << ")";
+				}
+				std::cout << std::endl;
 #endif /* DEBUG */
 
 				Reference obj = CONTEXT(context).get_local(code[ip + 1]);
@@ -153,8 +167,8 @@ meat::Reference meat::execute(Reference &ctx) {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-					CONTEXT(context).locals[2] = context.weak(); // context
 				}
+				CONTEXT(context).set_local(2, context.weak()); // context
 
 				break;
 			}
@@ -197,8 +211,8 @@ meat::Reference meat::execute(Reference &ctx) {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-					CONTEXT(context).locals[2] = context.weak(); // context
 				}
+				CONTEXT(context).set_local(2, context.weak()); // context
 
 				break;
 			}
@@ -244,8 +258,8 @@ meat::Reference meat::execute(Reference &ctx) {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-					CONTEXT(context).locals[2] = context.weak(); // context
 				}
+				CONTEXT(context).set_local(2, context.weak()); // context
 
 				break;
 			}
@@ -421,8 +435,11 @@ meat::Reference meat::execute(Reference &ctx) {
 			 * look for the next upper level not done context.
 			 */
 			while (CONTEXT(context).is_done()) {
+				//std::cout << "CONTEXT: " << ((void *)&(*context))
+				//					<< std::endl;
+
 				Reference result = CONTEXT(context).get_result();
-				context = CONTEXT(context).get_uplevel();
+				context = CONTEXT(context).get_messenger();
 
 				// If we are the top level context then return.
 				if (context.is_null() || context == meat::Null()) {
@@ -438,7 +455,7 @@ meat::Reference meat::execute(Reference &ctx) {
 
 				ip = CONTEXT(context).ip;
 				code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-				CONTEXT(context).locals[2] = context.weak(); // context
+				CONTEXT(context).set_local(2, context.weak()); // context
 			}
 		}
 	}

@@ -54,11 +54,11 @@ Object subClass: Objectᶲ body: {
   class method != other {
     context return: [self isNot: other]
   }
-  
+
   class function is: other {
-  	return (self == other ? meat::True() : meat::False());
+    return (self == other ? meat::True() : meat::False());
   }
-  
+
   class function isNot: other {
     return (!(self == other) ? meat::True() : meat::False());
   }
@@ -90,7 +90,7 @@ Object subClass: Objectᶲ body: {
     context return: [self isNot: other]
   }
 
-	function is: other {
+  function is: other {
     return (self == other ? meat::True() : meat::False());
   }
 
@@ -152,7 +152,7 @@ Object subClass: Classᶲ body: {
   class function super {
     return ((meat::Class &)(*self)).get_super();
   }
-  
+
   class method initialize {
   }
 }
@@ -180,11 +180,31 @@ Object subClass: Contextᶲ body: {
   }
 
   function localVariables {
-    return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
+    return new meat::Object(CONTEXT(self).get_num_of_locals() - 4);
   }
 
   function getLocal: index {
     return CONTEXT(self).get_local((int32_t)(*index));
+  }
+
+  function setLocal: index to: value {
+    CONTEXT(self).set_local(index->to_int(), value);
+    return null;
+  }
+
+  function repeat: block {
+    CONTEXT(block).set_uplevel(context);
+
+    dynamic_cast<meat::BlockContext &>(*block).set_break_trap();
+    for (;;) {
+      execute(block);
+      dynamic_cast<meat::BlockContext &>(*block).reset();
+
+      if (dynamic_cast<meat::BlockContext &>(*block).break_called())
+        break;
+    }
+
+    return null;
   }
 
   function return {
@@ -197,6 +217,12 @@ Object subClass: Contextᶲ body: {
     CONTEXT(self).finish();          // Tell the context it's done.
     return null;
   }
+
+  method break {
+  }
+
+  method continue {
+  }
 }
 
 #==============================================================================
@@ -204,25 +230,77 @@ Object subClass: Contextᶲ body: {
 
 Object subClass: BlockContextᶲ body: {
 
-	function execute {
-	  meat::uint16_t start_ip = CONTEXT(self).get_ip();
-    
-    CONTEXT(block).set_uplevel(context);
+  function execute {
+    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+    block.set_messenger(context);
     execute(self);
-    
-    // Reset the block context incase it's executed again.
-    CONTEXT(self).set_ip(start_ip);
-    CONTEXT(self).unfinish();
+    block.reset();
 
     return null;
-	}
+  }
+
+  function executeOnBreak: breakBlock {
+    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+    block.set_break_trap();
+    block.set_messenger(context);
+    execute(self);
+
+    if (block.break_called()) {
+      meat::Reference up_context = message(breakBlock, "execute", context);
+      execute(up_context);
+    }
+
+    block.reset();
+
+    return null;
+  }
+
+  function executeOnBreak: breakBlock onContinue: continueBlock {
+    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+    block.set_break_trap();
+    block.set_continue_trap();
+    block.set_messenger(context);
+    execute(self);
+
+    if (block.break_called()) {
+      meat::Reference up_context = message(breakBlock, "execute", context);
+      execute(up_context);
+    } else if (block.continue_called()) {
+      meat::Reference up_context = message(continueBlock, "execute", context);
+      execute(up_context);
+    }
+
+    block.reset();
+
+    return null;
+  }
+
+  function executeOnContinue: continueBlock {
+    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
+
+    block.set_continue_trap();
+    block.set_messenger(context);
+    execute(self);
+
+    if (block.continue_called()) {
+      meat::Reference up_context = message(continueBlock, "execute", context);
+      execute(up_context);
+    }
+
+    block.reset();
+
+    return null;
+  }
 
   function return {
     // We need to get the actual context to message the return method from.
-    meat::Reference uplevel =
-      ((meat::BlockContext &)(*self)).get_operating_context();
+    meat::Reference messenger =
+      ((meat::BlockContext &)(*self)).get_messenger();
 
-    meat::Reference up_context = message(uplevel, "return", context);
+    meat::Reference up_context = message(messenger, "return", context);
     execute(up_context);
 
     CONTEXT(self).finish(); // Tell the context it's done.
@@ -231,16 +309,37 @@ Object subClass: BlockContextᶲ body: {
   }
 
   function return: value {
-    // We need to get the actual context to message the return method from.
-    meat::Reference uplevel =
-      ((meat::BlockContext &)(*self)).get_operating_context();
+    meat::Reference messenger =
+      ((meat::BlockContext &)(*self)).get_messenger();
 
-    meat::Reference up_context = message(uplevel, "return:", context);
+    meat::Reference up_context = message(messenger, "return:", context);
     CONTEXT(up_context).set_param(0, value);
     execute(up_context);
 
     CONTEXT(self).finish(); // Tell the context it's done.
 
+    return null;
+  }
+
+  function continue {
+    (dynamic_cast<meat::BlockContext &>(*self)).c_continue();
+    if (!dynamic_cast<meat::BlockContext &>(*self).continue_trap_set()) {
+      meat::Reference init_ctx =
+        dynamic_cast<meat::BlockContext &>(*self).get_origin();
+      meat::Reference up_context = message(init_ctx, "continue", context);
+      execute(up_context);
+    }
+    return null;
+  }
+
+  function break {
+    (dynamic_cast<meat::BlockContext &>(*self)).c_break();
+    if (!dynamic_cast<meat::BlockContext &>(*self).break_trap_set()) {
+      meat::Reference init_ctx =
+        dynamic_cast<meat::BlockContext &>(*self).get_origin();
+      meat::Reference up_context = message(init_ctx, "break", context);
+      execute(up_context);
+    }
     return null;
   }
 }
@@ -256,16 +355,12 @@ Object subClass: Nullᶲ body: {
 
   class method newObject {
     Exception throw: "Cannot create a new internal Null object" \
-      for: [context uplevel]
+      for: [context messenger]
   }
 
   class method subClass: name body: block {
-    Exception throw: "Cannot subclass and internal Null class" \
-      for: [context uplevel]
-  }
-
-  class method isNull {
-    context return: [Boolean false]
+    Exception throw: "Cannot subclass an internal Null class" \
+      for: [context messenger]
   }
 
   method isNull {
@@ -286,7 +381,7 @@ Object subClass: Exceptionᶲ body: {
   }
 
   class function try: block {
-    CONTEXT(block).set_uplevel(context);
+    CONTEXT(block).set_messenger(context);
 
     try {
       execute(block);
@@ -324,12 +419,12 @@ Object subClass: Exceptionᶲ body: {
   }
 
   class function throw {
-    meat::Reference ctx = CONTEXT(context).get_uplevel();
+    meat::Reference ctx = CONTEXT(context).get_messenger();
     throw meat::Exception(null, ctx);
   }
 
   class function throw: message {
-    meat::Reference ctx = CONTEXT(context).get_uplevel();
+    meat::Reference ctx = CONTEXT(context).get_messenger();
     throw meat::Exception(message, ctx);
   }
 
@@ -733,7 +828,7 @@ Numeric subClass: Numberᶲ body: {
 }
 
 #==============================================================================
-# Boolean
+# Boolean Class
 
 Object subClass: Booleanᶲ body: {
 
@@ -821,17 +916,24 @@ Object subClass: Booleanᶲ body: {
 
 Object subClass: Textᶲ body: {
 
-  function length {
-    return new meat::Object((int32_t)std::strlen(self->to_string()));
-  }
-
   function isEmpty {
-    if (std::strlen(self->to_string()) == 0)
+    if (self->to_string()[0] == 0)
       return meat::True();
     return meat::False();
   }
 
-  function get: index {
+  function length {
+    unsigned int len = 0
+    const char *str = self->to_string();
+
+    // Count UTF-8 characters not bytes.
+    for (unsigned int i = 0; str[i]; ++i)
+      if ((str[i] & 0xC0) != 0x80) len++;
+
+    return new meat::Object(len));
+  }
+
+  function getCharAt: index {
     char new_string[2] = " ";
     new_string[0] = self->to_string()[(int32_t)(*index) - 1];
     return new meat::Object(new_string);
@@ -1023,9 +1125,11 @@ Object subClass: Listᶲ body: {
     meat::List::iterator it = ((meat::List &)(*self)).begin();
     for (; it != ((meat::List &)(*self)).end(); it++) {
       CONTEXT(block).set_local(local_id, *it);
-      execute(block);
+      Reference result = execute(block);
       CONTEXT(block).set_ip(start_ip);
       CONTEXT(block).unfinish();
+
+      if (result == "break") break;
     }
 
     return null;
@@ -1107,9 +1211,9 @@ Object subClass: Applicationᶲ body: {
 #endif
   }
 
-	class method entry {
-		Exception throw: "Application class method entry must be overridden"
-	}
+  class method entry {
+    Exception throw: "Application class method entry must be overridden"
+  }
 
   method entry {
     Exception throw: "Application method entry must be overridden"

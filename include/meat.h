@@ -69,8 +69,10 @@ namespace meat {
 	 */
 	typedef memory::reference<Object> Reference;
 
-#define CONTEXT(ref) ((meat::Context &)(*(ref)))
-#define CLASS(ref) ((meat::Class &)(*(ref)))
+#define CONTEXT(ref) (dynamic_cast<meat::Context &>(*(ref)))
+#define CONST_CONTEXT(ref) (dynamic_cast<const meat::Context &>(*(ref)))
+#define CLASS(ref) (dynamic_cast<meat::Class &>(*(ref)))
+#define CONST_CLASS(ref) (dynamic_cast<const meat::Class &>(*(ref)))
 
 	/** Initializes the scripting engine.
 	 */
@@ -84,24 +86,24 @@ namespace meat {
 	 * @see meat::execute()
 	 * @see hash()
 	 */
-	DECLSPEC Reference message(Reference &Object,
+	DECLSPEC Reference message(Reference object,
 														 uint32_t hash_id,
-														 Reference &context);
+														 Reference context);
 
-	DECLSPEC Reference message(Reference &Object,
+	DECLSPEC Reference message(Reference object,
 														 const char *method,
-														 Reference &context);
+														 Reference context);
 
-	DECLSPEC Reference message_super(Reference &Object,
+	DECLSPEC Reference message_super(Reference object,
 																	 uint32_t hash_id,
-																	 Reference &context);
+																	 Reference context);
 
 	/** Executes a context that has been created by meat::message().
 	 * @param context The context created by message.
 	 * @return The results of the message.
 	 * @see meat::message()
 	 */
-	DECLSPEC Reference execute(Reference &context);
+	DECLSPEC Reference execute(Reference context);
 
 #ifdef DEBUG
 	std::ostream &operator <<(std::ostream &out, Class &cls);
@@ -230,7 +232,7 @@ namespace meat {
 	 * @see meat::Context
 	 * @see meat::Class::VTable
 	 */
-	typedef Reference (*method_ptr_t)(Reference &context);
+	typedef Reference (*method_ptr_t)(Reference context);
 
 	/** Function type for creating new Objects from the class.
 	 */
@@ -336,7 +338,7 @@ namespace meat {
 		 * @see record()
 		 * @exception Exception If the class cannot be found.
 		 */
-		static Reference &resolve(const char *id);
+		static Reference &resolve(const std::string &id);
 
 		/** Resolves a class that has been registered with record.
 		 * @param hash_id The integer hash id of the class.
@@ -348,7 +350,7 @@ namespace meat {
 
     /**
      */
-		static bool have_class(const char *id);
+		static bool have_class(const std::string &id);
 
 		/** Returns a reference to the class. This uses the resolve method
 		 * to find the reference so the class @b must be registered with record()
@@ -362,13 +364,13 @@ namespace meat {
 		friend std::ostream &operator <<(std::ostream &out, Class &cls);
 #endif /* DEBUG */
 		friend void meat::initialize(int argc, const char *argv[]);
-		friend Reference message(Reference &Object,
+		friend Reference message(Reference object,
 														 uint32_t hash_id,
-														 Reference &context);
-		friend Reference message_super(Reference &Object,
+														 Reference context);
+		friend Reference message_super(Reference object,
 																	 uint32_t hash_id,
-																	 Reference &context);
-		friend Reference execute(Reference &context);
+																	 Reference context);
+		friend Reference execute(Reference context);
 
 	private:
     /** The virtual method table for class Objects.
@@ -397,12 +399,12 @@ namespace meat {
 			void read(std::istream &lib_file);
 
       friend class Class;
-			friend Reference message(Reference &Object,
+			friend Reference message(Reference object,
 															 uint32_t hash_id,
-															 Reference &context);
-			friend Reference message_super(Reference &Object,
+															 Reference context);
+			friend Reference message_super(Reference object,
 																		 uint32_t hash_id,
-																		 Reference &context);
+																		 Reference context);
 		private:
 			// Object virtual table entries
 			uint8_t no_entries;
@@ -480,7 +482,7 @@ namespace meat {
 		virtual ~Context() throw();
 
 		virtual Reference get_self() const;
-		void reset_self(Reference &new_self);
+		void reset_self(Reference new_self);
 
 		virtual Reference get_class() const { return locals[1]; }
 		virtual Reference get_context() const { return locals[2]; }
@@ -490,16 +492,16 @@ namespace meat {
 
 		/** Get the calling context.
 		 */
-		virtual Reference get_uplevel() const;
-		virtual void set_uplevel(Reference &context);
+		virtual Reference get_messenger() const;
+		virtual void set_messenger(Reference context);
 
 		virtual Reference get_param(uint8_t index) const;
 
-		virtual void set_param(uint8_t index, Reference &value);
+		virtual void set_param(uint8_t index, Reference value);
 
 		/**
 		 */
-		virtual void set_local(uint8_t index, Reference &value);
+		virtual void set_local(uint8_t index, Reference value);
 
 		/** Get a local variable from the context. If the index is out of range
 		 * then an meat::Exception is raised.
@@ -519,28 +521,28 @@ namespace meat {
 		void set_ip(uint16_t offset) { ip = offset; };
 
 		void set_result_index(uint8_t local_parent_index);
-		void set_result(Reference &value);
+		void set_result(Reference value);
 		Reference get_result() const;
 
-		virtual bool is_done() { return done; };
+		virtual bool is_done() const { return done; };
 		virtual void finish() { done = true; };
 		virtual void unfinish() { done = false; };
 
 		friend class Class;
 		friend class BlockContext;
-		friend Reference message(Reference &Object,
+		friend Reference message(Reference object,
 														 uint32_t hash_id,
-														 Reference &context);
-		friend Reference message_super(Reference &Object,
+														 Reference context);
+		friend Reference message_super(Reference object,
 																	 uint32_t hash_id,
-																	 Reference &context);
-		friend Reference execute(Reference &context);
+																	 Reference context);
+		friend Reference execute(Reference context);
 
 	protected:
 		/** The context that this context was created in. If this is Null then
 		 * the context is the top level context of the program.
 		 */
-		Reference up_level;
+		Reference messenger;
 		Reference result;
 
 		typedef enum {
@@ -569,22 +571,21 @@ namespace meat {
 	 */
 	class DECLSPEC BlockContext : public Context {
 	public:
-		BlockContext(uint8_t locals);
 		BlockContext(Reference &context, uint8_t locals, uint16_t ip);
 		virtual ~BlockContext() throw();
 
 		virtual Reference get_self() const {
-			return CONTEXT(context).get_self();
+			return CONST_CONTEXT(origin).get_self();
 		}
 
 		virtual Reference get_class() const {
-			return CONTEXT(context).get_class();
+			return CONST_CONTEXT(origin).get_class();
 		}
 		virtual Reference get_context() const {
-			return CONTEXT(context).get_context();
+			return CONST_CONTEXT(origin).get_context();
 		}
 		virtual Reference get_super() const {
-			return CLASS(get_class()).get_super();
+			return CONST_CLASS(get_class()).get_super();
 		}
 
 		virtual Reference get_param(uint8_t index) const {
@@ -602,7 +603,7 @@ namespace meat {
 		 * @param value The value to set the local variable to.
 		 * @throw Exception If the index is out of range.
 		 */
-		virtual void set_local(uint8_t index, Reference &value);
+		virtual void set_local(uint8_t index, Reference value);
 		virtual Reference get_local(uint8_t index) const;
 
 		/** Returns the number of locals in this context and in the containing
@@ -611,12 +612,22 @@ namespace meat {
 		 */
 		virtual uint8_t get_num_of_locals() const;
 
-		Reference get_operating_context() { return context; }
+		Reference get_origin() const { return origin; }
 
-		virtual bool is_done();
+		void c_break();
+		void c_continue();
+		void set_break_trap();
+		void set_continue_trap();
+		bool break_trap_set() const;
+		bool continue_trap_set() const;
+		bool break_called() const;
+		bool continue_called() const;
+		void reset();
 
 	private:
-		Reference context;
+		Reference origin;
+		uint8_t bc_flags;
+		uint16_t start_ip;
 	};
 
 	/****************************************************************************
@@ -627,10 +638,8 @@ namespace meat {
 		Exception();
 		Exception(const Exception &other);
 		Exception(Reference &cls, uint8_t properties);
-		Exception(const char *message);
-		Exception(std::string message);
-		Exception(const char *message, Reference &context);
-		Exception(std::string message, Reference &context);
+		Exception(const std::string &message);
+		Exception(const std::string &message, Reference &context);
 		Exception(Reference &message, Reference &context);
 		virtual ~Exception() throw() {}
 

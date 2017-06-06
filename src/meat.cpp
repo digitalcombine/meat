@@ -397,7 +397,7 @@ meat::Reference meat::Class::get_super() const {
 meat::uint8_t meat::Class::get_obj_properties() const {
 	meat::uint8_t total = obj_properties;
 	if (!super.is_null())
-		total += CLASS(super).get_obj_properties();
+		total += CONST_CLASS(super).get_obj_properties();
 	return total;
 }
 
@@ -679,21 +679,12 @@ void meat::Class::relink() {
 		vtable.link(CLASS(super));
 }
 
-/***************************
- * meat::Class::have_class *
- ***************************/
-
-bool meat::Class::have_class(const char *id) {
-	class_registry_t &classes = class_registry();
-	return (classes.find(hash(id)) != classes.end());
-}
-
 /************************
  * meat::Class::resolve *
  ************************/
 
-meat::Reference &meat::Class::resolve(const char *id) {
-	meat::uint32_t hash_id = hash(id);
+meat::Reference &meat::Class::resolve(const std::string &id) {
+	meat::uint32_t hash_id = hash(id.c_str());
 
 	class_registry_t &classes = class_registry();
 	if (classes.find(hash_id) == classes.end()) {
@@ -716,6 +707,15 @@ meat::Reference &meat::Class::resolve(meat::uint32_t hash_id) {
 	}
 
 	return classes[hash_id];
+}
+
+/***************************
+ * meat::Class::have_class *
+ ***************************/
+
+bool meat::Class::have_class(const std::string &id) {
+	class_registry_t &classes = class_registry();
+	return (classes.find(hash(id.c_str())) != classes.end());
 }
 
 /*********************
@@ -1184,7 +1184,7 @@ meat::Context::Context(meat::uint8_t locals)
 }
 
 meat::Context::Context(Reference &context, meat::uint8_t locals)
-	: Object(Class::resolve("Context")), up_level(context), result_index(0),
+	: Object(Class::resolve("Context")), messenger(context), result_index(0),
 		done(false) {
 	num_of_locals = locals + 4;
 	this->locals = new Reference[num_of_locals];
@@ -1193,7 +1193,7 @@ meat::Context::Context(Reference &context, meat::uint8_t locals)
 meat::Context::Context(Reference &cls,
 											 Reference &context,
 											 meat::uint8_t locals)
-	: Object(cls), up_level(context), result_index(0), done(false) {
+	: Object(cls), messenger(context), result_index(0), done(false) {
 	num_of_locals = locals + 4;
 	this->locals = new Reference[num_of_locals];
 }
@@ -1218,7 +1218,7 @@ meat::Reference meat::Context::get_self() const {
  * meat::Context::reset_self *
  *****************************/
 
-void meat::Context::reset_self(Reference &new_self) {
+void meat::Context::reset_self(Reference new_self) {
 	locals[0] = new_self;
 }
 
@@ -1226,16 +1226,16 @@ void meat::Context::reset_self(Reference &new_self) {
  * meat::Context::get_uplevel *
  ******************************/
 
-meat::Reference meat::Context::get_uplevel() const {
-	return up_level;
+meat::Reference meat::Context::get_messenger() const {
+	return messenger;
 }
 
 /******************************
  * meat::Context::set_uplevel *
  ******************************/
 
-void meat::Context::set_uplevel(Reference &context) {
-	up_level = context;
+void meat::Context::set_messenger(Reference context) {
+	messenger = context;
 }
 
 /****************************
@@ -1250,7 +1250,7 @@ meat::Reference meat::Context::get_param(uint8_t index) const {
  * meat::Context::set_param *
  ****************************/
 
-void meat::Context::set_param(uint8_t index, Reference &value) {
+void meat::Context::set_param(uint8_t index, Reference value) {
 	locals[index + 4] = value;
 }
 
@@ -1258,7 +1258,7 @@ void meat::Context::set_param(uint8_t index, Reference &value) {
  * meat::Context::set_local *
  ****************************/
 
-void meat::Context::set_local(uint8_t index, Reference &value) {
+void meat::Context::set_local(uint8_t index, Reference value) {
 	if (index < num_of_locals) locals[index] = value;
 	else {
 		std::stringstream msg;
@@ -1288,17 +1288,17 @@ meat::Reference meat::Context::get_local(uint8_t index) const {
 
 void meat::Context::set_result_index(uint8_t local_parent_index) {
 	result_index = local_parent_index;
-	CONTEXT(up_level).set_local(result_index, meat::Null());
+	CONTEXT(messenger).set_local(result_index, meat::Null());
 }
 
 /*****************************
  * meat::Context::set_result *
  *****************************/
 
-void meat::Context::set_result(Reference &value) {
+void meat::Context::set_result(Reference value) {
 	result = value;
 	if (result_index) {
-		CONTEXT(up_level).set_local(result_index, result);
+		CONTEXT(messenger).set_local(result_index, result);
 	}
 }
 
@@ -1314,20 +1314,19 @@ meat::Reference meat::Context::get_result() const {
  * meat::BlockContext Class
  */
 
+#define BCFL_BREAK (0x01)
+#define BCFL_CONTINUE (0x02)
+#define BCFL_BREAK_TRAP (0x04)
+#define BCFL_CONT_TRAP (0x08)
+
 /************************************
  * meat::BlockContext::BlockContext *
  ************************************/
 
-meat::BlockContext::BlockContext(uint8_t locals)
-	: Context(Class::resolve("BlockContext"), meat::Null(), locals),
-		context(meat::Null()) {
-	flags = meat::Context::NOMETHOD;
-}
-
 meat::BlockContext::BlockContext(Reference &context, meat::uint8_t locals,
 																 uint16_t ip)
 	: Context(Class::resolve("BlockContext"), context, locals),
-		context(context) {
+		origin(context), bc_flags(0), start_ip(ip) {
 	flags = meat::Context::BYTECODE;
 	this->ip = ip;
 }
@@ -1344,11 +1343,11 @@ meat::BlockContext::~BlockContext() throw() {
  *********************************/
 
 void meat::BlockContext::set_local(meat::uint8_t index,
-																	 meat::Reference &value) {
-	meat::uint8_t local_cnt = CONTEXT(context).get_num_of_locals();
+																	 meat::Reference value) {
+	meat::uint8_t local_cnt = CONTEXT(origin).get_num_of_locals();
 
 	if (index < local_cnt)
-		CONTEXT(context).set_local(index, value);
+		CONTEXT(origin).set_local(index, value);
 	else
 		Context::set_local(index - local_cnt, value);
 }
@@ -1358,10 +1357,12 @@ void meat::BlockContext::set_local(meat::uint8_t index,
  *********************************/
 
 meat::Reference meat::BlockContext::get_local(meat::uint8_t index) const {
-	meat::uint8_t local_cnt = CONTEXT(context).get_num_of_locals();
+	meat::uint8_t local_cnt = CONST_CONTEXT(origin).get_num_of_locals();
+
+	//if (index == 3) return self
 
 	if (index < local_cnt)
-		return CONTEXT(context).get_local(index);
+		return CONST_CONTEXT(origin).get_local(index);
 	else
 		return Context::get_local(index - local_cnt);
 }
@@ -1371,16 +1372,54 @@ meat::Reference meat::BlockContext::get_local(meat::uint8_t index) const {
  *****************************************/
 
 meat::uint8_t meat::BlockContext::get_num_of_locals() const {
-	return CONTEXT(context).get_num_of_locals() + Context::get_num_of_locals();
+	return CONST_CONTEXT(origin).get_num_of_locals() +
+		Context::get_num_of_locals();
 }
 
 /*******************************
- * meat::BlockContext::is_done *
+ * meat::BlockContext::c_break *
  *******************************/
 
-bool meat::BlockContext::is_done() {
-	return (Context::is_done() or CONTEXT(up_level).is_done());
-};
+void meat::BlockContext::c_break() {
+	std::clog << __func__ << "()" << std::endl;
+	bc_flags |= BCFL_BREAK;
+	finish();
+}
+
+void meat::BlockContext::c_continue() {
+	bc_flags |= BCFL_CONTINUE;
+	finish();
+}
+
+void meat::BlockContext::set_break_trap() {
+	bc_flags |= BCFL_BREAK_TRAP;
+}
+
+void meat::BlockContext::set_continue_trap() {
+	bc_flags |= BCFL_CONT_TRAP;
+}
+
+bool meat::BlockContext::break_trap_set() const {
+	return bc_flags & BCFL_BREAK_TRAP;
+}
+
+bool meat::BlockContext::continue_trap_set() const {
+	return bc_flags & BCFL_CONT_TRAP;
+}
+
+bool meat::BlockContext::break_called() const {
+	return bc_flags & BCFL_BREAK;
+}
+
+bool meat::BlockContext::continue_called() const {
+	return bc_flags & BCFL_CONTINUE;
+}
+
+void meat::BlockContext::reset() {
+	bc_flags = 0;
+	ip = start_ip;
+	unfinish();
+}
 
 /******************************************************************************
  * meat::Exception Class
@@ -1406,25 +1445,13 @@ meat::Exception::Exception(Reference &cls, meat::uint8_t properties)
 	// Empty Exception constructor used for class inheritance.
 }
 
-meat::Exception::Exception(const char *message)
-	: Object(Class::resolve("Exception"), 2) {
-	// New exception with a meat Text message.
-	this->property(0) = new Object(message);
-}
-
-meat::Exception::Exception(std::string message)
+meat::Exception::Exception(const std::string &message)
 	: Object(Class::resolve("Exception"), 2) {
 	// New exception with a meat Text message.
 	this->property(0) = new Object(message.c_str());
 }
 
-meat::Exception::Exception(const char *message, Reference &context)
-	: Object(Class::resolve("Exception"), 2) {
-	this->property(0) = new Object(message);
-	this->property(1) = context;
-}
-
-meat::Exception::Exception(std::string message, Reference &context)
+meat::Exception::Exception(const std::string &message, Reference &context)
 	: Object(Class::resolve("Exception"), 2) {
 	this->property(0) = new Object(message.c_str());
 	this->property(1) = context;
@@ -1573,9 +1600,9 @@ void meat::Index::unserialize(data::Archive &store,
  * meat::message *
  *****************/
 
-meat::Reference meat::message(meat::Reference &object,
+meat::Reference meat::message(meat::Reference object,
 															meat::uint32_t hash_id,
-															meat::Reference &context) {
+															meat::Reference context) {
 
 	Reference cls;
 	const vtable_entry_t *m_entry = 0;
@@ -1620,10 +1647,9 @@ meat::Reference meat::message(meat::Reference &object,
   Reference new_context(ctx);
 
   // Populate the mandatory local objects.
-  ctx->locals[0] = object;             // self
+  ctx->locals[0] = object;                                  // self
   ctx->locals[1] = meat::Class::resolve(m_entry->class_id); // class
-  ctx->locals[2] = new_context.weak(); // context
-  ctx->locals[3] = meat::Null();      // null
+  ctx->locals[3] = meat::Null();                            // null
 
   if ((m_entry->flags & VTM_BYTECODE) == 0) {
     // Flag for native method.
@@ -1639,9 +1665,9 @@ meat::Reference meat::message(meat::Reference &object,
   return new_context;
 }
 
-meat::Reference meat::message(meat::Reference &object,
+meat::Reference meat::message(meat::Reference object,
 															const char *method,
-															meat::Reference &context) {
+															meat::Reference context) {
 	return message(object, hash(method), context);
 }
 
@@ -1649,9 +1675,9 @@ meat::Reference meat::message(meat::Reference &object,
  * meat::message_super *
  ***********************/
 
-meat::Reference meat::message_super(meat::Reference &object,
+meat::Reference meat::message_super(meat::Reference object,
 																		meat::uint32_t hash_id,
-																		meat::Reference &context) {
+																		meat::Reference context) {
 
 	Reference cls;
 	const vtable_entry_t *m_entry = 0;
@@ -1690,7 +1716,6 @@ meat::Reference meat::message_super(meat::Reference &object,
 	// Populate the mandatory local objects.
 	ctx->locals[0] = object;                                  // self
 	ctx->locals[1] = meat::Class::resolve(m_entry->class_id); // class
-	ctx->locals[2] = new_context.weak();                      // context
 	ctx->locals[3] = meat::Null();                            // null
 
 	if ((m_entry->flags & VTM_BYTECODE) == 0) {

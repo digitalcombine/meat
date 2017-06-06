@@ -39,7 +39,7 @@ static meat::vtable_entry_t ConsoleMethods[] = {
 };
 
 // class method write:
-static meat::Reference Console_cm_write_(meat::Reference &context) {
+static meat::Reference Console_cm_write_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference message = CONTEXT(context).get_param(0);
@@ -50,7 +50,7 @@ static meat::Reference Console_cm_write_(meat::Reference &context) {
 }
 
 // class method writeLn:
-static meat::Reference Console_cm_writeLn_(meat::Reference &context) {
+static meat::Reference Console_cm_writeLn_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference message = CONTEXT(context).get_param(0);

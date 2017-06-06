@@ -21,8 +21,11 @@ Object subClass: Context body: {
   method localVariables
   method getLocal: index
   method setLocal: index to: value
+  method repeat: block
   method return
   method return: result
+  method break
+  method continue
 }
 \end{lstlisting}
 
@@ -30,13 +33,32 @@ Object subClass: Context body: {
 The Context class should never be sub-classed therefore this method always
 raises an exception.
 
-\hfill
 \subsubsection {class method newObject}
 Context classes are only created internally when an object is messaged
 therefore this method always raises an exception.
 
-\hfill
 \subsubsection {method messenger}
 This method returns the context object where the message was
 initiated. The null object can be returned if it was the very first context
 created to start execution.
+
+\subsubsection {method localVariables}
+This method returns the number of local variables allocated in the context
+minus \textit{self}, \textit{class}, \textit{context} and \textit{null}.
+
+\subsubsection {method getLocal: index}
+
+\subsubsection {method setLocal: index to: value}
+
+\subsubsection {method repeat: block}
+Repeat the execution of \textit{block} infinitely. \textit{block} must be
+a BlockContext object. Any other object type will raise an Exception.
+
+\subsubsection {method return}
+
+\subsubsection {method return: result}
+
+\subsubsection{method break}
+This method does nothing.
+
+\subsubsection{method continue}

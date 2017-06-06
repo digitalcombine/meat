@@ -40,9 +40,10 @@
 \subsection{Library File Format}
 
 \begin{center}
-  \begin{tabular}{ |l|l|p{8cm}| }
+  \begin{tabular}{ |l|p{4.5cm}|p{7.5cm}| }
     \hline
-    \multirow{5}{*}{Header} & \texttt{unsigned bytes [4]} = ''MLIB'' & The
+    \multirow{5}{*}{Header} & \texttt{unsigned bytes [4]} = ''MLIB''
+    = $\mathrm{4D4C4942}_{16}$ & The
     magic file identifier\\ \cline{2-3}
     & \texttt{unsigned byte} = 1 & Major Meat library format version\\
     \cline{2-3}

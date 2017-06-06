@@ -1,0 +1,65 @@
+# Simple test of using UTF-8 in multiple languages.
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Notes
+#   Since we need gitgo to compile this file, the 'ᶲ' character found in all
+#  the class names is to prevent collisions with the builtin in classes. Once
+#  the cpp file is generated then the ᶲ characters are stripped out.
+#   The generate cpp file is still not valid because all the hash values are
+#  included in the name hashing...
+
+Library import: "Console"
+
+Application subClass: Hello body: {
+
+  class method Hello {
+    Console writeLn: "Hello"
+  }
+
+  class method Tungjatjeta {
+    Console writeLn: "Tungjatjeta"
+  }
+
+  class method Grüßgott {
+    Console writeLn: "Grüßgott"
+  }
+
+  class method Вiтаю {
+    Console writeLn: "Вiтаю"
+  }
+  
+  class method 你好 {
+    Console writeLn: "你好"
+  }
+  
+  class method 早上好 {
+    Console writeLn: "早上好"
+  }
+  
+  class method entry {
+    self Hello
+    self Tungjatjeta
+    self Grüßgott
+    self Вiтаю
+    self 你好
+    self 早上好
+    
+    context return: 0
+  }
+}

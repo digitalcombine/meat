@@ -1,4 +1,4 @@
-# Build the library that holds the TestSuite application.
+# Object Class and Object Tests
 #
 # Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
 #
@@ -17,22 +17,33 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: "UnitTest"
-Library import: "Test.Object"
-Library import: "Test.BlockContext"
+Library import: UnitTest
 
-Application subClass: Tests body: {
+Test.Suite subClass: Test.BlockContext body: {
 
-	class method entry {
-		summary = [Test.Summary new]
-		
-		summary addSuite: [Test.Object new]
-		summary addSuite: [Test.BlockContext new]
-		
-		context return: [summary runAndSummarize]	
-	}
+  # Creates a new TestSuite object.
+  class method new {
+    self newObject
+    context return: self
+  }
 
+  method setup {
+    other = ""
+  
+    self title: "4.4.1 Method execute" test: {
+      self pass
+    }
+    
+    self title: "4.4.2 Method executeOnBreak" test: {
+      context repeat: {
+        [context isType: BlockContext] isFalse: {
+          self fail: "Context is not a BlockContext object."
+        }
+      
+        context break
+        self fail: "BlockContext break didn't stop block execution."
+      }
+      self pass
+    }
+  }
 }
-
-# This currently doesn't work.
-Library setApplication: Tests

@@ -78,7 +78,11 @@ namespace endian {
  * @param table_size The maximum size of the hash value.
  * @return Unsigned integer hash value.
  */
-DECLSPEC meat::uint32_t hash(const char *word,
+DECLSPEC meat::uint32_t hash(const std::string &word,
 														 size_t table_size = 0x7fffffff);
+
+/** Converts an hexidecimal integer value to a string.
+ */
+std::string itohex(unsigned int value, size_t width = 8);
 
 #endif /* _UTILITIES_H */

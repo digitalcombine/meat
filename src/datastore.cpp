@@ -528,7 +528,7 @@ static meat::vtable_entry_t LibraryMethods[] = {
 };
 
 // class method import:
-static meat::Reference Library_cm_import_(meat::Reference &context) {
+static meat::Reference Library_cm_import_(meat::Reference context) {
   //meat::Reference self = CONTEXT(context).get_self();
   meat::Reference filename = CONTEXT(context).get_param(0);
 
@@ -546,7 +546,7 @@ static meat::Reference Library_cm_import_(meat::Reference &context) {
 }
 
 // class method include:
-static meat::Reference Library_cm_include_(meat::Reference &context) {
+static meat::Reference Library_cm_include_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   //meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference cpp_includes = CONTEXT(context).get_param(0);
@@ -559,7 +559,7 @@ static meat::Reference Library_cm_include_(meat::Reference &context) {
 }
 
 // class method setApplication:
-static meat::Reference Library_cm_setApplication_(meat::Reference &context) {
+static meat::Reference Library_cm_setApplication_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   //meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference class_name = CONTEXT(context).get_param(0);
@@ -727,7 +727,7 @@ void meat::data::Archive::set_object(Reference &object) {
  * meat::data::Archive::add_property *
  *************************************/
 
-meat::uint32_t meat::data::Archive::add_property(Reference &property) {
+meat::uint32_t meat::data::Archive::add_property(Reference property) {
   if (create) {
     /* Search the index to see if the object already exists. If it does then
      * just return the index offset.
@@ -1138,7 +1138,7 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
  */
 
 // class method create:
-static meat::Reference Archive_cm_create_(meat::Reference &context) {
+static meat::Reference Archive_cm_create_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference filename = CONTEXT(context).get_param(0);
 
@@ -1146,7 +1146,7 @@ static meat::Reference Archive_cm_create_(meat::Reference &context) {
 }
 
 // class method open:
-static meat::Reference Archive_cm_open_(meat::Reference &context) {
+static meat::Reference Archive_cm_open_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference filename = CONTEXT(context).get_param(0);
 
@@ -1168,7 +1168,7 @@ static meat::vtable_entry_t ArchiveCMethods[] = {
 };
 
 // method getObject
-static meat::Reference Archive_om_getObject(meat::Reference &context) {
+static meat::Reference Archive_om_getObject(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   meat::data::Archive &store_obj = (meat::data::Archive &)(*self);
@@ -1176,7 +1176,7 @@ static meat::Reference Archive_om_getObject(meat::Reference &context) {
 }
 
 // method import:
-static meat::Reference Archive_om_import_(meat::Reference &context) {
+static meat::Reference Archive_om_import_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference filename = CONTEXT(context).get_param(0);
 
@@ -1187,7 +1187,7 @@ static meat::Reference Archive_om_import_(meat::Reference &context) {
 }
 
 // method setObject:
-static meat::Reference Archive_om_setObject_(meat::Reference &context) {
+static meat::Reference Archive_om_setObject_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference value = CONTEXT(context).get_param(0);
 
@@ -1197,7 +1197,7 @@ static meat::Reference Archive_om_setObject_(meat::Reference &context) {
 }
 
 // method sync
-static meat::Reference Archive_om_sync(meat::Reference &context) {
+static meat::Reference Archive_om_sync(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   ((meat::data::Archive &)(*self)).sync();
