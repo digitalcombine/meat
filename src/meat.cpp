@@ -1381,7 +1381,6 @@ meat::uint8_t meat::BlockContext::get_num_of_locals() const {
  *******************************/
 
 void meat::BlockContext::c_break() {
-	std::clog << __func__ << "()" << std::endl;
 	bc_flags |= BCFL_BREAK;
 	finish();
 }

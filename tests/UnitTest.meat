@@ -296,7 +296,6 @@ Object subClass: Test.Suite body: {
 	# Generate and return an index of the test counts.
 	method summary {
 		passedCount = 0
-	  Console writeLn: "Mark"
 	
 		# Tally up all the passed tests.
 		tests forEach: .test do: {			
@@ -304,8 +303,6 @@ Object subClass: Test.Suite body: {
 				passedCount = [passedCount + 1]
 			}
 		}
-		
-		Console writeLn: "Mark"
 		
 		# Create a index of the test counts
 		result = [Index new]

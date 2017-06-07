@@ -211,7 +211,7 @@ static meat::Reference Class_cm_subClass_body_(meat::Reference context) {
 static meat::Reference Class_cm_super(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-	return ((meat::Class &)(*self)).get_super();
+	return CLASS(self).get_super();
 }
 
 static meat::vtable_entry_t ClassCMethods[] = {
@@ -384,8 +384,6 @@ static meat::uint8_t ContextBytecode[] = {
 // method break
 static meat::Reference BlockContext_om_break(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
-
-	std::clog << "BlockContext break" << std::endl;
 
   (dynamic_cast<meat::BlockContext &>(*self)).c_break();
 	if (!dynamic_cast<meat::BlockContext &>(*self).break_trap_set()) {
