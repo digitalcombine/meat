@@ -69,10 +69,12 @@ namespace meat {
 	 */
 	typedef memory::reference<Object> Reference;
 
-#define CONTEXT(ref) (dynamic_cast<meat::Context &>(*(ref)))
-#define CONST_CONTEXT(ref) (dynamic_cast<const meat::Context &>(*(ref)))
 #define CLASS(ref) (dynamic_cast<meat::Class &>(*(ref)))
 #define CONST_CLASS(ref) (dynamic_cast<const meat::Class &>(*(ref)))
+#define CONTEXT(ref) (dynamic_cast<meat::Context &>(*(ref)))
+#define CONST_CONTEXT(ref) (dynamic_cast<const meat::Context &>(*(ref)))
+#define BLOCK(ref) (dynamic_cast<meat::BlockContext &>(*(ref)))
+#define CONST_BLOCK(ref) (dynamic_cast<const meat::BlockContext &>(*(ref)))
 
 	/** Initializes the scripting engine.
 	 */
@@ -659,7 +661,7 @@ namespace meat {
 		using std::deque<Reference>::pop_back;
 		using std::deque<Reference>::clear;
 		using std::deque<Reference>::at;
-		//using std::deque<Reference>::operator[];
+		using std::deque<Reference>::operator[];
 		using std::deque<Reference>::insert;
 		using std::deque<Reference>::erase;
 		using std::deque<Reference>::back;
@@ -675,6 +677,9 @@ namespace meat {
 													 std::ostream &data_stream) const;
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
 	};
+
+#define LIST(ref) (dynamic_cast<meat::List &>(*(ref)))
+#define CONST_LIST(ref) (dynamic_cast<const meat::List &>(*(ref)))
 
 	/****************************************************************************
 	 */
@@ -709,6 +714,9 @@ namespace meat {
 													 std::ostream &data_stream) const;
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
 	};
+
+#define INDEX(ref) (dynamic_cast<meat::Index &>(*(ref)))
+#define CONST_INDEX(ref) (dynamic_cast<const meat::Index &>(*(ref)))
 
 	/** A quick way of resolving a reference to the Class class Object.
 	 * @param initializing Used internally during initialization, not to be

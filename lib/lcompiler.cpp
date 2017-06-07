@@ -158,7 +158,7 @@ Reference compiler::LibraryBuilder::new_class(Reference &super,
                                               const char *name) {
   Reference cls = new ClassBuilder(*this, super, name);
 	Reference &classes = this->property(1);
-	(dynamic_cast<meat::List &>(*classes)).push_back(cls);
+	LIST(classes).push_back(cls);
   return cls;
 }
 
@@ -183,7 +183,7 @@ void compiler::LibraryBuilder::write() {
     List::const_iterator cit;
 
     // Create all the class methods and vtables.
-    List &classes = (List &)(*(this->property(1)));
+    List &classes = LIST(this->property(1));
     for (cit = classes.begin(); cit != classes.end(); cit++) {
       cppcode += ((ClassBuilder &)(*(*cit))).cpp_methods();
     }
@@ -325,7 +325,7 @@ bool compiler::LibraryBuilder::is_cpp() const {
   List::const_iterator mit;
 
   // Check the methods to see if any of them are cpp methods.
-  List &classes = (List &)(*(this->property(1)));
+  List &classes = LIST(this->property(1));
   for (mit = classes.begin(); mit != classes.end(); mit++) {
     if (((ClassBuilder &)(*(*(mit)))).is_cpp()) {
       return true;
@@ -367,7 +367,7 @@ meat::compiler::ClassBuilder::obj_property(const std::string &name) {
   std::cout << "COMPILE: Adding property " << name << " to class."
             << std::endl;
 #endif /* DEBUG */
-  List &properties = (List &)(*(this->property(1)));
+  List &properties = LIST(this->property(1));
 
   for (uint8_t index = 0; index < properties.size(); index++) {
     if (*(properties.at(index)) == name.c_str()) return index;
@@ -386,7 +386,7 @@ uint8_t compiler::ClassBuilder::cls_property(const std::string &name) {
   std::cout << "COMPILE: Adding class property " << name << " to class."
             << std::endl;
 #endif /* DEBUG */
-  List &cls_properties = (List &)(*(this->property(2)));
+  List &cls_properties = LIST(this->property(2));
 
   for (uint8_t index = 0; index < cls_properties.size(); index++) {
     if (*(cls_properties.at(index)) == name.c_str()) return index;
@@ -403,7 +403,7 @@ uint8_t compiler::ClassBuilder::cls_property(const std::string &name) {
 int16_t compiler::ClassBuilder::have_obj_property(const std::string &name)
   const {
 
-  List &properties = (List &)(*(this->property(1)));
+  List &properties = LIST(this->property(1));
 
   for (uint8_t index = 0; index < properties.size(); index++) {
     if (*(properties.at(index)) == name.c_str()) return index;
@@ -417,7 +417,7 @@ int16_t compiler::ClassBuilder::have_obj_property(const std::string &name)
 
 int16_t compiler::ClassBuilder::have_cls_property(const std::string &name)
   const {
-  List &cls_properties = (List &)(*(this->property(2)));
+  List &cls_properties = LIST(this->property(2));
 
   for (uint8_t index = 0; index < cls_properties.size(); index++) {
     if (*(cls_properties.at(index)) == name.c_str()) return index;
@@ -436,8 +436,8 @@ void compiler::ClassBuilder::create_class() const {
             << std::endl;
 #endif /* DEBUG */
 
-  List &properties = (List &)(*(this->property(1)));
-  List &cls_properties = (List &)(*(this->property(2)));
+  List &properties = LIST(this->property(1));
+  List &cls_properties = LIST(this->property(2));
 
   meat::Class *cls =
     new meat::Class((Reference &)super,
@@ -568,8 +568,8 @@ std::string meat::compiler::ClassBuilder::cpp_methods() {
 
   List::const_iterator pit;
   unsigned int c;
-  List &obj_props = (List &)(*(this->property(1)));
-  List &cls_props = (List &)(*(this->property(2)));
+  List &obj_props = LIST(this->property(1));
+  List &cls_props = LIST(this->property(2));
 
   if (obj_props.size() > 0) {
     for (pit = obj_props.begin(), c = 0; pit != obj_props.end(); pit++, c++) {
@@ -601,7 +601,7 @@ std::string meat::compiler::ClassBuilder::cpp_methods() {
 		vtable_it->func_name = "{.offset = 0}";
 	}
   if (method_count() > 0) {
-    Index &methods = (Index &)(*(this->property(3)));
+    Index &methods = INDEX(this->property(3));
     //std::vector<struct _c_vtable_entry_s> vtable;
 
     Index::const_iterator mit;
@@ -682,7 +682,7 @@ std::string meat::compiler::ClassBuilder::cpp_methods() {
 		vtable_it->func_name = "{.offset = 0}";
 	}
   if (class_method_count() > 0) {
-    Index &methods = (Index &)(*(this->property(4)));
+    Index &methods = INDEX(this->property(4));
 
     Index::const_iterator mit;
     for (mit = methods.begin(); mit != methods.end(); mit++) {
@@ -785,9 +785,9 @@ std::string meat::compiler::ClassBuilder::cpp_new_class() const {
   hex << ((Class &)(*super)).get_hash_id();
 
   cppcode += "\n  cls = new meat::Class(meat::Class::resolve(" + hex.str() +
-    "), " + ::to_string(((List &)*(this->property(2))).size()) + ", " +
-    ::to_string(((List &)*(this->property(1))).size() +
-                CONST_CLASS(super).get_obj_properties()) + ");\n";
+    "), " + ::to_string(LIST(this->property(2)).size()) + ", " +
+    ::to_string(LIST(this->property(1)).size() +
+								CONST_CLASS(super).get_obj_properties()) + ");\n";
 
   if (!(this->property(5) == meat::Null())) {
       cppcode += "  cls->set_constructor(" + cooked_name + "_constructor);\n";
@@ -853,7 +853,7 @@ void meat::compiler::ClassBuilder::command(Tokenizer &tokens) {
                                                 (tokens[1] == "function"));
 
           Reference name = new Object(method_name.c_str());
-          ((Index&)*(this->property(4)))[name] = mb;
+          INDEX(this->property(4))[name] = mb;
           mb->property(0) = name;
 
           for (int c = 3; c < body_index; c += 2) {
@@ -903,7 +903,7 @@ void meat::compiler::ClassBuilder::command(Tokenizer &tokens) {
           MethodBuilder *mb = new MethodBuilder(*this,
                                                 (tokens[0] == "function"));
           Reference name = new Object(method_name.c_str());
-          ((Index&)*(this->property(3)))[name] = mb;
+          INDEX(this->property(3))[name] = mb;
           mb->property(0) = name;
 
           // Add the method parameters to the method build..
@@ -939,7 +939,7 @@ void meat::compiler::ClassBuilder::command(Tokenizer &tokens) {
 
 uint8_t meat::compiler::ClassBuilder::method_count() const {
 	if (m_count == 0) {
-		Index &methods = (Index &)(*(this->property(3)));
+		Index &methods = INDEX(this->property(3));
 		return methods.size();
 	} else
 		return m_count;
@@ -951,7 +951,7 @@ uint8_t meat::compiler::ClassBuilder::method_count() const {
 
 uint8_t meat::compiler::ClassBuilder::class_method_count() const {
 	if (cm_count == 0) {
-		Index &methods = (Index &)(*(this->property(4)));
+		Index &methods = INDEX(this->property(4));
 		return methods.size();
 	} else
 		return cm_count;
@@ -979,16 +979,16 @@ meat::compiler::MethodBuilder::MethodBuilder(ClassBuilder &cb, bool is_cpp)
 void meat::compiler::MethodBuilder::compile() {
   if (!is_cpp) {
     Reference super = cb->get_super();
-    List &properties = (List &)(*(cb->property(1)));
-    List &cls_properties = (List &)(*(cb->property(2)));
+    List &properties = LIST(cb->property(1));
+    List &cls_properties = LIST(cb->property(2));
 
     meat::compiler::Method method(properties,
-                                   CLASS(super).get_obj_properties(),
-                                   cls_properties, 0);
+																	CLASS(super).get_obj_properties(),
+																	cls_properties, 0);
     astree = (void *)&method;
 
     // Add the parameters to the AST Method node.
-    List &parameters = (List &)(*(this->property(1)));
+    List &parameters = LIST(this->property(1));
     meat::List::iterator it;
     for (it = parameters.begin(); it != parameters.end(); it++)
       method.add_parameter((*it)->to_string());
@@ -1064,8 +1064,8 @@ std::string meat::compiler::MethodBuilder::cpp_method(const char *prelim) {
 
     List::const_iterator it;
     int i;
-    for (i = 0, it = ((List &)*(this->property(1))).begin();
-         it != ((List &)*(this->property(1))).end();
+    for (i = 0, it = LIST(this->property(1)).begin();
+         it != LIST(this->property(1)).end();
          it++, i++) {
       std::ostringstream convert;
       convert << i;
@@ -1076,7 +1076,7 @@ std::string meat::compiler::MethodBuilder::cpp_method(const char *prelim) {
     code += this->property(2)->to_string();
     code += "\n}\n\n";
 
-    locals = ((List &)*(this->property(1))).size();
+    locals = LIST(this->property(1)).size();
 
     return code;
   }
@@ -1143,7 +1143,7 @@ void meat::compiler::MethodBuilder::command(Tokenizer &tokens) {
  ********************************/
 
 void compiler::MethodBuilder::add_parameter(const std::string &name) {
-  List &parameters = dynamic_cast<List &>(*(this->property(1)));
+  List &parameters = LIST(this->property(1));
   parameters.push_back(new Object(name.c_str()));
 }
 
