@@ -266,20 +266,32 @@ void meat::data::Library::import() {
   std::ifstream lib_file;
   std::deque<std::string>::iterator it = get_path().begin();
 
+	bool found = false;
   for (; it != get_path().end(); it++) {
     if (fexists(((*it) + (this->name + ".mlib")).c_str())) {
       import_from_archive(((*it) + (this->name + ".mlib")).c_str());
-      return;
+			found = true;
+			break;
     } else if (fexists(((*it) + (this->name + DLLEXT)).c_str())) {
       // The .mlib failed, now try try to open a native library file.
       import_from_native(((*it) + (this->name + DLLEXT)).c_str(),
                          this->name.c_str());
-      return;
+			found = true;
+			break;
     }
   }
+	if (!found) {
+		/* OMG, we couldn't find the library. Must be a vegetarian :P */
+		throw meat::Exception(std::string("Unable to find library ") +
+													this->name);
+	}
 
-  /* OMG, we couldn't find the library. Must be a vegetarian :P */
-  throw meat::Exception(std::string("Unable to find library ") + this->name);
+	// Initialize all the imported classes.
+	std::deque<Reference>::iterator class_it = classes.begin();
+	for (; class_it != classes.end(); ++class_it) {
+		Reference context = message(*class_it, "initialize", meat::Null());
+		meat::execute(context);
+	}
 }
 
 /*********************************
