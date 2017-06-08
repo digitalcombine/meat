@@ -28,16 +28,22 @@
 #include <vector>
 #include <deque>
 #include <iostream>
+#if defined (_WIN32) || defined (_WIN64)
+#include <windows.h>
+#endif
 
 #ifndef _MEAT_H
 #define _MEAT_H
 
-#if defined(__WIN32__)
-#   define DLL_EXPORT __declspec(dllexport)
-#   define DLL_IMPORT __declspec(dllimport)
+#if defined (_WIN32) || defined (_WIN64)
+#  ifdef DLL_EXPORT
+#    define DECLSPEC __declspec(dllexport)
+#  else
+#    define DECLSPEC __declspec(dllimport)
+#  endif
 #elif defined(__linux__)
-#   define DLL_EXPORT __attribute__((visibility("default")))
-#   define DLL_IMPORT
+#   define DECLSPEC __attribute__((visibility("default")))
+#   define DECLSPEC
 #   if __GNUC__ > 4
 #       define DLL_LOCAL __attribute__((visibility("hidden")))
 #   else
@@ -45,12 +51,6 @@
 #   endif
 #else
 #   error("Don't know how to export shared object libraries")
-#endif
-
-#ifdef MEAT_BUILD
-#define DECLSPEC DLL_EXPORT
-#else
-#define DECLSPEC DLL_IMPORT
 #endif
 
 /** @ns */
@@ -78,7 +78,7 @@ namespace meat {
 
 	/** Initializes the scripting engine.
 	 */
-	DECLSPEC void initialize(int argc, const char *argv[]);
+	void DECLSPEC initialize(int argc, const char *argv[]);
 
 	/** Creates a new message context to an Object.
 	 * @param Object The Object to send the message to.
@@ -88,15 +88,15 @@ namespace meat {
 	 * @see meat::execute()
 	 * @see hash()
 	 */
-	DECLSPEC Reference message(Reference object,
+	Reference DECLSPEC message(Reference object,
 														 uint32_t hash_id,
 														 Reference context);
 
-	DECLSPEC Reference message(Reference object,
+	Reference DECLSPEC message(Reference object,
 														 const char *method,
 														 Reference context);
 
-	DECLSPEC Reference message_super(Reference object,
+	Reference DECLSPEC message_super(Reference object,
 																	 uint32_t hash_id,
 																	 Reference context);
 
@@ -105,7 +105,7 @@ namespace meat {
 	 * @return The results of the message.
 	 * @see meat::message()
 	 */
-	DECLSPEC Reference execute(Reference context);
+	Reference DECLSPEC execute(Reference context);
 
 #ifdef DEBUG
 	std::ostream &operator <<(std::ostream &out, Class &cls);
@@ -367,11 +367,11 @@ namespace meat {
 #endif /* DEBUG */
 		friend void meat::initialize(int argc, const char *argv[]);
 		friend Reference message(Reference object,
-														 uint32_t hash_id,
-														 Reference context);
+                                      uint32_t hash_id,
+                                      Reference context);
 		friend Reference message_super(Reference object,
-																	 uint32_t hash_id,
-																	 Reference context);
+                                            uint32_t hash_id,
+                                            Reference context);
 		friend Reference execute(Reference context);
 
 	private:

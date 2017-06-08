@@ -1617,9 +1617,9 @@ static meat::Reference Text_om_get_to_(meat::Reference context) {
   meat::Reference start = CONTEXT(context).get_param(0);
   meat::Reference end = CONTEXT(context).get_param(1);
 
-  int32_t start_pos = start->to_int() - 1;
-  int32_t end_pos = end->to_int();
-  int32_t len = end_pos - start_pos;
+  meat::int32_t start_pos = start->to_int() - 1;
+  meat::int32_t end_pos = end->to_int();
+  meat::int32_t len = end_pos - start_pos;
   char new_string[len + 1];
   std::strncpy(new_string, &((self->to_string())[start_pos]), len);
   new_string[len] = 0;
@@ -1639,7 +1639,7 @@ static meat::Reference Text_om_isEmpty(meat::Reference context) {
 static meat::Reference Text_om_length(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  return new meat::Object((int32_t)std::strlen(self->to_string()));
+  return new meat::Object((meat::int32_t)std::strlen(self->to_string()));
 }
 
 static meat::vtable_entry_t TextMethods[] = {
@@ -1833,7 +1833,7 @@ static meat::Reference List_cm_size(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
 
-  return new meat::Object((int32_t)((meat::List &)(*self)).size());
+  return new meat::Object((meat::int32_t)((meat::List &)(*self)).size());
 }
 
 // method swap:with:
@@ -1950,7 +1950,7 @@ static meat::Reference Index_om_set_to_(meat::Reference context) {
 static meat::Reference Index_om_size(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  int32_t size = ((meat::Index &)(*self)).size();
+  meat::int32_t size = ((meat::Index &)(*self)).size();
   return new meat::Object(size);
 }
 
@@ -2034,8 +2034,19 @@ static meat::Reference Application_cm_parameter_(meat::Reference context) {
 static meat::Reference Application_cm_getEnviron_(meat::Reference context) {
   meat::Reference key = CONTEXT(context).get_param(0);
 
-#if defined(__WIN32__)
-#  error("TODO Environment access")
+#if defined(_WIN32) || defined(_WIN64)
+  LPTSTR value = new TCHAR[4096];
+  DWORD result;
+  result = GetEnvironmentVariable(key->to_string(), value, 4096);
+  if (result == 0) {
+    delete[] value;
+    return new meat::Object("");
+  } else {
+    meat::Reference retvalue = new meat::Object(value);
+    delete[] value;
+    return retvalue;
+  }
+
 #elif defined(__linux__)
   char *value = getenv(key->to_string());
   if (value != (char *)0)
@@ -2052,15 +2063,15 @@ static meat::Reference Application_cm_setEnviron_to_(meat::Reference context) {
   meat::Reference key = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
 
-#if defined(__WIN32__)
-#  error("TODO Environment access")
+#if defined(_WIN32) || defined(_WIN64)
+  SetEnvironmentVariable(key->to_string(),
+                         value->to_string());
 #elif defined(__linux__)
   setenv(key->to_string(), value->to_string(), 1);
-
-  return meat::Null();
 #else
 #  error("Don't know how to set the system environment")
 #endif
+  return null;
 }
 
 static meat::vtable_entry_t ApplicationCMethods[] = {

@@ -562,13 +562,13 @@ void init_Compiler(meat::data::Library &library) {
 
 	/* Create the Comiler.Library class. */
 	cls = new meat::Class("Object", 2);
-	library.add(cls, "Compiler.Library");
+	library.add(cls, "Grinder.Library");
 
 	/* Create the Compiler.Class class */
 	cls = new meat::Class("Object", 6);
-	library.add(cls, "Compiler.Class");
+	library.add(cls, "Grinder.Class");
 
 	/* Create the Compiler.Method class. */
 	cls = new meat::Class("Object", 3);
-	library.add(cls, "Compiler.Method");
+	library.add(cls, "Grinder.Method");
 }

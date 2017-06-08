@@ -65,9 +65,7 @@ case $host_os in
     AC_CHECK_LIB([dl], [dlopen], ,
          [AC_MSG_ERROR([Library dl missing for your platform])])
     ;;
-  windows*)
-    AC_CHECK_LIB([kernel32], [LoadLibrary], ,
-         [AC_MSG_ERROR([Library kernel32 missing for your platform])])
+  mingw*)
     ;;
   *)
     # Default Case
@@ -93,5 +91,5 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  tests/Makefile
                  include/Makefile
-								 docs/Makefile])
+	               docs/Makefile])
 AC_OUTPUT

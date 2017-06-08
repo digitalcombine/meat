@@ -29,6 +29,8 @@
 
 #if defined (__linux__)
 typedef void *nativelib_t;
+#elif defined (_WIN32) || defined (_WIN64)
+typedef HMODULE nativelib_t;
 #endif
 
 /** @ns */
@@ -42,16 +44,16 @@ namespace meat {
     typedef void* dlhandle;
 #endif
 
-		/** Internal command to initialize the Meat classes.
-		 */
+    /** Internal command to initialize the Meat classes.
+     */
     DECLSPEC void initialize();
 
     extern void (*compiler_import)(const char *name);
 
-		static const int FL_ARCHIVE = 1;
-		static const int FL_LIBRARY = 2;
-		static const int FL_UNKNOWN = -1;
-		DECLSPEC int fl_type(const std::string &fname);
+    static const int FL_ARCHIVE = 1;
+    static const int FL_LIBRARY = 2;
+    static const int FL_UNKNOWN = -1;
+    DECLSPEC int fl_type(const std::string &fname);
 
     /** Access to class library files.
      */
@@ -59,9 +61,9 @@ namespace meat {
     public:
       static Library *create(const char *name);
       static Library *import(const char *name);
-			/**
-			 */
-			static Reference execute(const char *name);
+      /**
+       */
+      static Reference execute(const char *name);
       static void include(const std::string &includes);
       static const std::string &include();
       static void unload(const char *name);
@@ -76,24 +78,24 @@ namespace meat {
 
       void add(Class *cls, const char *id);
 
-			void set_application(const std::string &name);
+      void set_application(const std::string &name);
 
       const char *get_name() { return name.c_str(); }
 
-			/** Creates and writes a new Meat library file if the library was
-			 * created with the create() method.
-			 */
+      /** Creates and writes a new Meat library file if the library was
+       * created with the create() method.
+       */
       void write();
 
-			const std::deque<std::string> &get_imports() const { return imports; }
+      const std::deque<std::string> &get_imports() const { return imports; }
 
-			const std::deque<Reference> &get_classes() const { return classes; }
+      const std::deque<Reference> &get_classes() const { return classes; }
 
-		protected:
-			/* These are only used when compiling a new class library file. */
+    protected:
+      /* These are only used when compiling a new class library file. */
       std::deque<std::string> imports;
       std::deque<Reference> classes;
-			std::string includes;
+      std::string includes;
 
     private:
       std::string name;
@@ -101,7 +103,7 @@ namespace meat {
 
       bool is_native;
       nativelib_t dlhandle;
-			Reference application;
+      Reference application;
 
       Library(const char *name);
 
