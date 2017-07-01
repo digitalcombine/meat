@@ -30,7 +30,7 @@
 #include <testing.h>
 #endif
 
-using namespace meat::compiler;
+using namespace meat::grinder;
 
 /******************************************************************************
  * LocalVariable Class

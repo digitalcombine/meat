@@ -15,5 +15,5 @@ if TESTING
 grinder_SOURCES += testing.cpp misc.cpp
 endif
 grinder_CPPFLAGS = -I@top_srcdir@/include
-grinder_LDADD = @top_srcdir@/src/libmeat.la @top_srcdir@/lib/Compiler.la
+grinder_LDADD = @top_srcdir@/src/libmeat.la @top_srcdir@/lib/Grinder.la
 grinder_LDFLAGS = -rdynamic

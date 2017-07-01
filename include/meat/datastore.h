@@ -44,11 +44,13 @@ namespace meat {
     typedef void* dlhandle;
 #endif
 
+		typedef void (*compiler_import_t)(const char *name);
+
     /** Internal command to initialize the Meat classes.
      */
-    DECLSPEC void initialize();
+    DECLSPEC void initialize(compiler_import_t = NULL);
 
-    extern void (*compiler_import)(const char *name);
+		//extern void (*compiler_import)(const char *name);
 
     static const int FL_ARCHIVE = 1;
     static const int FL_LIBRARY = 2;
@@ -61,16 +63,17 @@ namespace meat {
     public:
       static Library *create(const char *name);
       static Library *import(const char *name);
-      /**
+
+      /** If the library has an application
        */
       static Reference execute(const char *name);
       static void include(const std::string &includes);
       static const std::string &include();
-      static void unload(const char *name);
+
+			static Library *get(const std::string &name);
+			static void unload(const char *name);
 
       virtual ~Library() throw();
-
-      void import();
 
       static void add_path(const char *path);
 
@@ -79,6 +82,8 @@ namespace meat {
       void add(Class *cls, const char *id);
 
       void set_application(const std::string &name);
+
+			void *dlsymbol(const std::string &name);
 
       const char *get_name() { return name.c_str(); }
 
@@ -96,6 +101,10 @@ namespace meat {
       std::deque<std::string> imports;
       std::deque<Reference> classes;
       std::string includes;
+
+			/**
+			 */
+      void import();
 
     private:
       std::string name;

@@ -35,7 +35,7 @@
 namespace meat {
 
 	/** @ns */
-	namespace compiler {
+	namespace grinder {
 
 		/** Initialize the Meat compiler.
 		 */
@@ -251,14 +251,14 @@ namespace meat {
 		/**************************************************************************
 		 */
 
-		class DECLSPEC ArchiveBuilder : public Language {
+		class DECLSPEC Interpreter : public Language {
 		public:
-			ArchiveBuilder();
-			virtual ~ArchiveBuilder() throw();
+			Interpreter();
+			virtual ~Interpreter() throw();
 
 			virtual void command(Tokenizer &tokens);
 
-			void create(const char *name);
+			void create(const std::string &name);
 
 			void write();
 
@@ -274,7 +274,7 @@ namespace meat {
 		};
 
 		/**************************************************************************
-		 * LibraryBuilder Class
+		 * Library Class
 		 *
 		 * Property 0 Library Name
 		 * Property 1 List of Classes
@@ -282,15 +282,17 @@ namespace meat {
 
 		/** Language parser for compiling library files.
 		 */
-		class DECLSPEC LibraryBuilder : public Language, public Object {
+		class DECLSPEC Library : public Language, public Object {
 		public:
-			/** Construct a new LibraryBuilder object.
+			/** Construct a new Library object.
 			 */
-			LibraryBuilder(const char *library_name);
+			Library(Reference klass, uint8_t properties);
 
-			/** Clean up a LibraryBuilder object.
+			/** Clean up a Library object.
 			 */
-			virtual ~LibraryBuilder() throw();
+			virtual ~Library() throw();
+
+			void register_as(const std::string &name);
 
 			Reference new_class(Reference &super, const char *name);
 
@@ -356,16 +358,16 @@ namespace meat {
 
 			virtual void command(Tokenizer &tokens);
 
-			friend class LibraryBuilder;
+			friend class Library;
 
 		private:
 			Reference super;
-			LibraryBuilder &library;
+			Library &library;
 			uint16_t cpp_bytecode;
 			uint8_t m_count;
 			uint8_t cm_count;
 
-			ClassBuilder(LibraryBuilder &library, Reference &super,
+			ClassBuilder(Library &library, Reference &super,
 									 const char *cls_name);
 
 			uint8_t method_count() const;
@@ -423,7 +425,7 @@ namespace meat {
 			DECLSPEC bool is_float(const std::string &value, float_t *res);
 		};
 
-	};
-};
+	}; /* namespace compiler */
+}; /* namespace meat */
 
 #endif /* _MEAT_COMPILER_H */

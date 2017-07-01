@@ -41,14 +41,14 @@ meat::Reference meat::execute(Reference context) {
 	} else	if (CONTEXT(context).flags == meat::Context::PRIMATIVE) {
 		/* Here we execute a c++ native function */
 
-		CONTEXT(context).locals[2] = context.weak(); // context
+		CONTEXT(context).set_local(2, context.weak()); // context
 		Reference result = CONTEXT(context).pointer(context);
 		CONTEXT(context).set_result(result);
+
 		return result;
 
 	} else {
 		/* The bytecode interpreter starts here */
-
 		meat::uint16_t ip = CONTEXT(context).ip;
 		const uint8_t *code = CLASS(CONTEXT(context).get_class()).get_bytecode();
 		CONTEXT(context).set_local(2, context.weak()); // context
@@ -338,7 +338,7 @@ meat::Reference meat::execute(Reference context) {
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": CLASS " << std::dec
 									<< (unsigned int)code[ip + 1] << " "
-									<< std::hex << (unsigned int)endian::read_be(*class_id)
+									<< itohex(endian::read_be(*class_id))
 									<< std::endl;
 #endif /* DEBUG */
 

@@ -1,0 +1,177 @@
+# Sample template of the grinder compiler classes.
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Notes
+#   Since we need gitgo to compile this file, the 'ᶲ' character found in all
+#  the class names is to prevent collisions with the builtin in classes. Once
+#  the cpp file is generated then the ᶲ characters are stripped out.
+#   The generate cpp file is still not valid because all the hash values are
+#  included in the name hashing...
+
+Library include: {
+#include <meat/compiler.h>
+}
+
+#==============================================================================
+# Grinder.Library Class
+
+Object subClass: Grinder.Libraryᶲ body: {
+  
+  property name
+  property classes
+  property documentation
+  
+  constructor {
+    return new meat::grinder::Library(klass, properties);    
+  }
+  
+  method initialize {
+    classes = [List new]
+  }
+  
+  class function new: libraryName {
+    meat::Reference new_object = CLASS(klass).new_object();
+    
+    name = libraryName;
+    (dynamic_cast<meat::grinder::Library &>(*new_object)).register_as(name->to_string());
+    
+    return new_object;
+  }
+  
+  function import: libraryName {
+    dynamic_cast<meat::grinder::Library &>
+      (*self).add_import(libraryName->to_string());
+    return null;
+  }
+  
+  method getName {
+    context return: name
+  }
+  
+  method renameTo: newName {
+    Exception throw: "Currently unable to rename libraries."
+    name = [newName asText]
+  }
+  
+  method addClass: theClass {
+  }
+  
+  method getClass: className {
+    classes forEach: .cls do: {
+      [className == [.cls getName]] isTrue: {
+        context return: .cls
+      }
+    }
+    Exception throw: [[["Class " + name] + " not found in library "] + name]
+  }
+  
+  method getClassList {
+    names = [List new]
+    classes forEach: .cls do: {
+      names append: [.cls getName]
+    }
+    context return: names
+  }
+  
+  method removeClass: className {
+    theClass = [self getClass: className]
+    classes remove: theClass
+  }
+  
+  function setApplicationClass: className {
+    dynamic_cast<meat::grinder::Library &>
+      (*self).set_application(className->to_string());
+    return null;
+  }
+  
+  function compile {
+    dynamic_cast<meat::grinder::Library &>(*self).write();
+    return null;
+  }
+}
+
+#==============================================================================
+# Grinder.Class Class
+
+Object subClass: Grinder.Classᶲ body: {
+
+  property name
+  property properties
+  property classProperties
+  property methods
+  property classMethods
+  property constr
+  
+  constructor {
+    return new meat::grinder::Class(klass, properties);    
+  }
+  
+  method initialize {
+    properties = [List new]
+    classProperties = [List new]
+    methods = [Index new]
+    classMethods = [Index new]
+  }
+  
+  method subClassFrom: superClass as: className {
+  }
+  
+  method getName {
+    context return: name
+  }
+  
+  method addProperty: propertyName {
+    properties push: [propertyName asText]
+  }
+  
+  method getPropertiesList {
+    context return: [properties makeCopy]
+  }
+  
+  method addClassProperty: propertyName {
+    classProperties push: [propertyName asText]
+  }
+  
+  method getClassPropertiesList {
+    context return: [classProperties clone]
+  }
+}
+
+#==============================================================================
+# Grinder.Method Class
+
+Object subClass: Grinder.Methodᶲ body: {
+
+  property name
+  property parameters
+  property body
+  property documentation
+  
+  method initialize {
+    parameters = [List new]
+  }
+  
+  method getBody {
+    context return: body
+  }
+  
+  method setBody: newBody {
+    body = [newBody asText]
+  }
+}

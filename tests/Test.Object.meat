@@ -61,12 +61,6 @@ OTest2 subClass: OTest3 body: {
 
 Test.Suite subClass: Test.Object body: {
 
-  # Creates a new TestSuite object.
-  #class method new {
-  #  self newObject
-  #  context return: self
-  #}
-
   method setup {
     other = ""
   

@@ -39,9 +39,13 @@
 #include <testing.h>
 #endif
 
+std::deque<const char *> source_files;
+std::string out_file;
+std::string app_class;
+
 meat::Reference library;
 
-#define LIBRARY ((meat::compiler::LibraryBuilder &)(*(library)))
+//#define LIBRARY ((meat::grinder::LibraryBuilder &)(*(library)))
 
 // This is found in src/meat.cpp
 extern void (*class_compiler)(meat::Reference &super, const char *cls_name,
@@ -67,33 +71,130 @@ static void help() {
  */
 static void classbuilder_int(meat::Reference &super, const char *cls_name,
                              const char *cls_body) {
-  meat::Reference cb = LIBRARY.new_class(super, cls_name);
+  meat::Reference cb =
+		(dynamic_cast<meat::grinder::Library &>(*library)).new_class(super,
+																																 cls_name);
   std::string body(cls_body);
   std::istringstream is(body);
 
-  ((meat::compiler::ClassBuilder &)(*cb)).execute(is);
+  ((meat::grinder::ClassBuilder &)(*cb)).execute(is);
 
-  ((meat::compiler::ClassBuilder &)(*cb)).create_class();
+  ((meat::grinder::ClassBuilder &)(*cb)).create_class();
 }
 
 /** Used for the Library import method when the compiler is initialized.
  */
-static void libcomp_import(const char *name) {
-  LIBRARY.add_import(name);
+static void compiler_import(const char *name) {
+	meat::Reference new_ctx = message(library, "import:", meat::Null());
+	CONTEXT(new_ctx).set_param(0, new meat::Object(std::string(name)));
+	execute(new_ctx);
+}
+
+/*********************
+ * build_archive_app *
+ *********************/
+
+typedef void * interp_t;
+typedef interp_t (*create_interp_fn)(const std::string &);
+typedef void (*exec_interp_fn)(interp_t, std::istream &);
+typedef void (*close_interp_fn)(interp_t);
+
+static void build_archive_app() {
+  meat::data::Library *grinder = meat::data::Library::get("Grinder");
+
+	create_interp_fn create_interpreter =
+		(create_interp_fn)grinder->dlsymbol("create_interpreter");
+	exec_interp_fn exec_interpreter =
+		(exec_interp_fn)grinder->dlsymbol("exec_interpreter");
+	close_interp_fn close_interpreter =
+		(close_interp_fn)grinder->dlsymbol("close_interpreter");
+
+	interp_t interp = create_interpreter(out_file);
+
+	// Go through each file and compile them
+	for (std::deque<const char *>::iterator it = source_files.begin();
+			 it != source_files.end();
+			 ++it) {
+
+#ifdef DEBUG
+		std::cout << "DEBUG: Compiling " << *it << std::endl;
+#endif /* DEBUG */
+
+		std::ifstream meat_file;
+
+		meat_file.open(*it, std::ios::in);
+
+		if (meat_file.is_open()) {
+			exec_interpreter(interp, meat_file);
+			meat_file.close();
+		} else {
+			std::cerr << "ERROR: Unable to open " << *it << std::endl;
+			return;
+		}
+	}
+
+	close_interpreter(interp);
+}
+
+/*********************
+ * build_library_app *
+ *********************/
+
+typedef void (*exec_library_fn)(meat::Reference, std::istream &);
+
+static void build_library_app() {
+	meat::data::Library *grinder = meat::data::Library::get("Grinder");
+	exec_library_fn exec_library =
+		(exec_library_fn)grinder->dlsymbol("exec_library");
+
+	meat::Reference context =
+		meat::message(meat::Class::resolve("Grinder.Library"),
+									"new:", meat::Null());
+	CONTEXT(context).set_param(0, new meat::Object(out_file));
+	library = meat::execute(context);
+
+	// Go through each file and compile them
+	for (std::deque<const char *>::iterator it = source_files.begin();
+			 it != source_files.end();
+			 ++it) {
+
+#ifdef DEBUG
+		std::cout << "DEBUG: Compiling " << *it << std::endl;
+#endif /* DEBUG */
+
+		std::ifstream meat_file;
+
+		meat_file.open(*it, std::ios::in);
+
+		if (meat_file.is_open()) {
+			exec_library(library, meat_file);
+			meat_file.close();
+		} else {
+			std::cerr << "ERROR: Unable to open " << *it << std::endl;
+			return;
+		}
+	}
+
+	if (not app_class.empty()) {
+		context = message(library, "setApplicationClass:", meat::Null());
+		CONTEXT(context).set_param(0, new meat::Object(app_class));
+		meat::execute(context);
+	}
+
+	context = message(library, "compile", meat::Null());
+	meat::execute(context);
+
+	library = NULL;
 }
 
 /******************************************************************************
- * Script Compiler Entry
+ * Meat Ginder Entry
  */
 int main(int argc, const char *argv[]) {
 
-  std::deque<const char *> meat_files;
-  std::string lib_name, cls_name;
-  meat::compiler::ArchiveBuilder arch_builder;
-
   /* The compiler state specified by the command line options. */
   static enum {
-    UNSET, BUILD_LIB, BUILD_ARCHIVE
+    UNSET, BUILD_LIBRARY, BUILD_ARCHIVE
   } state = UNSET;
 
 #ifdef DEBUG
@@ -104,8 +205,7 @@ int main(int argc, const char *argv[]) {
 #endif
 #endif
 
-  meat::initialize(argc, argv);
-  meat::data::Library::import("Compiler");
+  meat::initialize(argc, argv, compiler_import, classbuilder_int);
 
 #ifdef TESTING
   meat::test::run_tests();
@@ -126,7 +226,7 @@ int main(int argc, const char *argv[]) {
 
       case 'l': // Build library option
         if (state != UNSET) {
-          std::cerr << "FATAL: option -l/-a cannot be used more that once."
+          std::cerr << "FATAL: options -l/-a cannot be used at the same time."
                     << std::endl;
           return 1;
         }
@@ -135,20 +235,19 @@ int main(int argc, const char *argv[]) {
         std::cout << "DEBUG: Compiling library file " << argv[c + 1] << ".lib"
                   << std::endl;
 #endif /* DEBUG */
-        Reference context = message(meat::Class::resolve("")
-        lib_name = argv[c + 1];
-        state = BUILD_LIB;
+        out_file = argv[c + 1];
+        state = BUILD_LIBRARY;
         c++;
         break;
 
       case 'c':
-        cls_name = argv[c + 1];
+        app_class = argv[c + 1];
         c++;
         break;
 
       case 'a': // Build archive option
         if (state != UNSET) {
-          std::cerr << "FATAL: option -l/-a cannot be used more that once."
+          std::cerr << "FATAL: option -l/-a cannot be used at the same time."
                     << std::endl;
           return 1;
         }
@@ -157,15 +256,13 @@ int main(int argc, const char *argv[]) {
         std::cout << "DEBUG: Compiling archive " << argv[c + 1]
                   << std::endl;
 #endif /* DEBUG */
-        arch_builder.create(argv[c + 1]);
+				out_file = argv[c + 1];
         state = BUILD_ARCHIVE;
         c++;
         break;
 
       case '#': // Display a hash value used in the vtables.
         std::cout << "Hash value for \"" << argv[c + 1] << "\":\n  ";
-        //std::cout << std::setw(8) << std::setfill('0') << std::setbase(16)
-        //          << std::showbase;
         std::cout << itohex(hash(argv[c + 1])) << std::endl;
         return 0;
 
@@ -183,80 +280,32 @@ int main(int argc, const char *argv[]) {
         return 1;
       }
     } else {
-      meat_files.push_back(argv[c]);
+      source_files.push_back(argv[c]);
     }
   }
 
-  /***************************
+	/***************************
    * Compile the meat files.
    */
   try{
     // Make sure we have files to compile
-    if (meat_files.size() == 0)
-      throw meat::Exception("No files specified to compile");
+    if (source_files.size() == 0)
+      throw meat::Exception("No source files specified to compile");
 
-    //meat::data::Library::import("Compiler");
+    meat::data::Library::import("Grinder");
 
-    // Go through each file and compile them
-    for (std::deque<const char *>::iterator it = meat_files.begin();
-         it != meat_files.end();
-         ++it) {
-
-#ifdef DEBUG
-      std::cout << "DEBUG: Compiling " << *it << std::endl;
-#endif /* DEBUG */
-
-      std::ifstream meat_file;
-
-      meat_file.open(*it, std::ios::in);
-
-      if (meat_file.is_open()) {
-        switch (state) {
-        case BUILD_LIB: {
-          library = new meat::compiler::LibraryBuilder(lib_name.c_str());
-          meat::data::compiler_import = libcomp_import;
-          class_compiler = classbuilder_int;
-
-          LIBRARY.execute(meat_file);
-
-          if (!cls_name.empty())
-            LIBRARY.set_application(cls_name);
-
-          break;
-        }
-        case BUILD_ARCHIVE:
-          arch_builder.execute(meat_file);
-          break;
-        case UNSET:
-          throw meat::Exception("Option -l or -a not specified, "
-                                 "I don't know what to compile");
-          break;
-        }
-
-        meat_file.close();
-      } else {
-        std::cerr << "ERROR: Unable to open " << *it << std::endl;
-        return 1;
-      }
-    }
-
-    // Write all information to the files.
-    switch (state) {
-    case BUILD_LIB: {
-      LIBRARY.write();
-      /*  Remove the reference here or bad things happen if we leave it to
-       * the end of the program.
-       */
-      library = NULL;
-      break;
-    }
-    case BUILD_ARCHIVE:
-      arch_builder.write();
-      break;
-    case UNSET: // Can't happen but we'll keep the compiler from complaining.
-      break;
-    }
-
+		switch (state) {
+		case BUILD_LIBRARY:
+			build_library_app();
+			break;
+		case BUILD_ARCHIVE:
+			build_archive_app();
+			break;
+		default:
+			throw meat::Exception("Options -l or -a were not specified, "
+														"I don't know what to compile");
+			break;
+		}
   } catch (std::exception &err) {
     library = NULL;
     std::cerr << "UNCAUGHT EXCEPTION: " << err.what() << std::endl;

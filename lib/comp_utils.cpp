@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <cstring>
 
-bool meat::compiler::Utils::is_integer(const std::string &value,
+bool meat::grinder::Utils::is_integer(const std::string &value,
 					int32_t *res) {
   bool neg = false;
   unsigned int c = 0;
@@ -54,7 +54,7 @@ bool meat::compiler::Utils::is_integer(const std::string &value,
   return true;
 }
 
-bool meat::compiler::Utils::is_float(const std::string &value, float_t *res) {
+bool meat::grinder::Utils::is_float(const std::string &value, float_t *res) {
   const char *s_value = value.c_str();
   char *end_ptr;
 

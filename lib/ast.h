@@ -28,7 +28,7 @@
 namespace meat {
 
   /** @ns */
-  namespace compiler {
+  namespace grinder {
 
     class LocalVariable;
     class Method;

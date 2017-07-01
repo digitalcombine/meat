@@ -28,35 +28,35 @@
  * Location Class
  */
 
-meat::compiler::Location::Location()
+meat::grinder::Location::Location()
 	: source(""), line(1), offset(0) {
 }
 
-meat::compiler::Location::Location(const Location &other)
+meat::grinder::Location::Location(const Location &other)
 	: source(other.source), line(other.line), offset(other.offset) {
 }
 
-meat::compiler::Location::~Location() throw() {
+meat::grinder::Location::~Location() throw() {
 }
 
-void meat::compiler::Location::set_source(std::string &source_name) {
+void meat::grinder::Location::set_source(std::string &source_name) {
 	source = source_name;
 }
 
-void meat::compiler::Location::inc_line() {
+void meat::grinder::Location::inc_line() {
 	line++;
 }
 
-void meat::compiler::Location::inc_offset(uint32_t amount) {
+void meat::grinder::Location::inc_offset(uint32_t amount) {
 	offset += amount;
 }
 
-void meat::compiler::Location::set_offset(uint32_t position) {
+void meat::grinder::Location::set_offset(uint32_t position) {
 	offset = position;
 }
 
-meat::compiler::Location &
-meat::compiler::Location::operator =(const Location &other) {
+meat::grinder::Location &
+meat::grinder::Location::operator =(const Location &other) {
 	if (&other != this) {
 		source = other.source;
 		line = other.line;
@@ -71,33 +71,33 @@ meat::compiler::Location::operator =(const Location &other) {
  */
 
 /********************************
- * meat::compiler::Token::Token *
+ * meat::grinder::Token::Token *
  ********************************/
 
-meat::compiler::Token::Token(const std::string &value,
-															meat::compiler::Token::token_t value_type,
-															Location &start, Location &end)
+meat::grinder::Token::Token(const std::string &value,
+														meat::grinder::Token::token_t value_type,
+														Location &start, Location &end)
 	: value_type(value_type), value(value), start(start), end(end) {
 	subst();
 }
 
-meat::compiler::Token::Token(const Token &other)
+meat::grinder::Token::Token(const Token &other)
 	: value_type(other.value_type), value(other.value), start(other.start),
 		end(other.end) {
 }
 
 /*********************************
- * meat::compiler::Token::~Token *
+ * meat::grinder::Token::~Token *
  *********************************/
 
-meat::compiler::Token::~Token() throw() {
+meat::grinder::Token::~Token() throw() {
 }
 
 /********************************
- * meat::compiler::Token::subst *
+ * meat::grinder::Token::subst *
  ********************************/
 
-void meat::compiler::Token::subst() {
+void meat::grinder::Token::subst() {
 #ifdef DEBUG
 	//std::cout << "DEBUG: subst " << value << std::endl;
 #endif
@@ -152,8 +152,8 @@ void meat::compiler::Token::subst() {
 	}
 }
 
-meat::compiler::Token &
-meat::compiler::Token::operator =(const Token &other) {
+meat::grinder::Token &
+meat::grinder::Token::operator =(const Token &other) {
 	if (this != &other) {
 		value_type = other.value_type;
 		value = other.value;
@@ -161,11 +161,11 @@ meat::compiler::Token::operator =(const Token &other) {
 	return *this;
 }
 
-bool meat::compiler::Token::operator ==(const char *value) const {
+bool meat::grinder::Token::operator ==(const char *value) const {
 	return (this->value == value);
 }
 
-meat::compiler::Token::operator float_t () {
+meat::grinder::Token::operator float_t () {
 	return std::atof(value.c_str());
 }
 
@@ -177,7 +177,7 @@ meat::compiler::Token::operator float_t () {
  * Tokenizer::Tokenizer *
  ************************/
 
-meat::compiler::Tokenizer::Tokenizer() : code(0) {
+meat::grinder::Tokenizer::Tokenizer() : code(0) {
 	complete = false;
   cook_lines = true;
 }
@@ -186,29 +186,29 @@ meat::compiler::Tokenizer::Tokenizer() : code(0) {
  * Tokenizer::~Tokenizer *
  *************************/
 
-meat::compiler::Tokenizer::~Tokenizer() throw() {
+meat::grinder::Tokenizer::~Tokenizer() throw() {
 }
 
 /********************
  * Tokenizer::parse *
  ********************/
 
-void meat::compiler::Tokenizer::parse(std::istream &code) {
+void meat::grinder::Tokenizer::parse(std::istream &code) {
 	this->code = &code;
   remaining = "";
   //position.reset();
 }
 
-void meat::compiler::Tokenizer::parse(const std::string &code) {
+void meat::grinder::Tokenizer::parse(const std::string &code) {
   strs.str(code);
   this->code = &strs;
   remaining = "";
   get_next_line();
 }
 
-void meat::compiler::Tokenizer::parse(const Location &position,
-                                       const std::string &line,
-                                       bool more) {
+void meat::grinder::Tokenizer::parse(const Location &position,
+																		 const std::string &line,
+																		 bool more) {
 	size_t t_begin = 0;
 	size_t t_end = 0;
 	bool command_done = false;
@@ -369,38 +369,38 @@ void meat::compiler::Tokenizer::parse(const Location &position,
 	}
 }
 
-void meat::compiler::Tokenizer::parse(const Token &token) {
+void meat::grinder::Tokenizer::parse(const Token &token) {
   strs.str((const std::string &)token);
   this->code = &strs;
   remaining = "";
   get_next_line();
 }
 
-size_t meat::compiler::Tokenizer::count() {
+size_t meat::grinder::Tokenizer::count() {
 	return tokens.size();
 }
 
-bool meat::compiler::Tokenizer::is_complete() {
+bool meat::grinder::Tokenizer::is_complete() {
 	return complete;
 }
 
-void meat::compiler::Tokenizer::clear() {
+void meat::grinder::Tokenizer::clear() {
 	tokens.clear();
 }
 
-bool meat::compiler::Tokenizer::expect(Token::token_t id) {
+bool meat::grinder::Tokenizer::expect(Token::token_t id) {
   if (is_more() && tokens.front().is_type(id))
       return true;
   return false;
 }
 
-bool meat::compiler::Tokenizer::expect(Token::token_t id, const char *value) {
+bool meat::grinder::Tokenizer::expect(Token::token_t id, const char *value) {
   if (is_more() && tokens.front().is_type(id))
       return tokens.front() == value;
   return false;
 }
 
-void meat::compiler::Tokenizer::permit(Token::token_t id) {
+void meat::grinder::Tokenizer::permit(Token::token_t id) {
   if (expect(id))
     tokens.pop_front();
   else
@@ -408,7 +408,7 @@ void meat::compiler::Tokenizer::permit(Token::token_t id) {
                     (std::string &)tokens.front());
 }
 
-void meat::compiler::Tokenizer::permit(Token::token_t id, const char *value) {
+void meat::grinder::Tokenizer::permit(Token::token_t id, const char *value) {
   if (expect(id, value))
     tokens.pop_front();
   else
@@ -416,17 +416,17 @@ void meat::compiler::Tokenizer::permit(Token::token_t id, const char *value) {
                     (std::string &)tokens.front());
 }
 
-void meat::compiler::Tokenizer::next() {
+void meat::grinder::Tokenizer::next() {
   if (!tokens.empty()) tokens.pop_front();
 }
 
-bool meat::compiler::Tokenizer::is_more() {
+bool meat::grinder::Tokenizer::is_more() {
   if (tokens.empty()) get_next_line();
   if (tokens.empty()) return false;
   return true;
 }
 
-std::string meat::compiler::Tokenizer::to_string() const {
+std::string meat::grinder::Tokenizer::to_string() const {
 	std::string result;
 
 	std::deque<Token>::const_iterator it;
@@ -437,11 +437,11 @@ std::string meat::compiler::Tokenizer::to_string() const {
 	return result;
 }
 
-meat::compiler::Token &meat::compiler::Tokenizer::operator[] (size_t index) {
+meat::grinder::Token &meat::grinder::Tokenizer::operator[] (size_t index) {
 	return tokens.at(index);
 }
 
-void meat::compiler::Tokenizer::get_next_line() {
+void meat::grinder::Tokenizer::get_next_line() {
 
 #ifdef TESTING
     meat::test::test("Null code stream", false);
@@ -509,14 +509,14 @@ void meat::compiler::Tokenizer::get_next_line() {
  * Language Class Implementation
  */
 
-meat::compiler::Language::Language() {
+meat::grinder::Language::Language() {
 	curr_line = 0;
 }
 
-meat::compiler::Language::~Language() throw() {
+meat::grinder::Language::~Language() throw() {
 }
 
-void meat::compiler::Language::execute(std::istream &code) {
+void meat::grinder::Language::execute(std::istream &code) {
 	Tokenizer parser;
   parser.parse(code);
   while (parser.is_more()) {
@@ -526,7 +526,7 @@ void meat::compiler::Language::execute(std::istream &code) {
   }
 }
 
-void meat::compiler::Language::execute(const std::string &code) {
+void meat::grinder::Language::execute(const std::string &code) {
 	Tokenizer parser;
   parser.parse(code);
   while (parser.is_more()) {
@@ -536,7 +536,7 @@ void meat::compiler::Language::execute(const std::string &code) {
   }
 }
 
-void meat::compiler::Language::execute(const Token &token) {
+void meat::grinder::Language::execute(const Token &token) {
 	Tokenizer parser;
 
   parser.parse(token);
@@ -547,28 +547,5 @@ void meat::compiler::Language::execute(const Token &token) {
   }
 }
 
-void meat::compiler::Language::command(Tokenizer &tokens) {
-}
-
-/******************************************************************************
- */
-
-extern "C" {
-	DECLSPEC void init_Compiler(meat::data::Library &library);
-}
-
-void init_Compiler(meat::data::Library &library) {
-	meat::Class *cls;
-
-	/* Create the Comiler.Library class. */
-	cls = new meat::Class("Object", 2);
-	library.add(cls, "Grinder.Library");
-
-	/* Create the Compiler.Class class */
-	cls = new meat::Class("Object", 6);
-	library.add(cls, "Grinder.Class");
-
-	/* Create the Compiler.Method class. */
-	cls = new meat::Class("Object", 3);
-	library.add(cls, "Grinder.Method");
+void meat::grinder::Language::command(Tokenizer &tokens) {
 }

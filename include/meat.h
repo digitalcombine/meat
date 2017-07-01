@@ -43,12 +43,6 @@
 #  endif
 #elif defined(__linux__)
 #   define DECLSPEC __attribute__((visibility("default")))
-#   define DECLSPEC
-#   if __GNUC__ > 4
-#       define DLL_LOCAL __attribute__((visibility("hidden")))
-#   else
-#       define DLL_LOCAL
-#   endif
 #else
 #   error("Don't know how to export shared object libraries")
 #endif
@@ -76,9 +70,15 @@ namespace meat {
 #define BLOCK(ref) (dynamic_cast<meat::BlockContext &>(*(ref)))
 #define CONST_BLOCK(ref) (dynamic_cast<const meat::BlockContext &>(*(ref)))
 
+	typedef void (*class_compiler_t)(meat::Reference &super,
+                                   const char *cls_name,
+                                   const char *cls_body);
+
 	/** Initializes the scripting engine.
 	 */
-	void DECLSPEC initialize(int argc, const char *argv[]);
+	void DECLSPEC initialize(int argc, const char *argv[],
+													 void (*import)(const char *name) = 0,
+													 class_compiler_t compiler = 0);
 
 	/** Creates a new message context to an Object.
 	 * @param Object The Object to send the message to.
@@ -144,6 +144,7 @@ namespace meat {
 		 */
 		explicit Object(bool value);
 		explicit Object(const char *value);
+		explicit Object(const std::string &value);
 		Object(const char *value, const char *value2);
 
 		/** Destroy and clean up the Object.
@@ -199,7 +200,9 @@ namespace meat {
     virtual float_t to_float() const;
 		virtual const char *to_string() const;
 
-		friend void meat::initialize(int argc, const char *argv[]);
+		friend void initialize(int argc, const char *argv[],
+													 void (*import)(const char *name),
+													 class_compiler_t compiler);
 
 	private:
 		meat::Reference o_type;
@@ -365,7 +368,9 @@ namespace meat {
 #ifdef DEBUG
 		friend std::ostream &operator <<(std::ostream &out, Class &cls);
 #endif /* DEBUG */
-		friend void meat::initialize(int argc, const char *argv[]);
+		friend void initialize(int argc, const char *argv[],
+													 void (*import)(const char *name),
+													 class_compiler_t compiler);
 		friend Reference message(Reference object,
                                       uint32_t hash_id,
                                       Reference context);
@@ -662,6 +667,7 @@ namespace meat {
 		using std::deque<Reference>::clear;
 		using std::deque<Reference>::at;
 		using std::deque<Reference>::operator[];
+		using std::deque<Reference>::operator=;
 		using std::deque<Reference>::insert;
 		using std::deque<Reference>::erase;
 		using std::deque<Reference>::back;

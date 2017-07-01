@@ -18,7 +18,7 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 Library import: UnitTest
-Library import: Compiler
+Library import: Grinder
 
 Test subClass: Test.Compiler body: {
 

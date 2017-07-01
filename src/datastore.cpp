@@ -51,7 +51,6 @@ extern "C" {
     meat::uint8_t minor_ver;
   } sgelib_header_t;
 }
-void (*meat::data::compiler_import)(const char *name) = 0;
 
 /******************************************************************************
  * Dynamic Library importing abstract interface
@@ -77,7 +76,7 @@ static void dl_close(nativelib_t handle) {
 #endif
 }
 
-static void *dl_load(nativelib_t handle, const char *funcname) {
+static void *dl_symbol(nativelib_t handle, const char *funcname) {
 #if defined (__linux__)
   return dlsym(handle, funcname);
 #endif
@@ -125,11 +124,16 @@ static std::string &get_includes() {
   return includes;
 }
 
+static meat::data::compiler_import_t &compiler_import() {
+	static meat::data::compiler_import_t importfn;
+	return importfn;
+}
+
 /********************************
  * meat::data::Library::Library *
  ********************************/
 
-meat::data::Library::Library(const char *name) {
+meat::data::Library::Library(const char *name) : dlhandle(0) {
   this->name = name;
   this->is_new = false;
 }
@@ -227,6 +231,20 @@ const std::string &meat::data::Library::include() {
 	return get_includes();
 }
 
+/****************************
+ * meat::data::Library::get *
+ ****************************/
+
+meat::data::Library *
+meat::data::Library::get(const std::string &name) {
+	std::map<std::string, meat::data::Library *>::iterator it =
+    get_libraries().find(name);
+  if (it != get_libraries().end()) {
+		return it->second;
+  }
+	return NULL;
+}
+
 /*******************************
  * meat::data::Library::unload *
  *******************************/
@@ -255,6 +273,7 @@ void meat::data::Library::import() {
   std::cout << "LIBRARY: Importing " << name << std::endl;
 #endif
 
+	// First see if the library is already loaded.
   std::map<std::string, Library *>::iterator lib = get_libraries().find(name);
   if (lib != get_libraries().end()) {
     return;
@@ -343,6 +362,22 @@ void meat::data::Library::add(Class *cls, const char *id) {
  */
 void meat::data::Library::set_application(const std::string &name) {
 	application = Class::resolve(name.c_str());
+}
+
+/******************************
+ * meat::data::Library::dlsym *
+ ******************************/
+
+void *meat::data::Library::dlsymbol(const std::string &name) {
+	if (dlhandle) {
+		void *result = dl_symbol(dlhandle, name.c_str());
+		if (!result) {
+			throw Exception(std::string("Unable to load DL symbol ") + name +
+											" from library " + this->name);
+		}
+		return result;
+	}
+	throw Exception("Unable to load DL symbol from non-native library.");
 }
 
 /******************************
@@ -476,12 +511,12 @@ void meat::data::Library::import_from_archive(const char *name) {
   }
 
   /* Import all the classes from the file. */
-  int class_cnt = lib_file.get();
+  unsigned int class_cnt = lib_file.get();
 #ifdef DEBUG
   std::cout << "LIBRARY: Importing " << std::dec
             << (int)class_cnt << " classes" << std::endl;
 #endif
-  for (int cc = 0; cc < class_cnt; cc++) {
+  for (unsigned int cc = 0; cc < class_cnt; cc++) {
     Reference cls = meat::Class::import(lib_file);
     classes.push_back(cls);
     Class::record(cls);
@@ -503,7 +538,7 @@ void meat::data::Library::import_from_archive(const char *name) {
  *******************************************/
 
 void meat::data::Library::import_from_native(const char *filename,
-                                              const char *name) {
+																						 const char *name) {
   typedef void *(*init_proc_t)(Library &library);
 
 #ifdef DEBUG
@@ -515,12 +550,12 @@ void meat::data::Library::import_from_native(const char *filename,
   dlhandle = dl_open(filename);
 
   init_proc_t init_proc =
-    (init_proc_t)dl_load(dlhandle, (std::string("init_") + name).c_str());
+    (init_proc_t)dl_symbol(dlhandle, (std::string("init_") + name).c_str());
   if (init_proc != NULL) {
     init_proc(*this);
   } else
     throw meat::Exception(std::string("Unable to initialize library ") +
-                           dlerror());
+													dlerror());
 }
 
 /******************************************************************************
@@ -549,9 +584,9 @@ static meat::Reference Library_cm_import_(meat::Reference context) {
             << std::endl;
 #endif /* DEBUG */
 
-  if (meat::data::compiler_import != 0)
-    meat::data::compiler_import(filename->to_string());
-  else {
+  if (compiler_import() != NULL) {
+    compiler_import()(filename->to_string());
+  } else {
     meat::data::Library::import(filename->to_string());
   }
   return null;
@@ -559,14 +594,18 @@ static meat::Reference Library_cm_import_(meat::Reference context) {
 
 // class method include:
 static meat::Reference Library_cm_include_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  //meat::Reference klass = CONTEXT(context).get_class();
+  //meat::Reference self = CONTEXT(context).get_self();
   meat::Reference cpp_includes = CONTEXT(context).get_param(0);
 
-  if (meat::data::compiler_import != 0)
+	meat::data::compiler_import_t &import = compiler_import();
+
+  if (import != NULL) {
     meat::data::Library::include(cpp_includes->to_string());
-  else
+  } else {
     throw meat::Exception("Method Library include is only with the compiler");
+	}
+
+	std::cout << "  done" << std::endl;
   return null;
 }
 
@@ -1236,7 +1275,7 @@ static meat::vtable_entry_t ArchiveMethods[] = {
  * Public Interface
  */
 
-void meat::data::initialize() {
+void meat::data::initialize(void (*import)(const char *name)) {
   meat::Class *cls;
 
   Library::add_path("");
@@ -1252,4 +1291,6 @@ void meat::data::initialize() {
   cls->set_vtable(13, ArchiveMethods, STATIC);
   cls->set_class_vtable(11, ArchiveCMethods, STATIC);
   Class::record(cls, "Archive");
+
+	compiler_import() = import;
 }

@@ -377,7 +377,7 @@ Object subClass: Exceptionᶲ body: {
   property cntxt
 
   constructor {
-    return new meat::Exception(cls, properties);
+    return new meat::Exception(klass, properties);
   }
 
   class function try: block {
@@ -912,7 +912,7 @@ Object subClass: Booleanᶲ body: {
 }
 
 #==============================================================================
-# Text
+# Text Class
 
 Object subClass: Textᶲ body: {
 
@@ -1000,6 +1000,10 @@ Object subClass: Textᶲ body: {
     result[self_len * cnt_value] = 0;
 
     return new meat::Object(result);
+  }
+  
+  method asText {
+    context return: self
   }
 }
 
@@ -1134,10 +1138,16 @@ Object subClass: Listᶲ body: {
 
     return null;
   }
+  
+  function makeCopy {
+    Reference new_list = meat::List();
+    LIST(new_list) = LIST(self);
+    return new_list;
+  }
 }
 
 #==============================================================================
-# Index
+# Index Class
 
 Object subClass: Indexᶲ body: {
 
@@ -1179,7 +1189,7 @@ Object subClass: Indexᶲ body: {
 }
 
 #==============================================================================
-# Application
+# Application Class
 
 Object subClass: Applicationᶲ body: {
 
@@ -1218,4 +1228,53 @@ Object subClass: Applicationᶲ body: {
   method entry {
     Exception throw: "Application method entry must be overridden"
   }
+}
+
+#==============================================================================
+# Library Class
+
+Object subClass: Libraryᶲ body: {
+
+  class property newLibrary
+  
+  property cppIncludes
+  property applicationClass
+  property imports
+  property classes
+
+	class function import: filename {
+#ifdef DEBUG
+		std::cout << "DEBUG: Importing library " << filename->to_string()
+  	          << std::endl;
+#endif /* DEBUG */
+
+		if (meat::data::compiler_import != 0)
+			meat::data::compiler_import(filename->to_string());
+		else {
+			meat::data::Library::import(filename->to_string());
+		}
+
+		return null;
+	}
+
+	#class function include: cpp_includes {
+	#	if (meat::data::compiler_import != 0)
+	#	  meat::data::Library::include(cpp_includes->to_string());
+	#	else
+	#	  throw Exception("Method Library include is only with the compiler");
+  #
+	#	return null;
+	#}
+	
+	class method include: includes {
+	  [newLibrary isNull] isFalse: {
+	    cppIncludes = includes 
+	  } else: {
+	    Exception throw: "Library method include: can only be used with Grinder"
+	  }
+	}
+
+	class function setApplication: class_name {
+		((meat::data::Library &)(*self)).set_application(class_name->to_string());
+	}
 }

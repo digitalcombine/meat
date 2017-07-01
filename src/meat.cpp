@@ -119,8 +119,18 @@ meat::Object::Object(const char *value) {
 	num_of_props = 0;
 	properties = 0;
 	data_type = STRING;
-	data.s = new char[strlen(value) + 1];
+	data.s = new char[std::strlen(value) + 1];
 	std::strcpy(data.s, value);
+}
+
+meat::Object::Object(const std::string &value) {
+	// Create a new text Object
+	o_type = Class::resolve("Text");
+	num_of_props = 0;
+	properties = 0;
+	data_type = STRING;
+	data.s = new char[value.length() + 1];
+	std::strcpy(data.s, value.c_str());
 }
 
 meat::Object::Object(const char *value, const char *value2) {
@@ -1447,7 +1457,7 @@ meat::Exception::Exception(Reference &cls, meat::uint8_t properties)
 meat::Exception::Exception(const std::string &message)
 	: Object(Class::resolve("Exception"), 2) {
 	// New exception with a meat Text message.
-	this->property(0) = new Object(message.c_str());
+	this->property(0) = new Object(message);
 }
 
 meat::Exception::Exception(const std::string &message, Reference &context)
@@ -1639,7 +1649,8 @@ meat::Reference meat::message(meat::Reference object,
 	}
 
 	// Raise an error if we couldn't resolve the method name.
-	if (m_entry == 0) throw Exception("Message is unresolved", context);
+	if (m_entry == 0)
+		throw Exception(std::string("Message is unresolved"), context);
 
   // Now create the new context.
   Context *ctx = new Context(context, m_entry->locals);
@@ -1706,7 +1717,8 @@ meat::Reference meat::message_super(meat::Reference object,
 	}
 
 	// Raise an error if we couldn't resolve the method name.
-	if (m_entry == 0) throw Exception("Message is unresolved", context);
+	if (m_entry == 0)
+		throw Exception(std::string("Message is unresolved"), context);
 
 	// Now create the new context.
 	Context *ctx = new Context(context, m_entry->locals);

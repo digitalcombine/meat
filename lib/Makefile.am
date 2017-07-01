@@ -6,15 +6,15 @@
 # Written by Ron R Wills
 
 # Shared libraries
-pkglib_LTLIBRARIES = Compiler.la Console.la
+pkglib_LTLIBRARIES = Grinder.la Console.la
 
 Console_la_SOURCES = console.cpp
 Console_la_CPPFLAGS = -I@top_srcdir@/include
 Console_la_LIBADD = @top_srcdir@/src/libmeat.la
 Console_la_LDFLAGS = -module -avoid-version -shared
 
-Compiler_la_SOURCES = compiler.cpp comp_utils.cpp lcompiler.cpp \
-	acompiler.cpp ast.cpp ast.h
-Compiler_la_CPPFLAGS = -I@top_srcdir@/include
-Compiler_la_LIBADD = @top_srcdir@/src/libmeat.la
-Compiler_la_LDFLAGS = -module -avoid-version -shared
+Grinder_la_SOURCES = compiler.cpp comp_utils.cpp lcompiler.cpp \
+	interpreter.cpp Grinder.cpp ast.cpp ast.h
+Grinder_la_CPPFLAGS = -I@top_srcdir@/include
+Grinder_la_LIBADD = @top_srcdir@/src/libmeat.la
+Grinder_la_LDFLAGS = -module -avoid-version -shared

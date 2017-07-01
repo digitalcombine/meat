@@ -47,21 +47,17 @@ static meat::Reference object_constructor(meat::Reference &klass,
 // method is:
 static meat::Reference Object_om_is_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-    return (self == other ? meat::True() : meat::False());
-
+	return (self == other ? meat::True() : meat::False());
 }
 
 // method isNot:
 static meat::Reference Object_om_isNot_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-    return (!(self == other) ? meat::True() : meat::False());
-
+	return (!(self == other) ? meat::True() : meat::False());
 }
 
 // method isType:
@@ -161,8 +157,10 @@ static meat::uint8_t ObjectBytecode[] = {
  *
  */
 
-void (*class_compiler)(meat::Reference &super, const char *cls_name,
-                       const char *cls_body) = 0;
+static meat::class_compiler_t &class_compiler() {
+	static meat::class_compiler_t compiler;
+	return compiler;
+}
 
 static meat::vtable_entry_t ClassMethods[] = {
   {0x0000043c, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
@@ -200,8 +198,8 @@ static meat::Reference Class_cm_subClass_body_(meat::Reference context) {
   meat::Reference name = CONTEXT(context).get_param(0);
   meat::Reference block = CONTEXT(context).get_param(1);
 
-	if (class_compiler != 0) {
-		class_compiler(self, name->to_string(), block->to_string());
+	if (class_compiler() != 0) {
+		class_compiler()(self, name->to_string(), block->to_string());
 	}
 
 	return null;
@@ -609,9 +607,9 @@ static meat::uint8_t NullBytecode[] = {
  * Exception Class
  */
 
-static meat::Reference exception_constructor(meat::Reference &cls,
-																							meat::uint8_t properties) {
-  return new meat::Exception(cls, properties);
+static meat::Reference exception_constructor(meat::Reference &klass,
+																						 meat::uint8_t properties) {
+  return new meat::Exception(klass, properties);
 }
 
 static meat::vtable_entry_t ExceptionMethods[] = {
@@ -1540,7 +1538,7 @@ static meat::Reference Text_om_mult(meat::Reference context) {
   for (int c = 0; c < cnt_value; c++)
     strcpy(&(result[self_len * c]), self->to_string());
   result[self_len * cnt_value] = 0;
-  return new meat::Object(result);
+  return new meat::Object((const char *)result);
 }
 
 // method +
@@ -2102,10 +2100,9 @@ static meat::uint8_t ApplicationBytecode[] = {
  * Public API
  */
 
-// Found in Datastore
-void meat::data::initialize();
-
-void meat::initialize(int argc, const char *argv[]) {
+void meat::initialize(int argc, const char *argv[],
+											void (*import)(const char *name),
+											class_compiler_t compiler) {
   Class *cls;
 
   arg_count(argc);
@@ -2217,7 +2214,8 @@ void meat::initialize(int argc, const char *argv[]) {
   cls->set_bytecode(61, ApplicationBytecode, STATIC);
   Class::record(cls, "Application");
 
-  meat::data::initialize();
+	class_compiler() = compiler;
+  meat::data::initialize(import);
 
 #if defined(__WIN32__)
   meat::data::Library::add_path("C:\\gitgo\\");

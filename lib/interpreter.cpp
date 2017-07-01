@@ -26,28 +26,28 @@
 #endif
 
 /******************************************************************************
- * ArchiveBuilder Class Implementation
+ * Interpreter Class Implementation
  */
 
-/**********************************
- * ArchiveBuilder::ArchiveBuilder *
- **********************************/
+/****************************
+ * Interpreter::Interpreter *
+ ****************************/
 
-meat::compiler::ArchiveBuilder::ArchiveBuilder() : context(meat::Null()) {
+meat::grinder::Interpreter::Interpreter() : context(meat::Null()) {
 }
 
-/***********************************
- * ArchiveBuilder::~ArchiveBuilder *
- ***********************************/
+/*****************************
+ * Interpreter::~Interpreter *
+ *****************************/
 
-meat::compiler::ArchiveBuilder::~ArchiveBuilder() throw() {
+meat::grinder::Interpreter::~Interpreter() throw() {
 }
 
-/***************************
- * ArchiveBuilder::command *
- ***************************/
+/************************
+ * Interpreter::command *
+ ************************/
 
-void meat::compiler::ArchiveBuilder::command(Tokenizer &tokens) {
+void meat::grinder::Interpreter::command(Tokenizer &tokens) {
 
   std::string object, message;
 
@@ -135,16 +135,28 @@ void meat::compiler::ArchiveBuilder::command(Tokenizer &tokens) {
   tokens.clear();
 }
 
-void meat::compiler::ArchiveBuilder::create(const char *name) {
-  archive = new meat::data::Archive(name, true);
+/***********************
+ * Interpreter::create *
+ ***********************/
+
+void meat::grinder::Interpreter::create(const std::string &name) {
+  archive = new meat::data::Archive(name.c_str(), true);
   variables["archive"] = archive;
 }
 
-void meat::compiler::ArchiveBuilder::write() {
+/**********************
+ * Interpreter::write *
+ **********************/
+
+void meat::grinder::Interpreter::write() {
   if (archive != NULL) archive->sync();
 }
 
-meat::Reference meat::compiler::ArchiveBuilder::resolve_object(Token &token) {
+/*******************************
+ * Interpreter::resolve_object *
+ *******************************/
+
+meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
   int32_t int_value;
   float_t flt_value;
 
@@ -188,7 +200,7 @@ meat::Reference meat::compiler::ArchiveBuilder::resolve_object(Token &token) {
 #ifdef DEBUG
     std::cout << "          is string " << std::endl;
 #endif
-    return new Object(((std::string &)token).c_str());
+    return new Object((std::string &)token);
   case Token::COMMAND: {
 #ifdef DEBUG
     std::cout << "          is command " << std::endl;
