@@ -377,7 +377,8 @@ void *meat::data::Library::dlsymbol(const std::string &name) {
 		}
 		return result;
 	}
-	throw Exception("Unable to load DL symbol from non-native library.");
+	throw Exception(std::string("Unable to load DL symbol from non-native "
+															"library ") + this->name);
 }
 
 /******************************
@@ -605,7 +606,6 @@ static meat::Reference Library_cm_include_(meat::Reference context) {
     throw meat::Exception("Method Library include is only with the compiler");
 	}
 
-	std::cout << "  done" << std::endl;
   return null;
 }
 

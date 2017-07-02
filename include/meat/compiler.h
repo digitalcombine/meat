@@ -41,7 +41,7 @@ namespace meat {
 		 */
 		DECLSPEC void initialize();
 
-		class ClassBuilder;
+		class Class;
 		class MethodBuilder;
 
 		/** Parser location tracking.
@@ -294,7 +294,7 @@ namespace meat {
 
 			void register_as(const std::string &name);
 
-			Reference new_class(Reference &super, const char *name);
+			void add_class(Reference klass);
 
 			/** Interpret a parsed command already tokenized.
 			 */
@@ -311,7 +311,7 @@ namespace meat {
 			 */
 			void write();
 
-			friend class ClassBuilder;
+			friend class Class;
 
 		protected:
 			bool is_cpp() const;
@@ -333,15 +333,16 @@ namespace meat {
      * Property 5 Constructor
 		 */
 
-		class DECLSPEC ClassBuilder : public Language, public Object {
+		class DECLSPEC Class : public Language, public Object {
 		public:
-			virtual ~ClassBuilder() throw() {};
+			Class(Reference klass, uint8_t properties);
+			virtual ~Class() throw() {};
 
 			uint8_t obj_property(const std::string &name);
 			uint8_t cls_property(const std::string &name);
 			int16_t have_obj_property(const std::string &name) const;
 			int16_t have_cls_property(const std::string &name) const;
-      Reference get_super() const { return super; };
+      Reference get_super() const { return property(1); };
 
 			uint8_t constant(const std::string name);
 
@@ -361,14 +362,13 @@ namespace meat {
 			friend class Library;
 
 		private:
-			Reference super;
-			Library &library;
+			Library *library;
 			uint16_t cpp_bytecode;
 			uint8_t m_count;
 			uint8_t cm_count;
 
-			ClassBuilder(Library &library, Reference &super,
-									 const char *cls_name);
+			//Class(Library &library, Reference &super,
+			//			const char *cls_name);
 
 			uint8_t method_count() const;
 			uint8_t class_method_count() const;
@@ -382,7 +382,7 @@ namespace meat {
 
 		class DECLSPEC MethodBuilder : public Language, public Object {
 		public:
-			MethodBuilder(ClassBuilder &cb, bool is_cpp = false);
+			MethodBuilder(Class &cb, bool is_cpp = false);
 			virtual ~MethodBuilder() throw() {};
 
 			virtual void command(Tokenizer &tokens);
@@ -412,7 +412,7 @@ namespace meat {
 
 		private:
 			/** Reference to the class that contains the method */
-			ClassBuilder *cb;
+			Class *cb;
 			void *astree;
 
 			bool is_cpp;

@@ -18,12 +18,6 @@
  * You should have received a copy of the GNU General Public License
  * along with Meat.  If not, see <http://www.gnu.org/licenses/>.
  *
- * TODO
- *  Various compiler options for compiling c++ shared libraries.
- *    -c c++ compiler
- *    -x c++ options
- *    -l linker
- *    -z linker options
  */
 
 #include <meat.h>
@@ -45,12 +39,6 @@ std::string app_class;
 
 meat::Reference library;
 
-//#define LIBRARY ((meat::grinder::LibraryBuilder &)(*(library)))
-
-// This is found in src/meat.cpp
-extern void (*class_compiler)(meat::Reference &super, const char *cls_name,
-                              const char *cls_body);
-
 /** Display simple help for the -h option
  */
 static void help() {
@@ -65,21 +53,40 @@ static void help() {
   std::cout << "  -h           Displays this help" << std::endl;
 }
 
+typedef void (*exec_class_fn)(meat::Reference, std::istream &);
+
 /** Used to add functionallity to the Class subClass method when the compiler
  * is initialized. If the compiler is not initialized then the Class subClass
  * method should just raise an exception.
  */
 static void classbuilder_int(meat::Reference &super, const char *cls_name,
                              const char *cls_body) {
-  meat::Reference cb =
-		(dynamic_cast<meat::grinder::Library &>(*library)).new_class(super,
-																																 cls_name);
+	meat::data::Library *grinder = meat::data::Library::get("Grinder");
+	exec_class_fn exec_class =
+		(exec_class_fn)grinder->dlsymbol("exec_class");
+
+	meat::Reference context =
+		meat::message(meat::Class::resolve("Grinder.Class"),
+									"subClassFrom:as:",
+									meat::Null());
+	CONTEXT(context).set_param(0, super);
+	CONTEXT(context).set_param(1, new meat::Object(cls_name));
+	meat::Reference cb = meat::execute(context);
+
+	context = meat::message(library, "addClass:", meat::Null());
+	CONTEXT(context).set_param(0, cb);
+	execute(context);
+
+	// meat::Reference cb =
+	//	(dynamic_cast<meat::grinder::Library &>(*library)).new_class(super,
+	//																															 cls_name);
+
   std::string body(cls_body);
   std::istringstream is(body);
 
-  ((meat::grinder::ClassBuilder &)(*cb)).execute(is);
-
-  ((meat::grinder::ClassBuilder &)(*cb)).create_class();
+  //((meat::grinder::Class &)(*cb)).execute(is);
+  //((meat::grinder::Class &)(*cb)).create_class();
+	exec_class(cb, is);
 }
 
 /** Used for the Library import method when the compiler is initialized.

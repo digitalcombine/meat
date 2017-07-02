@@ -18,6 +18,16 @@ static meat::Reference Grinder_Library_constructor(meat::Reference &klass,
 #define classes (self->property(1))
 #define documentation (self->property(2))
 
+// method addClass:
+static meat::Reference Grinder_Library_om_addClass_(meat::Reference context) {
+	meat::Reference self = CONTEXT(context).get_self();
+	meat::Reference klass = CONTEXT(context).get_class();
+	meat::Reference theClass = CONTEXT(context).get_param(0);
+
+	dynamic_cast<meat::grinder::Library &>(*self).add_class(theClass);
+	return null;
+}
+
 // method compile
 static meat::Reference Grinder_Library_om_compile(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
@@ -63,7 +73,7 @@ static meat::vtable_entry_t Grinder_LibraryMethods[] = {
 	{0x39a68c12, 0x00000000, VTM_SUPER   , 0,  {.offset = 0}},
 	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0,  {.offset = 0}},
 	{0x49db9c88, 0x335f47b6, VTM_BYTECODE, 8,  {.offset = 146}},
-	{0x6447c96a, 0x335f47b6, VTM_BYTECODE, 5,  {.offset = 0}},
+	{0x6447c96a, 0x335f47b6, VTM_NATIVE  , 1,  Grinder_Library_om_addClass_},
 	{0x645271d8, 0x335f47b6, VTM_NATIVE  , 1,  Grinder_Library_om_setApplicationClass_},
 	{0x68f39719, 0x335f47b6, VTM_BYTECODE, 7,  {.offset = 260}},
 	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0,  {.offset = 0}},
@@ -73,14 +83,18 @@ static meat::vtable_entry_t Grinder_LibraryMethods[] = {
 	{0x7b840562, 0x00000000, VTM_SUPER   , 0,  {.offset = 0}}
 };
 
-// method compile
+#undef name
+#undef classes
+#undef documentation
+
+// class method new:
 static meat::Reference Grinder_Library_cm_new_(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 	meat::Reference klass = CONTEXT(context).get_class();
 	meat::Reference className = CONTEXT(context).get_param(0);
 
-	meat::Reference new_object = CLASS(klass).new_object();
-	name = className;
+	meat::Reference new_object = CLASS(self).new_object();
+	new_object->property(0) = className;
 	(dynamic_cast<meat::grinder::Library &>(*new_object)).register_as(className->to_string());
 
 	return new_object;
@@ -101,10 +115,6 @@ static meat::vtable_entry_t Grinder_LibraryCMethods[] = {
 	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
 	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
 };
-
-#undef name
-#undef classes
-#undef documentation
 
 static meat::uint8_t Grinder_LibraryBytecode[] = {
   0x0b, 0x11, 0x05, 0x01, 0x14, 0x06, 0x00, 0x00, 0x00, 0x0d, 0x0a, 0x07, 0x04,
@@ -136,6 +146,39 @@ static meat::uint8_t Grinder_LibraryBytecode[] = {
 };
 
 /******************************************************************************
+ * Grinder.Class Class
+ */
+
+static meat::Reference Grinder_Class_constructor(meat::Reference &klass,
+																								 meat::uint8_t properties) {
+  return new meat::grinder::Class(klass, properties);
+}
+
+#define className (self->property(0))
+#define superClass (self->property(1))
+
+// class method subClassFrom:as:
+static meat::Reference
+Grinder_Class_cm_subClassFrom_as_(meat::Reference context) {
+	meat::Reference self = CONTEXT(context).get_self();
+	meat::Reference klass = CONTEXT(context).get_class();
+	meat::Reference aClass = CONTEXT(context).get_param(0);
+	meat::Reference name = CONTEXT(context).get_param(1);
+
+	meat::Reference new_object = CLASS(self).new_object();
+	new_object->property(0) = name;
+	new_object->property(1) = aClass;
+	return new_object;
+}
+
+static meat::vtable_entry_t Grinder_ClassCMethods[] = {
+	{0x74b24d15, 0x335f47b6, VTM_NATIVE  , 2, Grinder_Class_cm_subClassFrom_as_},
+};
+
+#undef className
+#undef superClass
+
+/******************************************************************************
  */
 
 extern "C" {
@@ -146,7 +189,7 @@ void init_Grinder(meat::data::Library &library) {
 	meat::Class *cls;
 
 	/* Create the Comiler.Library class. */
-	cls = new meat::Class("Object", 1, 3);
+	cls = new meat::Class("Object", 3);
 	cls->set_constructor(Grinder_Library_constructor);
 	cls->set_vtable(20, Grinder_LibraryMethods, meat::STATIC);
 	cls->set_class_vtable(12, Grinder_LibraryCMethods, meat::STATIC);
@@ -154,7 +197,9 @@ void init_Grinder(meat::data::Library &library) {
 	library.add(cls, "Grinder.Library");
 
 	/* Create the Compiler.Class class */
-	cls = new meat::Class("Object", 6);
+	cls = new meat::Class("Object", 7);
+	cls->set_constructor(Grinder_Class_constructor);
+	cls->set_class_vtable(1, Grinder_ClassCMethods, meat::STATIC);
 	library.add(cls, "Grinder.Class");
 
 	/* Create the Compiler.Method class. */

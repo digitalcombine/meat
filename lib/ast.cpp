@@ -570,7 +570,7 @@ LocalVariable Value::gen_result(bool prelim) {
             set_result_dest(source);
         } else {
           result_set = false;
-          if (Class::have_class(value.c_str())) {
+          if (meat::Class::have_class(value.c_str())) {
 #ifdef DEBUG
             std::cout << "STAGE: Resolved class " << value << std::endl;
 #endif

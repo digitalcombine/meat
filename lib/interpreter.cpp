@@ -187,7 +187,7 @@ meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
       std::cout << "          is class" << std::endl;
 #endif
       try {
-        Reference result = Class::resolve(((std::string &)token).c_str());
+        Reference result = meat::Class::resolve(((std::string &)token).c_str());
         return result;
       } catch (...) {
         throw meat::Exception(std::string("Symbol ") +

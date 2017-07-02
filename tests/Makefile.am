@@ -10,14 +10,14 @@ EXTRA_DIST = UnitTest.meat Test.Object.meat Test.Boolean.meat \
 			 Test.Text.meat Test.Index.meat Test.List.meat Test.Data.meat \
 			 Test.Application.meat Test.Compiler.meat \
 			 tests.meat data.meat Console.meat builtin.meat Datastore.meat \
-			 Grinder.meat
+			 grinder.meat
 CLEANFILES = UnitTest.mlib Test.Boolean.mlib Test.Object.mlib \
 			 Test.Exception.mlib Test.Class.mlib  Test.BlockContext.mlib\
 			 Test.Numeric.mlib Test.Number.mlib Test.Integer.mlib \
 			 Test.Text.mlib Test.Index.mlib Test.List.mlib Test.Data.mlib \
 			 Test.Application.mlib Test.Compiler.mlib \
 			 Console.cpp builtin.cpp Datastore.cpp \
-			 data.mar tests.mapp hello.mlib libtests.mlib Grinder.cpp
+			 data.mar tests.mapp hello.mlib libtests.mlib grinder.cpp
 
 .meat.mlib:
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -l $* $<
@@ -47,7 +47,7 @@ Test.Compiler.mlib: @top_srcdir@/bin/meat
 Console.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 builtin.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Datastore.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
-Grinder.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+grinder.cpp: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 
 data.mar: Test.Data.mlib
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -a data.mar data.meat
@@ -58,7 +58,7 @@ tests.mapp: Test.Boolean.mlib Test.Exception.mlib Test.Object.mlib
 tests.mapp: Test.Class.mlib Test.BlockContext.mlib
 tests.mapp: Test.Numeric.mlib Test.Number.mlib Test.Integer.mlib Test.Text.mlib
 tests.mapp: Test.Index.mlib Test.List.mlib Test.Data.mlib Test.Compiler.mlib
-tests.mapp: Console.cpp builtin.cpp Datastore.cpp Grinder.cpp
+tests.mapp: Console.cpp builtin.cpp Datastore.cpp grinder.cpp
 tests.mapp: data.mar
 tests.mapp: tests.meat
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -a tests.mapp tests.meat

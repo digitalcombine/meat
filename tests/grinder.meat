@@ -144,7 +144,7 @@ Object subClass: Grinder.Classᶲ body: {
   }
   
   method getName {
-    context return: name
+    context return: className
   }
   
   method addProperty: propertyName {
