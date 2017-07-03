@@ -17,9 +17,9 @@
  * along with Meat.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <meat/compiler.h>
 #include <meat/datastore.h>
 #include <meat/utilities.h>
+#include "compiler.h"
 
 #ifdef DEBUG
 #include <iostream>
@@ -171,12 +171,12 @@ meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
 #ifdef DEBUG
       std::cout << "          is integer" << std::endl;
 #endif
-      return new Object(int_value);
+      return new Value(int_value);
     } else if (Utils::is_float(token, &flt_value)) {
 #ifdef DEBUG
       std::cout << "          is float" << std::endl;
 #endif
-      return new Object(flt_value);
+      return new Value(flt_value);
     } else if (variables.find(token) != variables.end()) {
 #ifdef DEBUG
       std::cout << "          is variable" << std::endl;
@@ -200,7 +200,7 @@ meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
 #ifdef DEBUG
     std::cout << "          is string " << std::endl;
 #endif
-    return new Object((std::string &)token);
+    return new Text((std::string &)token);
   case Token::COMMAND: {
 #ifdef DEBUG
     std::cout << "          is command " << std::endl;

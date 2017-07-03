@@ -1,7 +1,7 @@
 
 #include <meat.h>
 #include <meat/datastore.h>
-#include <meat/compiler.h>
+#include "compiler.h"
 
 #define null (meat::Null())
 
@@ -44,7 +44,7 @@ static meat::Reference Grinder_Library_om_import_(meat::Reference context) {
 	meat::Reference libraryName = CONTEXT(context).get_param(0);
 
 	dynamic_cast<meat::grinder::Library &>
-		(*self).add_import(libraryName->to_string());
+		(*self).add_import(TEXT(libraryName).c_str());
 	return null;
 }
 
@@ -56,7 +56,7 @@ Grinder_Library_om_setApplicationClass_(meat::Reference context) {
   meat::Reference className = CONTEXT(context).get_param(0);
 
 	dynamic_cast<meat::grinder::Library &>
-		(*self).set_application(className->to_string());
+		(*self).set_application(TEXT(className).c_str());
 	return null;
 }
 
@@ -95,7 +95,8 @@ static meat::Reference Grinder_Library_cm_new_(meat::Reference context) {
 
 	meat::Reference new_object = CLASS(self).new_object();
 	new_object->property(0) = className;
-	(dynamic_cast<meat::grinder::Library &>(*new_object)).register_as(className->to_string());
+	dynamic_cast<meat::grinder::Library &>
+		(*new_object).register_as(TEXT(className).c_str());
 
 	return new_object;
 
@@ -156,27 +157,71 @@ static meat::Reference Grinder_Class_constructor(meat::Reference &klass,
 
 #define className (self->property(0))
 #define superClass (self->property(1))
+#define objectProperties (self->property(2))
+#define classProperties (self->property(3))
+#define objectMethods (self->property(4))
+#define classMethods (self->property(5))
+#define constr (self->property(6))
 
-// class method subClassFrom:as:
-static meat::Reference
-Grinder_Class_cm_subClassFrom_as_(meat::Reference context) {
-	meat::Reference self = CONTEXT(context).get_self();
-	meat::Reference klass = CONTEXT(context).get_class();
-	meat::Reference aClass = CONTEXT(context).get_param(0);
-	meat::Reference name = CONTEXT(context).get_param(1);
-
-	meat::Reference new_object = CLASS(self).new_object();
-	new_object->property(0) = name;
-	new_object->property(1) = aClass;
-	return new_object;
-}
-
-static meat::vtable_entry_t Grinder_ClassCMethods[] = {
-	{0x74b24d15, 0x335f47b6, VTM_NATIVE  , 2, Grinder_Class_cm_subClassFrom_as_},
+static meat::vtable_entry_t Grinder_ClassMethods[] = {
+	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x00379f78, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x13778806, 0x475aee3c, VTM_BYTECODE, 7, {.offset = 20}},
+	{0x13e67172, 0x475aee3c, VTM_BYTECODE, 7, {.offset = 0}},
+	{0x34003578, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 92}},
+	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x3ab368f5, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 40}},
+	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x6f8450c1, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 72}},
+	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x7b82e32c, 0x475aee3c, VTM_BYTECODE, 5, {.offset = 60}},
+	{0x7b840562, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
 };
 
 #undef className
 #undef superClass
+#undef objectProperties
+#undef classProperties
+#undef objectMethods
+#undef classMethods
+#undef constr
+
+static meat::vtable_entry_t Grinder_ClassCMethods[] = {
+	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x2c296348, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x74b24d15, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 168}},
+	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
+};
+
+static meat::uint8_t Grinder_ClassBytecode[] = {
+	0x11, 0x05, 0x03, 0x02, 0x04, 0x06, 0x2c, 0x02, 0x5c, 0x80, 0x00, 0x01, 0x05,
+	0x06, 0x61, 0x34, 0x60, 0x01, 0x06, 0x0b, 0x11, 0x05, 0x02, 0x02, 0x04, 0x06,
+	0x2c, 0x02, 0x5c, 0x80, 0x00, 0x01, 0x05, 0x06, 0x61, 0x34, 0x60, 0x01, 0x06,
+	0x0b, 0x11, 0x04, 0x03, 0x02, 0x04, 0x05, 0x05, 0xa5, 0xdd, 0x5d, 0x00, 0x01,
+	0x02, 0x41, 0x79, 0x69, 0x3a, 0x01, 0x05, 0x0b, 0x11, 0x04, 0x00, 0x01, 0x02,
+	0x41, 0x79, 0x69, 0x3a, 0x01, 0x04, 0x0b, 0x11, 0x04, 0x02, 0x02, 0x04, 0x05,
+	0x02, 0x62, 0x88, 0x21, 0x00, 0x01, 0x02, 0x41, 0x79, 0x69, 0x3a, 0x01, 0x05,
+	0x0b, 0x03, 0x00, 0x34, 0x00, 0x35, 0x78, 0x00, 0x13, 0x04, 0x00, 0x24, 0x24,
+	0xbe, 0x02, 0x04, 0x05, 0x00, 0x01, 0xa9, 0xa0, 0x00, 0x20, 0x02, 0x05, 0x13,
+	0x04, 0x00, 0x24, 0x24, 0xbe, 0x02, 0x04, 0x05, 0x00, 0x01, 0xa9, 0xa0, 0x00,
+	0x20, 0x03, 0x05, 0x13, 0x04, 0x04, 0x38, 0x38, 0xb2, 0x02, 0x04, 0x05, 0x00,
+	0x01, 0xa9, 0xa0, 0x00, 0x20, 0x04, 0x05, 0x13, 0x04, 0x04, 0x38, 0x38, 0xb2,
+	0x02, 0x04, 0x05, 0x00, 0x01, 0xa9, 0xa0, 0x00, 0x20, 0x05, 0x05, 0x0b, 0x01,
+	0x00, 0x54, 0xaa, 0x30, 0xe6, 0x00, 0x20, 0x00, 0x05, 0x20, 0x01, 0x04, 0x01,
+	0x02, 0x41, 0x79, 0x69, 0x3a, 0x01, 0x00, 0x0b
+};
 
 /******************************************************************************
  */
@@ -199,7 +244,9 @@ void init_Grinder(meat::data::Library &library) {
 	/* Create the Compiler.Class class */
 	cls = new meat::Class("Object", 7);
 	cls->set_constructor(Grinder_Class_constructor);
-	cls->set_class_vtable(1, Grinder_ClassCMethods, meat::STATIC);
+	cls->set_vtable(16, Grinder_ClassMethods, meat::STATIC);
+	cls->set_class_vtable(12, Grinder_ClassCMethods, meat::STATIC);
+	cls->set_bytecode(190, Grinder_ClassBytecode, meat::STATIC);
 	library.add(cls, "Grinder.Class");
 
 	/* Create the Compiler.Method class. */

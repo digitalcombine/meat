@@ -19,9 +19,10 @@
  * along with Meat.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <meat/compiler.h>
+
 #include <meat/utilities.h>
 
+#include "compiler.h"
 #include "ast.h"
 
 #include <algorithm>
@@ -183,7 +184,7 @@ grinder::Library::Library(Reference klass,
   : Object(klass, properties), library(NULL), to_cpp(false) {
 
 	this->property(1) = new List();
-	this->property(2) = new Object("");
+	this->property(2) = new Text("");
 }
 
 grinder::Library::~Library() throw() {
@@ -192,7 +193,7 @@ grinder::Library::~Library() throw() {
 }
 
 void grinder::Library::register_as(const std::string &name) {
-	this->property(0) = new Object(name);
+	this->property(0) = new Text(name);
 	library = data::Library::create(name.c_str());
 }
 
@@ -331,7 +332,7 @@ void grinder::Library::command(Tokenizer &tokens) {
       case Token::BLOCK:
       case Token::SUBST_STRING:
       case Token::LITRL_STRING: {
-        Reference text(new Object((const std::string &)(tokens[c])));
+        Reference text(new Text((const std::string &)(tokens[c])));
         ((Context &)(*context)).set_param(param, text);
         break;
       }
@@ -383,7 +384,7 @@ bool grinder::Library::is_cpp() const {
  */
 
 #define className (property(0))
-#define super (property(1))
+#define superClass (property(1))
 #define objectProperties (property(2))
 #define classProperties (property(3))
 #define objectMethods (property(4))
@@ -396,10 +397,6 @@ bool grinder::Library::is_cpp() const {
 
 meat::grinder::Class::Class(Reference klass, uint8_t properties)
 	: Object(klass, properties), library(NULL), cpp_bytecode(0) {
-	objectProperties = new meat::List();
-	classProperties = new meat::List();
-	objectMethods = new meat::Index();
-	classMethods = new meat::Index();
 }
 
 /******************************
@@ -415,10 +412,10 @@ meat::grinder::Class::obj_property(const std::string &name) {
   List &properties = LIST(objectProperties);
 
   for (uint8_t index = 0; index < properties.size(); index++) {
-    if (*(properties.at(index)) == name.c_str()) return index;
+    if (TEXT(properties.at(index)) == name) return index;
   }
 
-  properties.push_back(new Object(name));
+  properties.push_back(new Text(name));
   return properties.size() - 1;
 }
 
@@ -434,10 +431,10 @@ uint8_t grinder::Class::cls_property(const std::string &name) {
   List &cls_properties = LIST(classProperties);
 
   for (uint8_t index = 0; index < cls_properties.size(); index++) {
-    if (*(cls_properties.at(index)) == name.c_str()) return index;
+    if (TEXT(cls_properties.at(index)) == name) return index;
   }
 
-  cls_properties.push_back(new Object(name));
+  cls_properties.push_back(new Text(name));
   return cls_properties.size() - 1;
 }
 
@@ -451,7 +448,7 @@ int16_t grinder::Class::have_obj_property(const std::string &name)
   List &properties = LIST(objectProperties);
 
   for (uint8_t index = 0; index < properties.size(); index++) {
-    if (*(properties.at(index)) == name.c_str()) return index;
+    if (TEXT(properties.at(index)) == name) return index;
   }
   return -1;
 }
@@ -465,7 +462,7 @@ int16_t grinder::Class::have_cls_property(const std::string &name)
   List &cls_properties = LIST(classProperties);
 
   for (uint8_t index = 0; index < cls_properties.size(); index++) {
-    if (*(cls_properties.at(index)) == name.c_str()) return index;
+    if (TEXT(cls_properties.at(index)) == name) return index;
   }
   return -1;
 }
@@ -477,18 +474,17 @@ int16_t grinder::Class::have_cls_property(const std::string &name)
 void grinder::Class::create_class() const {
 
 #ifdef DEBUG
-  std::cout << "COMPILER: Creating class " << this->property(0)->to_string()
-            << std::endl;
+  std::cout << "COMPILER: Creating class " << TEXT(className) << std::endl;
 #endif /* DEBUG */
 
   List &properties = LIST(objectProperties);
   List &cls_properties = LIST(classProperties);
 
   meat::Class *cls =
-    new meat::Class(super,
+    new meat::Class(superClass,
 										(uint8_t)cls_properties.size(),
 										(uint8_t)properties.size() +
-										CONST_CLASS(super).get_obj_properties());
+										CONST_CLASS(superClass).get_obj_properties());
 
   std::vector<uint8_t> bytecode;
 
@@ -501,22 +497,22 @@ void grinder::Class::create_class() const {
   /* Generate the bytecode for the object methods and record it in the
    * virtual table.
    */
-	vt = CONST_CLASS(super).get_vtable(vt_size);
+	vt = CONST_CLASS(superClass).get_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it)
 		vtable_it->flags = VTM_SUPER;
-  Index &methods = (Index &)(*(this->property(4)));
+  Index &methods = INDEX(objectMethods);
   for (mit = methods.begin(); mit != methods.end(); mit++) {
     struct _vtable_entry_s entry;
     uint16_t offset = bytecode.size();
     ((MethodBuilder &)(*(mit->second))).gen_bytecode(bytecode);
-    entry.hash_id = hash(mit->first->to_string());
-		entry.class_id = hash(this->property(0)->to_string());
+    entry.hash_id = hash(CONST_TEXT(mit->first));
+		entry.class_id = hash(CONST_TEXT(className));
     entry.flags = VTM_BYTECODE;
     entry.locals = ((MethodBuilder &)(*(mit->second))).local_count();
     entry.method.offset = offset;
 #ifdef DEBUG
-		std::cout << "VTABLE: method " << mit->first->to_string()
+		std::cout << "VTABLE: method " << CONST_TEXT(mit->first)
 							<< " bytecode @ " << offset << std::endl;
 #endif
 		vtable.add_entry(entry);
@@ -528,22 +524,22 @@ void grinder::Class::create_class() const {
   /* Generate the bytecode for the class methods and record it in the class
    * virtual table.
    */
-	vt = CONST_CLASS(super).get_class_vtable(vt_size);
+	vt = CONST_CLASS(superClass).get_class_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it)
 		vtable_it->flags = VTM_SUPER;
-  Index &class_methods = (Index &)(*(this->property(5)));
+  Index &class_methods = INDEX(classMethods);
   for (mit = class_methods.begin(); mit != class_methods.end(); mit++) {
     struct _vtable_entry_s entry;
     uint16_t offset = bytecode.size();
     ((MethodBuilder &)(*(mit->second))).gen_bytecode(bytecode);
-    entry.hash_id = hash(mit->first->to_string());
-		entry.class_id = hash(this->property(0)->to_string());
+    entry.hash_id = hash(CONST_TEXT(mit->first));
+		entry.class_id = hash(CONST_TEXT(className));
     entry.flags = VTM_BYTECODE;
     entry.locals = ((MethodBuilder &)(*(mit->second))).local_count();
     entry.method.offset = offset;
 #ifdef DEBUG
-		std::cout << "VTABLE: class method " << mit->first->to_string()
+		std::cout << "VTABLE: class method " << CONST_TEXT(mit->first)
 							<< " bytecode @ " << offset << std::endl;
 #endif
     vtable.add_entry(entry);
@@ -556,7 +552,7 @@ void grinder::Class::create_class() const {
   cls->set_bytecode(bytecode.size(), (uint8_t *)&bytecode[0], COPY);
 
   // Register the new class and add it to the library.
-  library->library->add(cls, className->to_string());
+  library->library->add(cls, TEXT(className).c_str());
 }
 
 /************************
@@ -572,7 +568,7 @@ bool meat::grinder::Class::is_cpp() const {
   }
 
   // Check the methods to see if any of them are cpp methods.
-  Index &methods = (Index &)(*(objectMethods));
+  Index &methods = INDEX(objectMethods);
   for (mit = methods.begin(); mit != methods.end(); mit++) {
     if (((MethodBuilder &)(*(mit->second))).is_cpp_method()) {
       return true;
@@ -580,7 +576,7 @@ bool meat::grinder::Class::is_cpp() const {
   }
 
   // Check the class methods to see if any of them are cpp methods.
-  Index &class_methods = (Index &)(*(classMethods));
+  Index &class_methods = INDEX(classMethods);
   for (mit = class_methods.begin(); mit != class_methods.end(); mit++) {
     if (((MethodBuilder &)(*(mit->second))).is_cpp_method()) {
       return true;
@@ -595,19 +591,18 @@ bool meat::grinder::Class::is_cpp() const {
 
 std::string meat::grinder::Class::cpp_methods() {
   std::string cppcode;
-  std::string class_name = cook_c_name(className->to_string());
+  std::string class_name = cook_c_name(TEXT(className).c_str());
   std::vector<uint8_t> bytecode;
 
   cppcode += "/***************************************************************"
     "***************\n";
-  cppcode += std::string(" * ") + (className->to_string()) +
-    " Class\n";
+  cppcode += std::string(" * ") + TEXT(className) + " Class\n";
   cppcode += " */\n\n";
 
   if (!(constr == meat::Null())) {
       cppcode += "static meat::Reference " + class_name + "_constructor(\n" +
         "  meat::Reference &klass,\n  meat::uint8_t properties) {\n";
-      cppcode += constr->to_string();
+      cppcode += TEXT(constr);
       cppcode += "\n}\n\n";
   }
 
@@ -618,14 +613,14 @@ std::string meat::grinder::Class::cpp_methods() {
 
   if (obj_props.size() > 0) {
     for (pit = obj_props.begin(), c = 0; pit != obj_props.end(); pit++, c++) {
-        cppcode += std::string("#define ") + (*pit)->to_string() +
+        cppcode += std::string("#define ") + CONST_TEXT(*pit) +
           " (self->property(" + ::to_string(c) + "))\n";
     }
     cppcode += "\n";
   }
   if (cls_props.size() > 0) {
     for (pit = cls_props.begin(), c = 0; pit != cls_props.end(); pit++, c++) {
-        cppcode += std::string("#define ") + (*pit)->to_string() +
+        cppcode += std::string("#define ") + CONST_TEXT(*pit) +
           " (klass->property(" + ::to_string(c) + "))\n";
     }
     cppcode += "\n";
@@ -637,7 +632,7 @@ std::string meat::grinder::Class::cpp_methods() {
 	VtableBuilder<struct _c_vtable_entry_s>::iterator vtable_it;
 
   /* Methods */
-	vt = CLASS(super).get_vtable(vt_size);
+	vt = CLASS(superClass).get_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it) {
 		vtable_it->str_hash = itohex(vtable_it->hash_id);
@@ -651,7 +646,7 @@ std::string meat::grinder::Class::cpp_methods() {
 
     Index::const_iterator mit;
     for (mit = methods.begin(); mit != methods.end(); mit++) {
-      meat::uint32_t hash_id = hash((*(mit->first)).to_string());
+      meat::uint32_t hash_id = hash(CONST_TEXT(mit->first));
       struct _c_vtable_entry_s entry;
 
       if (((MethodBuilder &)(*(mit->second))).is_cpp_method()) {
@@ -664,9 +659,7 @@ std::string meat::grinder::Class::cpp_methods() {
           ((MethodBuilder &)(*(mit->second))).cpp_name((class_name +
             "_om_").c_str());
 
-        cppcode += "// method " +
-          std::string((*(mit->first)).to_string()) +
-          "\n";
+        cppcode += "// method " + CONST_TEXT(mit->first) + "\n";
         cppcode +=
           ((MethodBuilder &)(*(mit->second))).cpp_method((class_name +
             "_om_").c_str());
@@ -712,13 +705,13 @@ std::string meat::grinder::Class::cpp_methods() {
 
 	if (obj_props.size() > 0) {
     for (pit = obj_props.begin(); pit != obj_props.end(); pit++) {
-      cppcode += std::string("#undef ") + (*pit)->to_string() + "\n";
+      cppcode += std::string("#undef ") + CONST_TEXT(*pit) + "\n";
     }
     cppcode += "\n";
   }
 
   /* Class methods */
-	vt = CLASS(super).get_class_vtable(vt_size);
+	vt = CLASS(superClass).get_class_vtable(vt_size);
 	vtable.set(vt, vt_size);
 	for (vtable_it = vtable.begin(); vtable_it != vtable.end(); ++vtable_it) {
 		vtable_it->str_hash = itohex(vtable_it->hash_id);
@@ -731,7 +724,7 @@ std::string meat::grinder::Class::cpp_methods() {
 
     Index::const_iterator mit;
     for (mit = methods.begin(); mit != methods.end(); mit++) {
-      meat::uint32_t hash_id = hash((*(mit->first)).to_string());
+      meat::uint32_t hash_id = hash(CONST_TEXT(mit->first));
       struct _c_vtable_entry_s entry;
 
       if (((MethodBuilder &)(*(mit->second))).is_cpp_method()) {
@@ -742,9 +735,7 @@ std::string meat::grinder::Class::cpp_methods() {
         entry.flags = "VTM_NATIVE  ";
         entry.func_name = ((MethodBuilder &)(*(mit->second))).cpp_name((class_name + "_cm_").c_str());
 
-        cppcode += "// class method " +
-          std::string((*(mit->first)).to_string()) +
-          "\n";
+        cppcode += "// class method " + CONST_TEXT(mit->first) + "\n";
         cppcode += ((MethodBuilder &)(*(mit->second))).cpp_method((class_name + "_cm_").c_str());
 
         entry.locals = ((MethodBuilder &)(*(mit->second))).local_count();
@@ -788,7 +779,7 @@ std::string meat::grinder::Class::cpp_methods() {
 
   if (cls_props.size() > 0) {
     for (pit = cls_props.begin(); pit != cls_props.end(); pit++) {
-      cppcode += std::string("#undef ") + (*pit)->to_string() + "\n";
+      cppcode += std::string("#undef ") + CONST_TEXT(*pit) + "\n";
     }
     cppcode += "\n";
   }
@@ -821,18 +812,18 @@ std::string meat::grinder::Class::cpp_methods() {
 
 std::string meat::grinder::Class::cpp_new_class() const {
   std::string cppcode;
-  std::string class_name = className->to_string();
+  std::string class_name = CONST_TEXT(className);
   std::string cooked_name = cook_c_name(class_name.c_str());
   std::ostringstream hex;
 
   hex << std::hex << std::showbase << std::setw(8)
       << std::setfill('0');
-  hex << CONST_CLASS(super).get_hash_id();
+  hex << CONST_CLASS(superClass).get_hash_id();
 
   cppcode += "\n  cls = new meat::Class(meat::Class::resolve(" + hex.str() +
     "), " + ::to_string(LIST(objectProperties).size()) + ", " +
     ::to_string(LIST(classProperties).size() +
-								CONST_CLASS(super).get_obj_properties()) + ");\n";
+								CONST_CLASS(superClass).get_obj_properties()) + ");\n";
 
   if (!(this->property(5) == meat::Null())) {
       cppcode += "  cls->set_constructor(" + cooked_name + "_constructor);\n";
@@ -856,7 +847,7 @@ std::string meat::grinder::Class::cpp_new_class() const {
 }
 
 std::string meat::grinder::Class::cpp_hash_id() const {
-	uint32_t hash_id = hash(this->property(0)->to_string());
+	uint32_t hash_id = hash(CONST_TEXT(this->property(0)));
 	std::stringstream hex;
   hex << std::setw(8) << std::setfill('0') << std::setbase(16);
   hex << hash_id;
@@ -897,7 +888,7 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
           MethodBuilder *mb = new MethodBuilder(*this,
                                                 (tokens[1] == "function"));
 
-          Reference name = new Object(method_name);
+          Reference name = new Text(method_name);
           INDEX(classMethods)[name] = mb;
           mb->property(0) = name;
 
@@ -926,7 +917,7 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
           obj_property(tokens[1]);
 
         } else if (tokens[0] == "constructor") {
-          constr = new Object((std::string &)tokens[1]);
+          constr = new Text((std::string &)tokens[1]);
 
         } else if (tokens[0] == "method" || tokens[0] == "function") {
 
@@ -947,7 +938,7 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
           // Create a new method builder and add it to the vtable mappings.
           MethodBuilder *mb = new MethodBuilder(*this,
                                                 (tokens[0] == "function"));
-          Reference name = new Object(method_name);
+          Reference name = new Text(method_name);
           INDEX(objectMethods)[name] = mb;
           mb->property(0) = name;
 
@@ -1002,11 +993,11 @@ uint8_t meat::grinder::Class::class_method_count() const {
 		return cm_count;
 }
 
-#undef name
-#undef super
-#undef properties
+#undef className
+#undef superClass
+#undef objectProperties
 #undef classProperties
-#undef methods
+#undef objectMethods
 #undef classMethods
 #undef constr
 
@@ -1045,10 +1036,10 @@ void meat::grinder::MethodBuilder::compile() {
     List &parameters = LIST(this->property(1));
     meat::List::iterator it;
     for (it = parameters.begin(); it != parameters.end(); it++)
-      method.add_parameter((*it)->to_string());
+      method.add_parameter(TEXT(*it));
 
     // Tokenize and send command to command() method.
-    execute(this->property(2)->to_string());
+    execute(TEXT(this->property(2)));
 
     method.gen_bytecode(true);  // Bytecode generation stage 1
     method.gen_bytecode(false); // Bytecode generation stage 2
@@ -1065,7 +1056,7 @@ void meat::grinder::MethodBuilder::compile() {
  ******************************/
 
 std::string meat::grinder::MethodBuilder::cpp_hash_id() {
-  uint32_t hash_id = hash(this->property(0)->to_string());
+  uint32_t hash_id = hash(CONST_TEXT(this->property(0)));
   std::stringstream hex;
   hex << std::setw(8) << std::setfill('0') << std::setbase(16);
   hex << hash_id;
@@ -1077,7 +1068,7 @@ std::string meat::grinder::MethodBuilder::cpp_hash_id() {
  ***************************/
 
 std::string meat::grinder::MethodBuilder::cpp_name(const char *prelim) {
-  std::string orig_name = this->property(0)->to_string();
+  std::string orig_name = TEXT(this->property(0));
 
   // Transform operator names
   if (orig_name == "==") orig_name = "equals";
@@ -1123,11 +1114,11 @@ std::string meat::grinder::MethodBuilder::cpp_method(const char *prelim) {
          it++, i++) {
       std::ostringstream convert;
       convert << i;
-      code += std::string("  meat::Reference ") + (*it)->to_string() +
+      code += std::string("  meat::Reference ") + CONST_TEXT(*it) +
         " = CONTEXT(context).get_param(" + convert.str() + ");\n";
     }
 
-    code += this->property(2)->to_string();
+    code += TEXT(this->property(2));
     code += "\n}\n\n";
 
     locals = LIST(this->property(1)).size();
@@ -1198,7 +1189,7 @@ void meat::grinder::MethodBuilder::command(Tokenizer &tokens) {
 
 void grinder::MethodBuilder::add_parameter(const std::string &name) {
   List &parameters = LIST(this->property(1));
-  parameters.push_back(new Object(name));
+  parameters.push_back(new Text(name));
 }
 
 /***************************
@@ -1206,7 +1197,7 @@ void grinder::MethodBuilder::add_parameter(const std::string &name) {
  ***************************/
 
 void grinder::MethodBuilder::add_body(const std::string &body) {
-  this->property(2) = new Object(body);
+  this->property(2) = new Text(body);
 }
 
 /*******************************

@@ -125,28 +125,6 @@ namespace meat {
 		 */
 		Object(Reference &type, uint8_t properties);
 
-		/** Creates a new integer Object.
-		 * @param value The value to initialize the Object with.
-		 */
-		explicit Object(int32_t value);
-
-		/** Create a new meat number Object from a float_t value.
-		 */
-		explicit Object(float_t value);
-
-		/** Create a new script boolean Object. This constructor should never be
-		 * used exception to initialize the actual true and false Objects and the
-		 * True() and False() functions should be used to get references to these
-		 * Objects.
-		 *
-		 * @see True()
-		 * @see False()
-		 */
-		explicit Object(bool value);
-		explicit Object(const char *value);
-		explicit Object(const std::string &value);
-		Object(const char *value, const char *value2);
-
 		/** Destroy and clean up the Object.
 		 */
 		virtual ~Object () throw ();
@@ -162,7 +140,7 @@ namespace meat {
 
 		virtual bool is_class() const { return false; };
 
-		virtual bool is_Object() const { return true; };
+		virtual bool is_object() const { return true; };
 
 		/** Serialize the Object data to a data store.
 		 * @param store The store where Object is getting serialized to. This is
@@ -187,19 +165,6 @@ namespace meat {
     virtual Reference &property(uint8_t index);
     virtual Reference &property(uint8_t index) const;
 
-		virtual bool operator == (const char *value) const;
-
-		virtual operator Class &();
-		virtual operator Context &();
-
-		/** Converts the Object to an integer if possible.
-		 * @throws Exception If the Object cannot be converted to an integer.
-		 * @return Returns an integer.
-		 */
-    virtual int32_t to_int() const;
-    virtual float_t to_float() const;
-		virtual const char *to_string() const;
-
 		friend void initialize(int argc, const char *argv[],
 													 void (*import)(const char *name),
 													 class_compiler_t compiler);
@@ -207,24 +172,8 @@ namespace meat {
 	private:
 		meat::Reference o_type;
 
-		typedef enum {
-			PROPSONLY = 0x00,
-			BOOLEAN   = 0xfc,
-			INTEGER   = 0xfd,
-			FLOAT     = 0xfe,
-			STRING    = 0xff,
-		} data_type_t;
-
 		uint8_t num_of_props;
 		meat::Reference *properties;
-
-		data_type_t data_type;
-		union {
-			int32_t i;
-			float_t f;
-			bool b;
-			char *s;
-		} data;
 	};
 
 	/****************************************************************************
@@ -656,6 +605,62 @@ namespace meat {
 	/****************************************************************************
 	 */
 
+	class DECLSPEC Value : public Object {
+	public:
+		Value(Reference &cls, uint8_t properties);
+		Value(int32_t value);
+		Value(float_t value);
+		Value(bool value);
+		virtual ~Value() throw() {}
+
+		virtual void serialize(data::Archive &store,
+													 std::ostream &data_stream) const;
+		virtual void unserialize(data::Archive &store, std::istream &data_stream);
+
+		operator meat::int32_t() const;
+		operator meat::float_t() const;
+
+  private:
+    typedef enum {
+      BOOLEAN   = 0x00,
+      INTEGER   = 0x01,
+      FLOAT     = 0x02,
+    } data_type_t;
+
+    data_type_t data_type;
+    union {
+      bool b;
+			int32_t i;
+			float_t f;
+		} data;
+	};
+
+#define INTEGER(ref) ((meat::int32_t)(dynamic_cast<meat::Value &>(*(ref))))
+#define FLOAT(ref) ((meat::float_t)(dynamic_cast<meat::Value &>(*(ref))))
+
+	/****************************************************************************
+	 */
+
+	class DECLSPEC Text : public std::string, public Object {
+	public:
+		Text();
+		Text(const Text &other);
+		Text(Reference &cls, uint8_t properties);
+		Text(const std::string &value);
+		Text(const char *value);
+		virtual ~Text() throw() {}
+
+		virtual void serialize(data::Archive &store,
+													 std::ostream &data_stream) const;
+		virtual void unserialize(data::Archive &store, std::istream &data_stream);
+	};
+
+#define TEXT(ref) (dynamic_cast<meat::Text &>(*(ref)))
+#define CONST_TEXT(ref) (dynamic_cast<const meat::Text &>(*(ref)))
+
+	/****************************************************************************
+	 */
+
 	class DECLSPEC List : private std::deque<Reference>, public Object {
 	public:
 		List();
@@ -707,7 +712,6 @@ namespace meat {
 		using std::map<Reference, Reference, obj_less>::operator[];
 		using std::map<Reference, Reference, obj_less>::insert;
 		using std::map<Reference, Reference, obj_less>::erase;
-		//using std::map<Reference, Reference, obj_less>::back;
 		using std::map<Reference, Reference, obj_less>::size;
 		using std::map<Reference, Reference, obj_less>::empty;
 		using std::map<Reference, Reference, obj_less>::begin;

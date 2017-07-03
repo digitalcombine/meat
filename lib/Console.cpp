@@ -44,9 +44,8 @@ static meat::Reference Console_cm_write_(meat::Reference context) {
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference message = CONTEXT(context).get_param(0);
 
-		std::cout << message->to_string();
-		return null;
-
+	std::cout << TEXT(message);
+	return null;
 }
 
 // class method writeLn:
@@ -55,9 +54,8 @@ static meat::Reference Console_cm_writeLn_(meat::Reference context) {
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference message = CONTEXT(context).get_param(0);
 
-		std::cout << message->to_string() << std::endl;
-		return null;
-
+	std::cout << TEXT(message) << std::endl;
+	return null;
 }
 
 static meat::vtable_entry_t ConsoleCMethods[] = {

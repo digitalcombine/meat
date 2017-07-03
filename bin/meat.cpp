@@ -133,7 +133,7 @@ int main(int argc, const char *argv[]) {
 #ifdef TESTING
 			meat::test::summary();
 #endif
-			try { return (result->to_int()); }
+			try { return INTEGER(result); }
 			catch (...) { return 1; }
 		}
 

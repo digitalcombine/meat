@@ -25,57 +25,64 @@
 #  included in the name hashing...
 
 Library include: {
-#include <meat/compiler.h>
+#include "compiler.h"
 }
 
 #==============================================================================
 # Grinder.Library Class
 
 Object subClass: Grinder.Libraryᶲ body: {
-  
+
   property name
   property classes
   property documentation
-  
+
   constructor {
-    return new meat::grinder::Library(klass, properties);    
+    return new meat::grinder::Library(klass, properties);
   }
-  
+
   method initialize {
     super initialize
-  
+
     classes = [List new]
   }
-  
+
   class function new: libraryName {
     meat::Reference new_object = CLASS(klass).new_object();
-    
+
     name = libraryName;
-    (dynamic_cast<meat::grinder::Library &>(*new_object)).register_as(name->to_string());
-    
+    dynamic_cast<meat::grinder::Library &>
+		  (*new_object).register_as(name->to_string());
+
     return new_object;
   }
-  
-  function import: libraryName {
+
+  function addImport: libraryName {
     dynamic_cast<meat::grinder::Library &>
       (*self).add_import(libraryName->to_string());
     return null;
   }
-  
+
+	function removeImport: libraryName {
+	}
+
+	function getImportList {
+	}
+
   method getName {
     context return: name
   }
-  
+
   method renameTo: newName {
     Exception throw: "Currently unable to rename libraries."
     name = [newName asText]
   }
-  
+
   function addClass: theClass {
     dynamic_cast<meat::grinder::Library &>(*self).add_class(theClass);
 	  return null;
   }
-  
+
   method getClass: className {
     classes forEach: .cls do: {
       [className == [.cls getName]] isTrue: {
@@ -84,7 +91,7 @@ Object subClass: Grinder.Libraryᶲ body: {
     }
     Exception throw: [[["Class " + name] + " not found in library "] + name]
   }
-  
+
   method getClassList {
     names = [List new]
     classes forEach: .cls do: {
@@ -92,18 +99,18 @@ Object subClass: Grinder.Libraryᶲ body: {
     }
     context return: names
   }
-  
+
   method removeClass: className {
     theClass = [self getClass: className]
     classes remove: theClass
   }
-  
+
   function setApplicationClass: className {
     dynamic_cast<meat::grinder::Library &>
       (*self).set_application(className->to_string());
     return null;
   }
-  
+
   function compile {
     dynamic_cast<meat::grinder::Library &>(*self).write();
     return null;
@@ -117,50 +124,58 @@ Object subClass: Grinder.Classᶲ body: {
 
   property className
   property superClass
-  property properties
+  property objectProperties
   property classProperties
-  property methods
+  property objectMethods
   property classMethods
   property constr
-  
+
   constructor {
-    return new meat::grinder::Class(klass, properties);    
+    return new meat::grinder::Class(klass, properties);
   }
-  
+
   method initialize {
     super initialize
-  
-    properties = [List new]
+
+    objectProperties = [List new]
     classProperties = [List new]
-    methods = [Index new]
+    objectMethods = [Index new]
     classMethods = [Index new]
   }
-  
+
   class method subClassFrom: aClass as: name {
     self newObject
     className = name
     superClass = aClass
     context return: self
   }
-  
+
   method getName {
     context return: className
   }
-  
+
   method addProperty: propertyName {
-    properties push: [propertyName asText]
+    objectProperties push: [propertyName asText]
   }
-  
+
   method getPropertiesList {
-    context return: [properties makeCopy]
+    context return: [objectProperties makeCopy]
   }
-  
+
   method addClassProperty: propertyName {
     classProperties push: [propertyName asText]
   }
-  
+
   method getClassPropertiesList {
     context return: [classProperties clone]
+  }
+
+  method addMethod: theMethod {
+    objectMethods set: [theMethod getName] to: theMethod
+  }
+
+  method removeMethod: methodName {
+    objectMethods remove: methodName
   }
 }
 
@@ -169,20 +184,53 @@ Object subClass: Grinder.Classᶲ body: {
 
 Object subClass: Grinder.Methodᶲ body: {
 
-  property name
+  property methodName
   property parameters
   property body
   property documentation
-  
+
+  constructor {
+    return new meat::grinder::Method(klass, properties);
+  }
+
   method initialize {
+    super initialize
     parameters = [List new]
   }
-  
+
+  class method new: name {
+    self newObject
+    methodName = name
+    context return: self
+  }
+
+  method getName {
+    context return: methodName
+  }
+
+  method addParameter: name {
+    parameters push: [name asText]
+  }
+
+  method removeParameter: name {
+    parameters remove: [name asText]
+  }
+
+  method getParameterList {
+    context return: [parameters makeCopy]
+  }
+
   method getBody {
     context return: body
   }
-  
+
   method setBody: newBody {
     body = [newBody asText]
+  }
+
+  function isNative {
+    if (dynamic_cast<meat::grinder::Method &>(*self).is_cpp_method())
+      return meat::True();
+    return meat::False();
   }
 }

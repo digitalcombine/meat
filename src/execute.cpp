@@ -352,7 +352,7 @@ meat::Reference meat::execute(Reference context) {
 				uint8_t local_id = code[ip + 1];
 				int32_t *i = (int32_t *)&code[ip + 2];
 
-				Reference intobj = new Object(endian::read_be(*i));
+				Reference intobj = new Value(endian::read_be(*i));
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": INT " << std::dec
@@ -370,7 +370,7 @@ meat::Reference meat::execute(Reference context) {
 				uint8_t local_id = code[ip + 1];
 				float_t *i = (float_t *)&code[ip + 2];
 
-				Reference float_obj = new Object(endian::read_be(*i));
+				Reference float_obj = new Value(endian::read_be(*i));
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": FLOAT " << std::dec
@@ -387,7 +387,7 @@ meat::Reference meat::execute(Reference context) {
 			case meat::bytecode::ASSIGN_CONST_STR: {
 				uint8_t local_id = code[ip + 1];
 				const char *str = (const char *)&code[ip + 2];
-				Reference strobj = new Object(str);
+				Reference strobj = new Text(str);
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": STR " << std::dec

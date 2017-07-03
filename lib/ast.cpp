@@ -19,10 +19,9 @@
  * along with Meat.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <meat/compiler.h>
 #include <meat/utilities.h>
 #include <meat/bytecode.h>
-
+#include "compiler.h"
 #include "ast.h"
 #include <sstream>
 
@@ -184,11 +183,11 @@ Method::Method(const meat::List &properties, int p_offset,
 
   List::const_iterator it;
   for (it = properties.begin(); it != properties.end(); it++)
-    this->properties.push_back((*it)->to_string());
+    this->properties.push_back(CONST_TEXT(*it));
   this->p_offset = p_offset;
 
   for (it = class_properties.begin(); it != class_properties.end(); it++)
-    this->class_properties.push_back((*it)->to_string());
+    this->class_properties.push_back(CONST_TEXT(*it));
   this->cp_offset = cp_offset;
 
   temp_counter = 0;

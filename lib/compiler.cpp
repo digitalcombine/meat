@@ -17,7 +17,7 @@
  * along with Meat.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <meat/compiler.h>
+#include "compiler.h"
 
 #include <cstdlib>
 #ifdef TESTING

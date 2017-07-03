@@ -17,8 +17,8 @@
  * along with Meat.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <meat/compiler.h>
 #include <meat/utilities.h>
+#include "compiler.h"
 
 #include <algorithm>
 #include <cstring>

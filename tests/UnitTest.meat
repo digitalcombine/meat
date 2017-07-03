@@ -1,4 +1,4 @@
-# Unit Test Suit for the Gitgo Language.
+# Unit Test Suit for the Meat Language.
 #
 # Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
 #
@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 Library import: Console
 
 #==============================================================================
@@ -40,7 +40,7 @@ Object subClass: Test body: {
 	# Initialize a the new Test object with default values.
 	method initialize {
 		super initialize
-		
+
 		passed = [Boolean true]
 		title = ""
 		failExplanation = [List new]
@@ -93,7 +93,7 @@ Object subClass: Test body: {
 			context return: res
 		}
 	}
-	
+
 	#  Set the reason why the test failed, but unlike the method fail: it does
 	# not kill the context where the failure occured.
 	method whyFailed: reason {
@@ -141,13 +141,13 @@ Console subClass: TestSuite body: {
 		Console writeLn: ["=" * 79]
 		testList forEach: .test do: {
 			Console write: [["TEST: " + [.test getTitle]] + "... "]
-			
+
 			Exception try: {
 				.test execute
 			} catch: .error do: {
 				.test whyFailed: [.error message]
 			}
-			
+
 			# Record the results of the test.
 			[.test hasPassed] isTrue: {
 				Console writeLn: "Passed"
@@ -187,24 +187,25 @@ Console subClass: TestSuite body: {
 # Test.Test Class
 
 Object subClass: Test.Test body: {
+
 	property title
 	property test
 	property passed
 	property failedReason
-	
+
 	class method new: testTitle test: body {
 		self newObject
 		title = testTitle
 		test = body
 		context return: self
 	}
-	
+
 	method initialize {
 		passed = [Boolean false]
 		title = ""
 		failedReason = "Unknown reason"
 	}
-	
+
 	# Run the test.
 	method run {
 		Exception try: {
@@ -214,7 +215,7 @@ Object subClass: Test.Test body: {
 			failedReason = [.error message]
 			passed = [Boolean false]
 		}
-		
+
 		passed isTrue: {
 			Console writeLn: "passed"
 		} else: {
@@ -222,11 +223,11 @@ Object subClass: Test.Test body: {
 			Console writeLn: ["  " + failedReason]
 		}
 	}
-	
+
 	method hasPassed {
 		context return: passed
 	}
-	
+
 	# Pass and exit the test.
 	method pass {
 		passed = [Boolean true]
@@ -245,6 +246,7 @@ Object subClass: Test.Test body: {
 # Test.Suite Class
 
 Object subClass: Test.Suite body: {
+
 	property tests
 	property currentTest
 
@@ -257,17 +259,17 @@ Object subClass: Test.Suite body: {
 	method initialize {
 		super initialize
 		tests = [List new]
-		
+
 		self setup
 	}
-	
+
 	method title: title test: body {
 		tests append: [Test.Test new: title test: body]
 	}
-	
+
 	method setup {
 	}
-	
+
 	# Pass and exit the test.
 	method pass {
 		[currentTest isNull] isFalse: {
@@ -281,7 +283,7 @@ Object subClass: Test.Suite body: {
 			currentTest fail: reason
 		}
 	}
-	
+
 	# Application entry point.
 	method runTests {
 		# Execute the tests.
@@ -289,21 +291,21 @@ Object subClass: Test.Suite body: {
 		tests forEach: .test do: {
 			currentTest = .test
 			.test run
-			currentTest = null			
+			currentTest = null
 		}
 	}
-	
+
 	# Generate and return an index of the test counts.
 	method summary {
 		passedCount = 0
-	
+
 		# Tally up all the passed tests.
-		tests forEach: .test do: {			
+		tests forEach: .test do: {
 			[.test hasPassed] isTrue: {
 				passedCount = [passedCount + 1]
 			}
 		}
-		
+
 		# Create a index of the test counts
 		result = [Index new]
 		result set: "tests preformed" to: [tests size]
@@ -317,18 +319,19 @@ Object subClass: Test.Suite body: {
 # Test.Summary Class
 
 Object subClass: Test.Summary body: {
+
   property testSuites
-  
+
   class method new {
-  	super newObject
+  	self newObject
   	context return: self
   }
-  
+
   method initialize {
   	super initialize
   	testSuites = [List new]
   }
-  
+
   method addSuite: suite {
   	[suite isType: Test.Suite] isTrue: {
 	  	testSuites append: suite
@@ -336,21 +339,21 @@ Object subClass: Test.Summary body: {
 	  	Exception throw: "Only a Test.Suite can be added to a Test.Summary"
 	  }
   }
-  
+
   method runAndSummarize {
   	testsPreformed = 0
   	testsPassed = 0
   	testsFailed = 0
-  
+
   	testSuites forEach: .suite do: {
   		.suite runTests
-  		
+
   		results = [.suite summary]
   		testsPreformed = [testsPreformed + [results get: "tests preformed"]]
   		testsPassed = [testsPassed + [results get: "tests passed"]]
   		testsFailed = [testsFailed + [results get: "tests failed"]]
   	}
-  	
+
   	Console writeLn: ["=" * 79]
   	[testsFailed == 0] isTrue: {
   		Console write: "All "

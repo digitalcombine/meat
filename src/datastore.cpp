@@ -581,14 +581,14 @@ static meat::Reference Library_cm_import_(meat::Reference context) {
   meat::Reference filename = CONTEXT(context).get_param(0);
 
 #ifdef DEBUG
-  std::cout << "DEBUG: Importing library " << filename->to_string()
+  std::cout << "DEBUG: Importing library " << TEXT(filename)
             << std::endl;
 #endif /* DEBUG */
 
   if (compiler_import() != NULL) {
-    compiler_import()(filename->to_string());
+    compiler_import()(TEXT(filename).c_str());
   } else {
-    meat::data::Library::import(filename->to_string());
+    meat::data::Library::import(TEXT(filename).c_str());
   }
   return null;
 }
@@ -601,7 +601,7 @@ static meat::Reference Library_cm_include_(meat::Reference context) {
 	meat::data::compiler_import_t &import = compiler_import();
 
   if (import != NULL) {
-    meat::data::Library::include(cpp_includes->to_string());
+    meat::data::Library::include(TEXT(cpp_includes).c_str());
   } else {
     throw meat::Exception("Method Library include is only with the compiler");
 	}
@@ -875,7 +875,7 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
     data_stream.seekg(this->index.at(index).obj_offset);
 
     meat::uint8_t value;
-    data_stream >> value; // Object data value type
+    //data_stream >> value; // Object data value type
     data_stream >> value;
 
     data_stream.seekg(save_pos);
@@ -1193,7 +1193,7 @@ static meat::Reference Archive_cm_create_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference filename = CONTEXT(context).get_param(0);
 
-  return new meat::data::Archive(filename->to_string(), true);
+  return new meat::data::Archive(TEXT(filename).c_str(), true);
 }
 
 // class method open:
@@ -1201,7 +1201,7 @@ static meat::Reference Archive_cm_open_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference filename = CONTEXT(context).get_param(0);
 
-  return new meat::data::Archive(filename->to_string());
+  return new meat::data::Archive(TEXT(filename).c_str());
 }
 
 static meat::vtable_entry_t ArchiveCMethods[] = {
@@ -1232,8 +1232,8 @@ static meat::Reference Archive_om_import_(meat::Reference context) {
   meat::Reference filename = CONTEXT(context).get_param(0);
 
   meat::data::Archive &archive_obj = (meat::data::Archive &)(*self);
-  meat::data::Library::import(filename->to_string());
-  archive_obj.add_import(filename->to_string());
+  meat::data::Library::import(TEXT(filename).c_str());
+  archive_obj.add_import(TEXT(filename).c_str());
   return null;
 }
 

@@ -57,7 +57,6 @@ meat::Object::Object(Reference &type) {
 			this->properties[c] = Null();
 	} else
 		properties = 0;
-	data_type = PROPSONLY;
 }
 
 meat::Object::Object(Reference &type, meat::uint8_t properties) {
@@ -83,65 +82,6 @@ meat::Object::Object(Reference &type, meat::uint8_t properties) {
 			this->properties[c] = Null();
 	} else
 		this->properties = 0;
-	data_type = PROPSONLY;
-}
-
-meat::Object::Object(bool value) {
-	// Create a new boolean Object.
-	o_type = Class::resolve("Boolean");
-	num_of_props = 0;
-	properties = 0;
-	data_type = BOOLEAN;
-	data.b = value;
-}
-
-meat::Object::Object(meat::int32_t value) {
-	// Create a new integer Object.
-	o_type = Class::resolve("Integer");
-	num_of_props = 0;
-	properties = 0;
-	data_type = INTEGER;
-	data.i = value;
-}
-
-meat::Object::Object(meat::float_t value) {
-	// Create a new float Object
-	o_type = Class::resolve("Number");
-	num_of_props = 0;
-	properties = 0;
-	data_type = FLOAT;
-	data.f = value;
-}
-
-meat::Object::Object(const char *value) {
-	// Create a new text Object
-	o_type = Class::resolve("Text");
-	num_of_props = 0;
-	properties = 0;
-	data_type = STRING;
-	data.s = new char[std::strlen(value) + 1];
-	std::strcpy(data.s, value);
-}
-
-meat::Object::Object(const std::string &value) {
-	// Create a new text Object
-	o_type = Class::resolve("Text");
-	num_of_props = 0;
-	properties = 0;
-	data_type = STRING;
-	data.s = new char[value.length() + 1];
-	std::strcpy(data.s, value.c_str());
-}
-
-meat::Object::Object(const char *value, const char *value2) {
-	// Create a new text Object conjugating the two strings.
-	o_type = Class::resolve("Text");
-	num_of_props = 0;
-	properties = 0;
-	data_type = STRING;
-	data.s = new char[strlen(value) + strlen(value2) + 1];
-	std::strcpy(data.s, value);
-	std::strcat(data.s, value2);
 }
 
 /*************************
@@ -152,10 +92,6 @@ meat::Object::~Object() throw () {
 	// Clean up all the properties
 	if (properties)
 		delete [] properties;
-
-	// Clean up any text if the Object was a text type.
-	if (data_type == STRING)
-		delete [] data.s;
 }
 
 /*************************
@@ -190,26 +126,6 @@ bool meat::Object::is_type(const char *class_name) const {
 
 void meat::Object::serialize(data::Archive &store,
 														 std::ostream &data_stream) const {
-	// Serialize the Objects data
-	store << (uint8_t)data_type;
-
-	switch (data_type) {
-	case BOOLEAN:
-		store << (uint8_t)data.b;
-		break;
-	case INTEGER:
-		store << data.i;
-		break;
-	case FLOAT:
-		store << data.f;
-		break;
-	case STRING:
-		data_stream.write(data.s, strlen(data.s));
-		data_stream.put(0);
-		break;
-	default:
-		break;
-	}
 }
 
 /*****************************
@@ -218,33 +134,6 @@ void meat::Object::serialize(data::Archive &store,
 
 void meat::Object::unserialize(data::Archive &store,
 															 std::istream &data_stream) {
-	uint8_t temp;
-	store >> temp;
-	data_type = (data_type_t)temp;
-
-	switch (data_type) {
-	case BOOLEAN:
-		store >> temp;
-		data.b = (bool)temp;
-		break;
-	case INTEGER:
-		store >> data.i;
-		break;
-	case FLOAT:
-		store >> data.f;
-		break;
-	case STRING: {
-		std::string temp;
-		char ch;
-		while ((ch = data_stream.get()) != 0)
-			temp += ch;
-		data.s = new char[temp.length() + 1];
-		std::strcpy(data.s, temp.c_str());
-		break;
-	}
-	default:
-		break;
-	}
 }
 
 /**************************
@@ -257,76 +146,10 @@ meat::Reference &meat::Object::property(meat::uint8_t index) {
 	throw Exception("Invalid property index.");
 }
 
-
 meat::Reference &meat::Object::property(meat::uint8_t index) const {
 	if (index < num_of_props)
 		return properties[index];
 	throw Exception("Invalid property index.");
-}
-
-/*****************************
- * meat::Object::operator == *
- *****************************/
-
-bool meat::Object::operator ==(const char *value) const {
-	return std::strcmp(to_string(), value) == 0;
-}
-
-/****************************************
- * meat::Object::operator meat::Class & *
- ****************************************/
-
-meat::Object::operator meat::Class &() {
-	throw Exception("Invalid conversion of an Object to a Class.");
-}
-
-/******************************************
- * meat::Object::operator meat::Context & *
- ******************************************/
-
-meat::Object::operator meat::Context &() {
-	throw Exception("Invalid conversion of an Object to a Context.");
-}
-
-/************************
- * meat::Object::to_int *
- ************************/
-
-meat::int32_t meat::Object::to_int() const {
-	switch (data_type) {
-	case INTEGER:
-		return data.i;
-	case FLOAT:
-		return data.f;
-	default:
-		throw Exception("Invalid conversion of an Object to an integer.");
-	}
-}
-
-/**************************
- * meat::Object::to_float *
- **************************/
-
-meat::float_t meat::Object::to_float() const {
-	switch (data_type) {
-	case INTEGER:
-		return data.i;
-	case FLOAT:
-		return data.f;
-	default:
-		throw Exception("Invalid conversion of an Object to a float.");
-	}
-}
-
-/***************************
- * meat::Object::to_string *
- ***************************/
-
-const char *meat::Object::to_string() const {
-	if (data_type == STRING)
-		return data.s;
-
-	throw Exception("Invalid conversion of an Object to a string.");
 }
 
 /******************************************************************************
@@ -1457,12 +1280,12 @@ meat::Exception::Exception(Reference &cls, meat::uint8_t properties)
 meat::Exception::Exception(const std::string &message)
 	: Object(Class::resolve("Exception"), 2) {
 	// New exception with a meat Text message.
-	this->property(0) = new Object(message);
+	this->property(0) = new Text(message);
 }
 
 meat::Exception::Exception(const std::string &message, Reference &context)
 	: Object(Class::resolve("Exception"), 2) {
-	this->property(0) = new Object(message.c_str());
+	this->property(0) = new Text(message);
 	this->property(1) = context;
 }
 
@@ -1482,11 +1305,146 @@ const char* meat::Exception::what() const throw() {
 		if (this->property(0) == Null())
 			return "";
 		else
-			return this->property(0)->to_string();
+			return TEXT(this->property(0)).c_str();
 	} catch (...) {
 		// If property 0 cannot be converted to a string then return nothing.
 		return "";
 	}
+}
+
+/******************************************************************************
+ * Value Class Implemenation
+ */
+
+/**********************
+ * meat::Value::Value *
+ **********************/
+
+meat::Value::Value(Reference &cls, uint8_t properties)
+	: Object(cls, properties), data_type(INTEGER) {
+	data.i = 0;
+}
+
+meat::Value::Value(int32_t value)
+	: Object(Class::resolve("Integer")), data_type(INTEGER) {
+	data.i = value;
+}
+
+meat::Value::Value(float_t value)
+	: Object(Class::resolve("Number")), data_type(FLOAT) {
+	data.f = value;
+}
+
+meat::Value::Value(bool value)
+	: Object(Class::resolve("Boolean")), data_type(BOOLEAN) {
+	data.b = value;
+}
+
+/**************************
+ * meat::Value::serialize *
+ **************************/
+
+void meat::Value::serialize(data::Archive &store,
+														std::ostream &data_stream) const {
+	switch (data_type) {
+	case BOOLEAN:
+		store << (uint8_t)data.b;
+		break;
+	case INTEGER:
+		store << data.i;
+		break;
+	case FLOAT:
+		store << data.f;
+		break;
+	default:
+		break;
+	}
+}
+
+/****************************
+ * meat::Value::unserialize *
+ ****************************/
+
+void meat::Value::unserialize(data::Archive &store,
+															std::istream &data_stream) {
+	if (this->is_type("Integer")) {
+		data_type = INTEGER;
+		store >> data.i;
+	} else if (this->is_type("Number")) {
+		data_type = FLOAT;
+		store >> data.f;
+	}
+}
+
+meat::Value::operator meat::int32_t() const {
+	switch (data_type) {
+	case INTEGER:
+		return data.i;
+	case FLOAT:
+		return data.f;
+	default:
+		throw Exception("Invalid conversion of an Object to an integer.");
+	}
+}
+
+meat::Value::operator meat::float_t() const {
+	switch (data_type) {
+	case INTEGER:
+		return data.i;
+	case FLOAT:
+		return data.f;
+	default:
+		throw Exception("Invalid conversion of an Object to a float.");
+	}
+}
+
+/******************************************************************************
+ * Text Class Implemenation
+ */
+
+/********************
+ * meat::Text::Text *
+ ********************/
+
+meat::Text::Text() : Object(Class::resolve("Text")) {
+}
+
+meat::Text::Text(const Text &other)
+	: std::string(other), Object(Class::resolve("Text")) {
+}
+
+meat::Text::Text(Reference &cls, uint8_t properties)
+	: Object(cls, properties) {
+}
+
+meat::Text::Text(const std::string &value)
+	: std::string(value), Object(Class::resolve("Text")) {
+}
+
+meat::Text::Text(const char *value)
+	: std::string(value), Object(Class::resolve("Text")) {
+}
+
+/*************************
+ * meat::Text::serialize *
+ *************************/
+
+void meat::Text::serialize(data::Archive &store,
+													 std::ostream &data_stream) const {
+	data_stream.write(c_str(), length());
+	data_stream.put(0);
+}
+
+/***************************
+ * meat::Text::unserialize *
+ ***************************/
+
+void meat::Text::unserialize(data::Archive &store,
+														 std::istream &data_stream) {
+	clear();
+	unsigned char ch;
+	while ((ch = data_stream.get()) != 0)
+		*this += ch;
 }
 
 /******************************************************************************
@@ -1544,8 +1502,8 @@ void meat::List::unserialize(data::Archive &store,
 
 bool meat::obj_less::operator()(const Reference &first,
 																const Reference &second) const {
-	Reference ctx = message((Reference &)first, "<", meat::Null());
-	CONTEXT(ctx).set_param(0, (Reference &)second);
+	Reference ctx = message((Reference)first, "<", meat::Null());
+	CONTEXT(ctx).set_param(0, (Reference)second);
 	Reference result = execute(ctx);
 	if (result == meat::True())
 		return true;

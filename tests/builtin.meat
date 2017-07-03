@@ -446,7 +446,6 @@ Object subClass: Exceptionᶲ body: {
 
 Object subClass: Numericᶲ body: {
 
-
   class function cos: value {
     return
       new meat::Object((meat::float_t)std::cos(value->to_float()));
@@ -916,10 +915,12 @@ Object subClass: Booleanᶲ body: {
 
 Object subClass: Textᶲ body: {
 
+	constructor {
+    new meat::Text(klass, properties);
+	}
+
   function isEmpty {
-    if (self->to_string()[0] == 0)
-      return meat::True();
-    return meat::False();
+    return (TEXT(self).empty() ? meat::True() : meat::False());
   }
 
   function length {
@@ -1001,7 +1002,7 @@ Object subClass: Textᶲ body: {
 
     return new meat::Object(result);
   }
-  
+
   method asText {
     context return: self
   }
@@ -1138,7 +1139,7 @@ Object subClass: Listᶲ body: {
 
     return null;
   }
-  
+
   function makeCopy {
     Reference new_list = meat::List();
     LIST(new_list) = LIST(self);
@@ -1236,7 +1237,7 @@ Object subClass: Applicationᶲ body: {
 Object subClass: Libraryᶲ body: {
 
   class property newLibrary
-  
+
   property cppIncludes
   property applicationClass
   property imports
@@ -1265,10 +1266,10 @@ Object subClass: Libraryᶲ body: {
   #
 	#	return null;
 	#}
-	
+
 	class method include: includes {
 	  [newLibrary isNull] isFalse: {
-	    cppIncludes = includes 
+	    cppIncludes = includes
 	  } else: {
 	    Exception throw: "Library method include: can only be used with Grinder"
 	  }

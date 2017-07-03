@@ -39,7 +39,7 @@
  * Object Class
  */
 
-static meat::Reference object_constructor(meat::Reference &klass,
+static meat::Reference Object_constructor(meat::Reference &klass,
 																					meat::uint8_t properties) {
   return new meat::Object(klass, properties);
 }
@@ -199,7 +199,7 @@ static meat::Reference Class_cm_subClass_body_(meat::Reference context) {
   meat::Reference block = CONTEXT(context).get_param(1);
 
 	if (class_compiler() != 0) {
-		class_compiler()(self, name->to_string(), block->to_string());
+		class_compiler()(self, TEXT(name).c_str(), TEXT(block).c_str());
 	}
 
 	return null;
@@ -235,7 +235,7 @@ static meat::uint8_t ClassBytecode[] = {
  * Context Class
  */
 
-static meat::Reference context_constructor(meat::Reference &cls,
+static meat::Reference Context_constructor(meat::Reference &cls,
 																					 meat::uint8_t properties) {
   return new meat::Context(properties);
 }
@@ -245,14 +245,14 @@ static meat::Reference Context_om_getLocal_(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
 
-	return CONTEXT(self).get_local(index->to_int());
+	return CONTEXT(self).get_local(INTEGER(index));
 }
 
 // method localVariables
 static meat::Reference Context_om_localVariables(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-	return new meat::Object(CONTEXT(self).get_num_of_locals() - 3);
+	return new meat::Value(CONTEXT(self).get_num_of_locals() - 3);
 }
 
 // method repeat:
@@ -301,14 +301,6 @@ static meat::Reference Context_om_return_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	// std::cout << "Context return: " << (self == context)
-	// 					<< std::endl;
-	// std::cout << "Context return: " << (self == CONTEXT(context).get_messenger())
-	// 					<< std::endl;
-	// std::cout << "Context return: "
-	// 					<< (self == CONTEXT(CONTEXT(context).get_messenger()).get_messenger())
-	// 					<< std::endl;
-
 	CONTEXT(self).set_result(value); // Set the return value
 	CONTEXT(self).finish();          // Tell the context it's done.
 	return null;
@@ -320,7 +312,7 @@ static meat::Reference Context_om_setLocal_to_(meat::Reference context) {
   meat::Reference index = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
 
-  CONTEXT(self).set_local(index->to_int(), value);
+  CONTEXT(self).set_local(INTEGER(index), value);
   return null;
 }
 
@@ -488,7 +480,6 @@ static meat::Reference BlockContext_om_executeOnContinue_(meat::Reference contex
 	return null;
 }
 
-
 // method return
 static meat::Reference BlockContext_om_return(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
@@ -607,7 +598,7 @@ static meat::uint8_t NullBytecode[] = {
  * Exception Class
  */
 
-static meat::Reference exception_constructor(meat::Reference &klass,
+static meat::Reference Exception_constructor(meat::Reference &klass,
 																						 meat::uint8_t properties) {
   return new meat::Exception(klass, properties);
 }
@@ -683,7 +674,7 @@ static meat::Reference Exception_cm_try_catch_do_(meat::Reference context) {
 		execute(try_block);
 	} catch (meat::Exception &err) {
 		meat::Reference excp = new meat::Exception(err);
-		CONTEXT(catch_block).set_local(error->to_int(), excp);
+		CONTEXT(catch_block).set_local(INTEGER(error), excp);
 		execute(catch_block);
 	}
 	return null;
@@ -743,7 +734,7 @@ static meat::Reference Numeric_cm_acos_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
-		new meat::Object((meat::float_t)std::acos(value->to_float()));
+		new meat::Value((meat::float_t)std::acos(FLOAT(value)));
 }
 
 // class method asin:
@@ -751,7 +742,7 @@ static meat::Reference Numeric_cm_asin_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
 	return
-		new meat::Object((meat::float_t)std::asin(value->to_float()));
+		new meat::Value((meat::float_t)std::asin(FLOAT(value)));
 }
 
 // class method atan2y:x:
@@ -759,104 +750,92 @@ static meat::Reference Numeric_cm_atan2y_x_(meat::Reference context) {
   meat::Reference y = CONTEXT(context).get_param(0);
   meat::Reference x = CONTEXT(context).get_param(1);
 
-	return
-		new meat::Object((meat::float_t)std::atan2(y->to_float(),
-																								 x->to_float()));
+	return new meat::Value((meat::float_t)std::atan2(FLOAT(y), FLOAT(x)));
 }
 
 // class method atan:
 static meat::Reference Numeric_cm_atan_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	return
-		new meat::Object((meat::float_t)std::atan(value->to_float()));
+	return new meat::Value((meat::float_t)std::atan(FLOAT(value)));
 }
 
 // class method cos:
 static meat::Reference Numeric_cm_cos_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	return
-		new meat::Object((meat::float_t)std::cos(value->to_float()));
+	return new meat::Value((meat::float_t)std::cos(FLOAT(value)));
 }
 
 // class method cosh:
 static meat::Reference Numeric_cm_cosh_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-  return
-    new meat::Object((meat::float_t)std::cosh(value->to_float()));
+  return new meat::Value((meat::float_t)std::cosh(FLOAT(value)));
 }
 
 // class method exp:
 static meat::Reference Numeric_cm_exp_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-  meat::float_t answer = (meat::float_t)std::exp(value->to_float());
+  meat::float_t answer = (meat::float_t)std::exp(FLOAT(value));
   if (answer == HUGE_VAL) throw meat::Exception("exp range error");
-  return new meat::Object(answer);
+  return new meat::Value(answer);
 }
 
 // class method log10:
 static meat::Reference Numeric_cm_log10_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	if (value->to_float() <= 0.0)
+	if (FLOAT(value) <= 0.0)
 		throw meat::Exception("Log10 parameter out of range");
-	return
-		new meat::Object((meat::float_t)std::log10(value->to_float()));
+	return new meat::Value((meat::float_t)std::log10(FLOAT(value)));
 }
 
 // class method log:
 static meat::Reference Numeric_cm_log_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	if (value->to_float() <= 0.0)
+	if (FLOAT(value) <= 0.0)
 		throw meat::Exception("Log parameter out of range");
-	return
-		new meat::Object((meat::float_t)std::log(value->to_float()));
+	return new meat::Value((meat::float_t)std::log(FLOAT(value)));
 }
 
 // class method sin:
 static meat::Reference Numeric_cm_sin_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	return
-		new meat::Object((meat::float_t)std::sin(value->to_float()));
+	return new meat::Value((meat::float_t)std::sin(FLOAT(value)));
 }
 
 // class method sinh:
 static meat::Reference Numeric_cm_sinh_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	return
-		new meat::Object((meat::float_t)std::sinh(value->to_float()));
+	return new meat::Value((meat::float_t)std::sinh(FLOAT(value)));
 }
 
 // class method sqrt:
 static meat::Reference Numeric_cm_sqrt_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-	if (value->to_float() < 0.0)
+	if (FLOAT(value) < 0.0)
 		throw meat::Exception("Square root parameter out of range");
-	return
-		new meat::Object((meat::float_t)std::sqrt(value->to_float()));
+	return new meat::Value((meat::float_t)std::sqrt(FLOAT(value)));
 }
 
 // class method tan:
 static meat::Reference Numeric_cm_tan_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-  return
-    new meat::Object((meat::float_t)std::tan(value->to_float()));
+  return new meat::Value((meat::float_t)std::tan(FLOAT(value)));
 }
 
 // class method tanh:
 static meat::Reference Numeric_cm_tanh_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
-  return
-    new meat::Object((meat::float_t)std::tanh(value->to_float()));
+  return new meat::Value((meat::float_t)std::tanh(FLOAT(value)));
 }
 
 static meat::vtable_entry_t NumericCMethods[] = {
@@ -936,13 +915,18 @@ static meat::uint8_t NumericBytecode[] = {
  * Integer Class
  */
 
+static meat::Reference Integer_constructor(meat::Reference &klass,
+																					 meat::uint8_t properties) {
+  return new meat::Value(klass, properties);
+}
+
 // method !=
 static meat::Reference Integer_om_nequals(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
   try {
-    if (self->to_int() != other->to_int())
+    if (INTEGER(self) != INTEGER(other))
       return meat::True();
   } catch (...) {}
   return meat::False();
@@ -953,7 +937,7 @@ static meat::Reference Integer_om_mod(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() % other->to_int());
+  return new meat::Value(INTEGER(self) % INTEGER(other));
 }
 
 // method *
@@ -961,7 +945,10 @@ static meat::Reference Integer_om_mult(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() * other->to_int());
+	int32_t res;
+	if (__builtin_mul_overflow(INTEGER(self), INTEGER(other), &res))
+		throw meat::Exception("Integer multiplication overflow");
+  return new meat::Value(res);
 }
 
 // method +
@@ -969,7 +956,10 @@ static meat::Reference Integer_om_add(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() + other->to_int());
+	int32_t res;
+	if (__builtin_add_overflow(INTEGER(self), INTEGER(other), &res))
+		throw meat::Exception("Integer addition overflow");
+  return new meat::Value(res);
 }
 
 // method -
@@ -977,7 +967,10 @@ static meat::Reference Integer_om_sub(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() - other->to_int());
+	int32_t res;
+	if (__builtin_sub_overflow(INTEGER(self), INTEGER(other), &res))
+		throw meat::Exception("Integer subtraction underflow");
+  return new meat::Value(res);
 }
 
 // method /
@@ -985,7 +978,7 @@ static meat::Reference Integer_om_div(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() / other->to_int());
+  return new meat::Value(INTEGER(self) / INTEGER(other));
 }
 
 // method <
@@ -994,7 +987,7 @@ static meat::Reference Integer_om_less(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
   try {
-    if (self->to_int() < other->to_int())
+    if (INTEGER(self) < INTEGER(other))
       return meat::True();
   } catch (...) {}
   return meat::False();
@@ -1006,7 +999,7 @@ static meat::Reference Integer_om_less_equal(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
   try {
-    if (self->to_int() <= other->to_int())
+    if (INTEGER(self) <= INTEGER(other))
       return meat::True();
   } catch (...) {}
   return meat::False();
@@ -1018,7 +1011,7 @@ static meat::Reference Integer_om_equals(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
   try {
-    if (self->to_int() == other->to_int())
+    if (INTEGER(self) == INTEGER(other))
       return meat::True();
   } catch (...) {}
   return meat::False();
@@ -1030,7 +1023,7 @@ static meat::Reference Integer_om_greater(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
   try {
-    if (self->to_int() > other->to_int())
+    if (INTEGER(self) > INTEGER(other))
       return meat::True();
   } catch (...) {}
   return meat::False();
@@ -1042,7 +1035,7 @@ static meat::Reference Integer_om_greater_equal(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
   try {
-    if (self->to_int() >= other->to_int())
+    if (INTEGER(self) >= INTEGER(other))
       return meat::True();
   } catch (...) {}
   return meat::False();
@@ -1053,8 +1046,8 @@ static meat::Reference Integer_om_pow(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object((meat::float_t)std::pow(self->to_float(),
-                                                    other->to_float()));
+  return new meat::Value((meat::float_t)std::pow(FLOAT(self),
+																								 FLOAT(other)));
 }
 
 // method and:
@@ -1062,7 +1055,7 @@ static meat::Reference Integer_om_and_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() & other->to_int());
+  return new meat::Value(INTEGER(self) & INTEGER(other));
 }
 
 // method asText
@@ -1070,15 +1063,15 @@ static meat::Reference Integer_om_asText(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
   std::stringstream result;
-  result << self->to_int();
-  return new meat::Object(result.str().c_str());
+  result << INTEGER(self);
+  return new meat::Text(result.str());
 }
 
 // method lshift
 static meat::Reference Integer_om_lshift(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  return new meat::Object(self->to_int() << 1);
+  return new meat::Value(INTEGER(self) << 1);
 }
 
 // method lshift:
@@ -1086,21 +1079,21 @@ static meat::Reference Integer_om_lshift_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference amount = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() << amount->to_int());
+  return new meat::Value(INTEGER(self) << INTEGER(amount));
 }
 
 // method neg
 static meat::Reference Integer_om_neg(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  return new meat::Object(-self->to_int());
+  return new meat::Value(-INTEGER(self));
 }
 
 // method abs
 static meat::Reference Integer_om_abs(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  return new meat::Object(std::abs(self->to_int()));
+  return new meat::Value(std::abs(INTEGER(self)));
 }
 
 // method or:
@@ -1108,14 +1101,14 @@ static meat::Reference Integer_om_or_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() | other->to_int());
+  return new meat::Value(INTEGER(self) | INTEGER(other));
 }
 
 // method rshift
 static meat::Reference Integer_om_rshift(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  return new meat::Object(self->to_int() >> 1);
+  return new meat::Value(INTEGER(self) >> 1);
 }
 
 // method rshift:
@@ -1123,7 +1116,7 @@ static meat::Reference Integer_om_rshift_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference amount = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() >> amount->to_int());
+  return new meat::Value(INTEGER(self) >> INTEGER(amount));
 }
 
 // method timesDo:
@@ -1131,11 +1124,10 @@ static meat::Reference Integer_om_timesDo_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference block = CONTEXT(context).get_param(0);
 
-  meat::int32_t limit = self->to_int();
-  meat::uint8_t start_ip = CONTEXT(block).get_ip();
+  meat::int32_t limit = INTEGER(self);
   for (meat::int32_t c = 0; c < limit; c++) {
     meat::execute(block);
-    CONTEXT(block).set_ip(start_ip);
+    BLOCK(block).reset();
   }
   return null;
 }
@@ -1145,7 +1137,7 @@ static meat::Reference Integer_om_xor_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_int() ^ other->to_int());
+  return new meat::Value(INTEGER(self) ^ INTEGER(other));
 }
 
 static meat::vtable_entry_t IntegerMethods[] = {
@@ -1178,13 +1170,18 @@ static meat::vtable_entry_t IntegerMethods[] = {
  * Number Class
  */
 
+static meat::Reference Number_constructor(meat::Reference &klass,
+																					meat::uint8_t properties) {
+  return new meat::Value(klass, properties);
+}
+
 // method !=
 static meat::Reference Number_cm_nequal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
 	try {
-		if (self->to_float() != other->to_float())
+		if (FLOAT(self) != FLOAT(other))
 			return meat::True();
 	} catch (...) {}
 	return null;
@@ -1195,7 +1192,7 @@ static meat::Reference Number_cm_mod(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-	return new meat::Object(std::fmod(self->to_float(), other->to_float()));
+	return new meat::Value(std::fmod(FLOAT(self), FLOAT(other)));
 }
 
 // method *
@@ -1203,7 +1200,7 @@ static meat::Reference Number_cm_mult(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-	return new meat::Object(self->to_float() * other->to_float());
+	return new meat::Value(FLOAT(self) * FLOAT(other));
 }
 
 // method +
@@ -1211,7 +1208,7 @@ static meat::Reference Number_cm_add(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-	return new meat::Object(self->to_float() + other->to_float());
+	return new meat::Value(FLOAT(self) + FLOAT(other));
 }
 
 // method -
@@ -1219,7 +1216,7 @@ static meat::Reference Number_cm_sub(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-	return new meat::Object(self->to_float() - other->to_float());
+	return new meat::Value(FLOAT(self) - FLOAT(other));
 }
 
 // method /
@@ -1227,10 +1224,10 @@ static meat::Reference Number_cm_div(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  if (other->to_float() == 0.0)
+  if (FLOAT(other) == 0.0)
     throw meat::Exception("Divide by zero");
 
-	return new meat::Object(self->to_float() / other->to_float());
+	return new meat::Value(FLOAT(self) / FLOAT(other));
 }
 
 // method <
@@ -1239,7 +1236,7 @@ static meat::Reference Number_cm_less(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
 	try {
-		if (self->to_float() < other->to_float())
+		if (FLOAT(self) < FLOAT(other))
 			return meat::True();
 	} catch (...) {}
 	return meat::False();
@@ -1251,7 +1248,7 @@ static meat::Reference Number_cm_less_equal(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
 	try {
-		if (self->to_float() <= other->to_float())
+		if (FLOAT(self) <= FLOAT(other))
 			return meat::True();
 	} catch (...) {}
 	return meat::False();
@@ -1263,7 +1260,7 @@ static meat::Reference Number_cm_equal(meat::Reference context) {
 	meat::Reference other = CONTEXT(context).get_param(0);
 
 	try {
-		if (self->to_float() == other->to_float())
+		if (FLOAT(self) == FLOAT(other))
 			return meat::True();
 	} catch (...) {}
 	return meat::False();
@@ -1275,7 +1272,7 @@ static meat::Reference Number_cm_greater(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
 	try {
-		if (self->to_float() > other->to_float())
+		if (FLOAT(self) > FLOAT(other))
 			return meat::True();
 	} catch (...) {}
 	return meat::False();
@@ -1287,7 +1284,7 @@ static meat::Reference Number_cm_greater_equal(meat::Reference context) {
   meat::Reference other = CONTEXT(context).get_param(0);
 
 	try {
-		if (self->to_float() >= other->to_float())
+		if (FLOAT(self) >= FLOAT(other))
 			return meat::True();
 	} catch (...) {}
 	return meat::False();
@@ -1298,15 +1295,15 @@ static meat::Reference Number_cm_pow(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-	return new meat::Object((meat::float_t)std::pow(self->to_float(),
-																										other->to_float()));
+	return new meat::Value((meat::float_t)std::pow(FLOAT(self),
+																								 FLOAT(other)));
 }
 
 // method abs
 static meat::Reference Number_cm_abs(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-	return new meat::Object(std::abs(self->to_float()));
+	return new meat::Value(std::abs(FLOAT(self)));
 }
 
 // method asText
@@ -1314,15 +1311,15 @@ static meat::Reference Number_cm_asText(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
 	std::stringstream result;
-	result << (double)self->to_float();
-	return new meat::Object(result.str().c_str());
+	result << (double)FLOAT(self);
+	return new meat::Text(result.str());
 }
 
 // method neg
 static meat::Reference Number_cm_neg(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-	return new meat::Object(-self->to_float());
+	return new meat::Value(-FLOAT(self));
 }
 
 static meat::vtable_entry_t NumberMethods[] = {
@@ -1517,14 +1514,18 @@ static meat::uint8_t BooleanBytecode[] = {
  * Text Class
  */
 
+static meat::Reference Text_constructor(meat::Reference &klass,
+																				meat::uint8_t properties) {
+  return new meat::Text(klass, properties);
+}
+
 // method !=
 static meat::Reference Text_om_nequal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  if (std::strcmp(self->to_string(), other->to_string()) != 0)
-    return meat::True();
-  return meat::False();
+	return (TEXT(self).compare(TEXT(other)) != 0 ?
+					meat::True() : meat::False());
 }
 
 // method *
@@ -1532,13 +1533,13 @@ static meat::Reference Text_om_mult(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference count = CONTEXT(context).get_param(0);
 
-  meat::int32_t cnt_value = count->to_int();
-  meat::uint32_t self_len = strlen(self->to_string());
-  char result[(self_len * cnt_value) + 1]; // Could be nasty having on the stack
+  meat::int32_t cnt_value = INTEGER(count);
+	meat::Text *result = new meat::Text();
+
   for (int c = 0; c < cnt_value; c++)
-    strcpy(&(result[self_len * c]), self->to_string());
-  result[self_len * cnt_value] = 0;
-  return new meat::Object((const char *)result);
+    (*result) += TEXT(self);
+
+  return result;
 }
 
 // method +
@@ -1546,7 +1547,7 @@ static meat::Reference Text_om_add(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  return new meat::Object(self->to_string(), other->to_string());
+	return new meat::Text(TEXT(self) + TEXT(other));
 }
 
 // method <
@@ -1554,9 +1555,8 @@ static meat::Reference Text_om_less(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  if (std::strcmp(self->to_string(), other->to_string()) < 0)
-    return meat::True();
-  return meat::False();
+	return (TEXT(self).compare(TEXT(other)) < 0 ?
+					meat::True() : meat::False());
 }
 
 // method <=
@@ -1564,9 +1564,8 @@ static meat::Reference Text_om_less_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  if (std::strcmp(self->to_string(), other->to_string()) <= 0)
-    return meat::True();
-  return meat::False();
+	return (TEXT(self).compare(TEXT(other)) <= 0 ?
+					meat::True() : meat::False());
 }
 
 // method ==
@@ -1574,9 +1573,8 @@ static meat::Reference Text_om_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  if (std::strcmp(self->to_string(), other->to_string()) == 0)
-    return meat::True();
-  return meat::False();
+	return (TEXT(self).compare(TEXT(other)) == 0 ?
+					meat::True() : meat::False());
 }
 
 // method >
@@ -1584,9 +1582,8 @@ static meat::Reference Text_om_greater(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  if (std::strcmp(self->to_string(), other->to_string()) > 0)
-    return meat::True();
-  return meat::False();
+	return (TEXT(self).compare(TEXT(other)) > 0 ?
+					meat::True() : meat::False());
 }
 
 // method >=
@@ -1594,9 +1591,8 @@ static meat::Reference Text_om_greater_equal(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-  if (std::strcmp(self->to_string(), other->to_string()) >= 0)
-    return meat::True();
-  return meat::False();
+	return (TEXT(self).compare(TEXT(other)) >= 0 ?
+					meat::True() : meat::False());
 }
 
 // method get:
@@ -1604,9 +1600,9 @@ static meat::Reference Text_om_get_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
 
-  char new_string[2] = " ";
-  new_string[0] = self->to_string()[index->to_int() - 1];
-  return new meat::Object(new_string);
+	meat::Text *new_string = new meat::Text();
+  (*new_string) += TEXT(self)[INTEGER(index) - 1];
+  return new_string;
 }
 
 // method get:to:
@@ -1615,29 +1611,26 @@ static meat::Reference Text_om_get_to_(meat::Reference context) {
   meat::Reference start = CONTEXT(context).get_param(0);
   meat::Reference end = CONTEXT(context).get_param(1);
 
-  meat::int32_t start_pos = start->to_int() - 1;
-  meat::int32_t end_pos = end->to_int();
-  meat::int32_t len = end_pos - start_pos;
-  char new_string[len + 1];
-  std::strncpy(new_string, &((self->to_string())[start_pos]), len);
-  new_string[len] = 0;
-  return new meat::Object(new_string);
+  meat::int32_t start_pos = INTEGER(start) - 1;
+  meat::int32_t len = INTEGER(end) - start_pos;
+
+	meat::Text *new_string = new meat::Text();
+  (*new_string) += TEXT(self).substr(start_pos, len);
+  return new_string;
 }
 
 // method isEmpty
 static meat::Reference Text_om_isEmpty(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  if (std::strlen(self->to_string()) == 0)
-    return meat::True();
-  return meat::False();
+	return (TEXT(self).empty() ? meat::True() : meat::False());
 }
 
 // method length
 static meat::Reference Text_om_length(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  return new meat::Object((meat::int32_t)std::strlen(self->to_string()));
+  return new meat::Value((meat::int32_t)TEXT(self).length());
 }
 
 static meat::vtable_entry_t TextMethods[] = {
@@ -1701,8 +1694,7 @@ static meat::Reference List_cm_at_insert_(meat::Reference context) {
   meat::Reference index = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
 
-  ((meat::List &)(*self)).insert(((meat::List &)(*self)).begin() +
-    (index->to_int() - 1), value);
+  LIST(self).insert(LIST(self).begin() + (INTEGER(index) - 1), value);
   return null;
 }
 
@@ -1710,7 +1702,7 @@ static meat::Reference List_cm_at_insert_(meat::Reference context) {
 static meat::Reference List_cm_clear(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  ((meat::List &)(*self)).clear();
+  LIST(self).clear();
   return null;
 }
 
@@ -1720,14 +1712,14 @@ static meat::Reference List_cm_forEach_do_(meat::Reference context) {
   meat::Reference item = CONTEXT(context).get_param(0);
   meat::Reference block = CONTEXT(context).get_param(1);
 
-  meat::uint8_t local_id = item->to_int();
+  meat::uint8_t local_id = INTEGER(item);
   CONTEXT(block).set_messenger(context);
 
-  meat::List::iterator it = ((meat::List &)(*self)).begin();
-  for (; it != ((meat::List &)(*self)).end(); it++) {
+  meat::List::iterator it = LIST(self).begin();
+  for (; it != LIST(self).end(); it++) {
     CONTEXT(block).set_local(local_id, *it);
     execute(block);
-    (dynamic_cast<meat::BlockContext &>(*block)).reset();
+    BLOCK(block).reset();
   }
   return null;
 }
@@ -1738,7 +1730,7 @@ static meat::Reference List_cm_get_(meat::Reference context) {
 	meat::Reference index = CONTEXT(context).get_param(0);
 
 	try {
-		return ((meat::List &)(*self)).at(index->to_int() - 1);
+		return LIST(self).at(INTEGER(index) - 1);
 	} catch (std::out_of_range &err) {
 		throw meat::Exception("List index out of Range", context);
 	}
@@ -1748,21 +1740,21 @@ static meat::Reference List_cm_get_(meat::Reference context) {
 static meat::Reference List_cm_isEmpty(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 
-	return (((meat::List &)(*self)).empty() ? meat::True() : meat::False());
+	return (LIST(self).empty() ? meat::True() : meat::False());
 }
 
 // method last
 static meat::Reference List_cm_last(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-	return ((meat::List &)(*self)).back();
+	return LIST(self).back();
 }
 
 // method pop
 static meat::Reference List_cm_pop(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-	((meat::List &)(*self)).pop_back();
+	LIST(self).pop_back();
 	return null;
 }
 
@@ -1771,7 +1763,7 @@ static meat::Reference List_cm_push_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference value = CONTEXT(context).get_param(0);
 
-  ((meat::List &)(*self)).push_back(value);
+  LIST(self).push_back(value);
   return null;
 }
 
@@ -1781,9 +1773,9 @@ static meat::Reference List_cm_remove_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(0);
 
   meat::List::iterator it = ((meat::List &)(*self)).begin();
-  while (it != ((meat::List &)(*self)).end()) {
+  while (it != LIST(self).end()) {
     if (*it == value)
-      ((meat::List &)(*self)).erase(it);
+      LIST(self).erase(it);
     it++;
   }
   return null;
@@ -1794,8 +1786,7 @@ static meat::Reference List_cm_removeAt_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference index = CONTEXT(context).get_param(0);
 
-  ((meat::List &)(*self)).erase(((meat::List &)(*self)).begin() +
-    (index->to_int() - 1));
+  LIST(self).erase(LIST(self).begin() + (INTEGER(index) - 1));
   return null;
 }
 
@@ -1805,10 +1796,8 @@ static meat::Reference List_cm_removeFrom_to_(meat::Reference context) {
   meat::Reference start = CONTEXT(context).get_param(0);
   meat::Reference end = CONTEXT(context).get_param(1);
 
-  ((meat::List &)(*self)).erase(((meat::List &)(*self)).begin() +
-    (start->to_int() - 1),
-    ((meat::List &)(*self)).begin() +
-    (end->to_int() - 1));
+  LIST(self).erase(LIST(self).begin() + (INTEGER(start) - 1),
+									 LIST(self).begin() + (INTEGER(end) - 1));
   return null;
 }
 
@@ -1819,7 +1808,7 @@ static meat::Reference List_cm_set_to_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(1);
 
   try {
-    ((meat::List &)(*self)).at(index->to_int() - 1) = value;
+    LIST(self).at(INTEGER(index) - 1) = value;
   } catch (std::out_of_range &err) {
     throw meat::Exception("Index out of Range", context);
   }
@@ -1831,7 +1820,7 @@ static meat::Reference List_cm_size(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
 
-  return new meat::Object((meat::int32_t)((meat::List &)(*self)).size());
+  return new meat::Value((meat::int32_t)LIST(self).size());
 }
 
 // method swap:with:
@@ -1841,10 +1830,9 @@ static meat::Reference List_cm_swap_with_(meat::Reference context) {
   meat::Reference second = CONTEXT(context).get_param(1);
 
   try {
-    meat::Reference temp = ((meat::List &)(*self)).at(first->to_int() - 1);
-    ((meat::List &)(*self)).at(first->to_int() - 1) =
-      ((meat::List &)(*self)).at(second->to_int() - 1);
-    ((meat::List &)(*self)).at(second->to_int() - 1) = temp;
+    meat::Reference temp = LIST(self).at(INTEGER(first) - 1);
+    LIST(self).at(INTEGER(first) - 1) = LIST(self).at(INTEGER(second) - 1);
+    LIST(self).at(INTEGER(second) - 1) = temp;
   } catch (std::out_of_range &err) {
     throw meat::Exception("Index out of Range", context);
   }
@@ -1910,8 +1898,8 @@ static meat::Reference Index_om_get_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference key = CONTEXT(context).get_param(0);
 
-  if (((meat::Index &)(*self)).find(key) != ((meat::Index &)(*self)).end())
-    return ((meat::Index &)(*self))[key];
+  if (INDEX(self).find(key) != INDEX(self).end())
+    return INDEX(self)[key];
   throw meat::Exception("Invalid key in index");
 }
 
@@ -1920,7 +1908,7 @@ static meat::Reference Index_om_has_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference key = CONTEXT(context).get_param(0);
 
-  if (((meat::Index &)(*self)).find(key) != ((meat::Index &)(*self)).end())
+  if (INDEX(self).find(key) != INDEX(self).end())
     return meat::True();
   return meat::False();
 }
@@ -1930,7 +1918,7 @@ static meat::Reference Index_om_remove_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference key = CONTEXT(context).get_param(0);
 
-  ((meat::Index &)(*self)).erase(key);
+  INDEX(self).erase(key);
   return null;
 }
 
@@ -1940,7 +1928,7 @@ static meat::Reference Index_om_set_to_(meat::Reference context) {
   meat::Reference key = CONTEXT(context).get_param(0);
   meat::Reference value = CONTEXT(context).get_param(1);
 
-  ((meat::Index &)(*self))[key] = value;
+  INDEX(self)[key] = value;
   return null;
 }
 
@@ -1948,8 +1936,8 @@ static meat::Reference Index_om_set_to_(meat::Reference context) {
 static meat::Reference Index_om_size(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  meat::int32_t size = ((meat::Index &)(*self)).size();
-  return new meat::Object(size);
+  meat::int32_t size = (INDEX(self)).size();
+  return new meat::Value(size);
 }
 
 static meat::vtable_entry_t IndexMethods[] = {
@@ -2012,20 +2000,20 @@ static meat::vtable_entry_t ApplicationMethods[] = {
 
 // class method parameters
 static meat::Reference Application_cm_parameters(meat::Reference context) {
-  return new meat::Object((meat::int32_t)arg_count());
+  return new meat::Value((meat::int32_t)arg_count());
 }
 
 // class method parameter: index
 static meat::Reference Application_cm_parameter_(meat::Reference context) {
   meat::Reference index = CONTEXT(context).get_param(0);
-  meat::int32_t idx = index->to_int();
+  meat::int32_t idx = INTEGER(index);
 
   if (idx > arg_count() or idx <= 0)
     throw meat::Exception("Parameter index out of range");
 
   const char **argv = args();
 
-  return new meat::Object(argv[idx - 1]);
+  return new meat::Text(argv[idx - 1]);
 }
 
 // class method getEnviron: key
@@ -2035,22 +2023,22 @@ static meat::Reference Application_cm_getEnviron_(meat::Reference context) {
 #if defined(_WIN32) || defined(_WIN64)
   LPTSTR value = new TCHAR[4096];
   DWORD result;
-  result = GetEnvironmentVariable(key->to_string(), value, 4096);
+  result = GetEnvironmentVariable(TEXT(key), value, 4096);
   if (result == 0) {
     delete[] value;
-    return new meat::Object("");
+    return new meat::Text("");
   } else {
-    meat::Reference retvalue = new meat::Object(value);
+    meat::Reference retvalue = new meat::TEXT(value);
     delete[] value;
     return retvalue;
   }
 
 #elif defined(__linux__)
-  char *value = getenv(key->to_string());
+  char *value = getenv(TEXT(key).c_str());
   if (value != (char *)0)
-    return new meat::Object(value);
+    return new meat::Text(value);
   else
-    return new meat::Object("");
+    return new meat::Text("");
 #else
 #  error("Don't know how to read the system environment")
 #endif
@@ -2062,10 +2050,10 @@ static meat::Reference Application_cm_setEnviron_to_(meat::Reference context) {
   meat::Reference value = CONTEXT(context).get_param(1);
 
 #if defined(_WIN32) || defined(_WIN64)
-  SetEnvironmentVariable(key->to_string(),
-                         value->to_string());
+  SetEnvironmentVariable(TEXT(key).c_str(),
+                         TEXT(value).c_str());
 #elif defined(__linux__)
-  setenv(key->to_string(), value->to_string(), 1);
+  setenv(TEXT(key).c_str(), TEXT(value).c_str(), 1);
 #else
 #  error("Don't know how to set the system environment")
 #endif
@@ -2117,7 +2105,7 @@ void meat::initialize(int argc, const char *argv[],
 
   /* Create the Object base class. */
   cls = new Class(meat::ClassClass());
-  cls->set_constructor(object_constructor);
+  cls->set_constructor(Object_constructor);
   cls->set_vtable(11, ObjectMethods, STATIC);
   cls->set_class_vtable(11, ObjectCMethods, STATIC);
   cls->set_bytecode(226, ObjectBytecode, STATIC);
@@ -2140,7 +2128,7 @@ void meat::initialize(int argc, const char *argv[],
 
   /* Create the Exception class. */
   cls = new meat::Class("Object", 2);
-  cls->set_constructor(exception_constructor);
+  cls->set_constructor(Exception_constructor);
   cls->set_vtable(8, ExceptionMethods, STATIC);
   cls->set_class_vtable(15, ExceptionCMethods, STATIC);
   cls->set_bytecode(24, ExceptionBytecode, STATIC);
@@ -2148,7 +2136,7 @@ void meat::initialize(int argc, const char *argv[],
 
   /* Create the Context class. */
   cls = new Class("Object");
-  cls->set_constructor(context_constructor);
+  cls->set_constructor(Context_constructor);
   cls->set_vtable(20, ContextMethods, STATIC);
   cls->set_class_vtable(11, ContextCMethods, STATIC);
   cls->set_bytecode(131, ContextBytecode, STATIC);
@@ -2169,17 +2157,20 @@ void meat::initialize(int argc, const char *argv[],
 
 	/* Create the Integer class. */
   cls = new Class("Numeric");
+	cls->set_constructor(Integer_constructor);
   cls->set_vtable(23, IntegerMethods, STATIC);
   Class::record(cls, "Integer");
 
 	/* Create the Number class. */
   cls = new Class("Numeric");
+	cls->set_constructor(Number_constructor);
   cls->set_vtable(15, NumberMethods, STATIC);
 	cls->set_class_vtable(19, NumberCMethods, STATIC);
   Class::record(cls, "Number");
 
   /* Create the Text class. */
   cls = new Class("Object");
+	cls->set_constructor(Text_constructor);
   cls->set_vtable(16, TextMethods, STATIC);
 	cls->set_class_vtable(9, TextCMethods, STATIC);
   Class::record(cls, "Text");
@@ -2190,8 +2181,8 @@ void meat::initialize(int argc, const char *argv[],
   cls->set_class_vtable(11, BooleanCMethods, meat::STATIC);
   cls->set_bytecode(145, BooleanBytecode, meat::STATIC);
   Class::record(cls, "Boolean");
-  cls->property(0) = new Object(true);
-  cls->property(1) = new Object(false);
+  cls->property(0) = new Value(true);
+  cls->property(1) = new Value(false);
 
   /* Create the List class. */
   cls = new Class("Object");

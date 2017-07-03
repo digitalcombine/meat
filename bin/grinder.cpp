@@ -21,7 +21,7 @@
  */
 
 #include <meat.h>
-#include <meat/compiler.h>
+#include <meat/datastore.h>
 #include <meat/utilities.h>
 
 #include <iostream>
@@ -70,22 +70,16 @@ static void classbuilder_int(meat::Reference &super, const char *cls_name,
 									"subClassFrom:as:",
 									meat::Null());
 	CONTEXT(context).set_param(0, super);
-	CONTEXT(context).set_param(1, new meat::Object(cls_name));
+	CONTEXT(context).set_param(1, new meat::Text(cls_name));
 	meat::Reference cb = meat::execute(context);
 
 	context = meat::message(library, "addClass:", meat::Null());
 	CONTEXT(context).set_param(0, cb);
 	execute(context);
 
-	// meat::Reference cb =
-	//	(dynamic_cast<meat::grinder::Library &>(*library)).new_class(super,
-	//																															 cls_name);
-
   std::string body(cls_body);
   std::istringstream is(body);
 
-  //((meat::grinder::Class &)(*cb)).execute(is);
-  //((meat::grinder::Class &)(*cb)).create_class();
 	exec_class(cb, is);
 }
 
@@ -93,7 +87,7 @@ static void classbuilder_int(meat::Reference &super, const char *cls_name,
  */
 static void compiler_import(const char *name) {
 	meat::Reference new_ctx = message(library, "import:", meat::Null());
-	CONTEXT(new_ctx).set_param(0, new meat::Object(std::string(name)));
+	CONTEXT(new_ctx).set_param(0, new meat::Text(name));
 	execute(new_ctx);
 }
 
@@ -157,7 +151,7 @@ static void build_library_app() {
 	meat::Reference context =
 		meat::message(meat::Class::resolve("Grinder.Library"),
 									"new:", meat::Null());
-	CONTEXT(context).set_param(0, new meat::Object(out_file));
+	CONTEXT(context).set_param(0, new meat::Text(out_file));
 	library = meat::execute(context);
 
 	// Go through each file and compile them
@@ -184,7 +178,7 @@ static void build_library_app() {
 
 	if (not app_class.empty()) {
 		context = message(library, "setApplicationClass:", meat::Null());
-		CONTEXT(context).set_param(0, new meat::Object(app_class));
+		CONTEXT(context).set_param(0, new meat::Text(app_class));
 		meat::execute(context);
 	}
 
