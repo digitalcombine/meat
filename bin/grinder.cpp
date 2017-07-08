@@ -59,23 +59,25 @@ typedef void (*exec_class_fn)(meat::Reference, std::istream &);
  * is initialized. If the compiler is not initialized then the Class subClass
  * method should just raise an exception.
  */
-static void classbuilder_int(meat::Reference &super, const char *cls_name,
-                             const char *cls_body) {
+static void classbuilder_int(meat::Reference super,
+														 const std::string &cls_name,
+                             const std::string &cls_body,
+														 meat::Reference context) {
 	meat::data::Library *grinder = meat::data::Library::get("Grinder");
 	exec_class_fn exec_class =
 		(exec_class_fn)grinder->dlsymbol("exec_class");
 
-	meat::Reference context =
+	meat::Reference ctx =
 		meat::message(meat::Class::resolve("Grinder.Class"),
 									"subClassFrom:as:",
-									meat::Null());
-	CONTEXT(context).set_param(0, super);
-	CONTEXT(context).set_param(1, new meat::Text(cls_name));
-	meat::Reference cb = meat::execute(context);
+									context);
+	CONTEXT(ctx).set_param(0, super);
+	CONTEXT(ctx).set_param(1, new meat::Text(cls_name));
+	meat::Reference cb = meat::execute(ctx);
 
-	context = meat::message(library, "addClass:", meat::Null());
-	CONTEXT(context).set_param(0, cb);
-	execute(context);
+	ctx = meat::message(library, "addClass:", context);
+	CONTEXT(ctx).set_param(0, cb);
+	execute(ctx);
 
   std::string body(cls_body);
   std::istringstream is(body);
@@ -85,8 +87,9 @@ static void classbuilder_int(meat::Reference &super, const char *cls_name,
 
 /** Used for the Library import method when the compiler is initialized.
  */
-static void compiler_import(const char *name) {
-	meat::Reference new_ctx = message(library, "import:", meat::Null());
+static void compiler_import(const std::string &name,
+														meat::Reference context) {
+	meat::Reference new_ctx = message(library, "import:", context);
 	CONTEXT(new_ctx).set_param(0, new meat::Text(name));
 	execute(new_ctx);
 }

@@ -157,8 +157,8 @@ static meat::uint8_t ObjectBytecode[] = {
  *
  */
 
-static meat::class_compiler_t &class_compiler() {
-	static meat::class_compiler_t compiler;
+static meat::class_compiler_fn &class_compiler() {
+	static meat::class_compiler_fn compiler;
 	return compiler;
 }
 
@@ -199,7 +199,9 @@ static meat::Reference Class_cm_subClass_body_(meat::Reference context) {
   meat::Reference block = CONTEXT(context).get_param(1);
 
 	if (class_compiler() != 0) {
-		class_compiler()(self, TEXT(name).c_str(), TEXT(block).c_str());
+		class_compiler()(self, TEXT(name), TEXT(block), context);
+	} else {
+		throw meat::Exception("No compiler implementation is loaded.");
 	}
 
 	return null;
@@ -2084,32 +2086,49 @@ static meat::uint8_t ApplicationBytecode[] = {
   0x01, 0x04, 0x4b, 0xe1, 0x36, 0x15, 0x01, 0x05, 0x0b
 };
 
+static meat::uint8_t Symbols[] = {
+  "%\0*\0+\0-\0/\0<\0>\0^\0!=\0<=\0==\0>=\0abs\0is:\0neg\0new\0not\0or:\0pop\0"
+  "and:\0copy\0cos:\0exp:\0get:\0has:\0last\0log:\0sin:\0size\0tan:\0true\0"
+  "try:\0type\0weak\0xor:\0forEach:do:\0timesDo:\0getEnviron:\0Integer\0"
+  "include:\0acos:\0asin:\0atan:\0break\0clear\0cosh:\0entry\0false\0items\0"
+  "push:\0sinh:\0sqrt:\0super\0tanh:\0throw\0Context\0atan2y:x:\0Index\0"
+  "Text\0removeFrom:to:\0swap:with:\0Numeric\0lshift:\0parameter:\0"
+  "parameters\0setApplication:\0Object\0getLocal:\0executeOnContinue:\0"
+  "messenger\0asText\0subClass:body:\0Class\0Exception\0execute\0"
+  "initialize\0context\0message\0isNot:\0isNull\0at:insert:\0length\0log10:\0"
+  "lshift\0remove:\0repeat:\0return:\0BlockContext\0localVariables\0"
+  "isTrue:else:\0return\0rshift\0throw:\0removeAt:\0try:catch:do:\0append:\0"
+  "Boolean\0newObject\0Library\0isFalse:else:\0rshift:\0Number\0"
+  "executeOnBreak:\0isFalse:\0continue\0setLocal:to:\0getCharAt:\0isObject\0"
+  "Null\0Application\0throw:for:\0List\0executeOnBreak:onContinue:\0"
+  "import:\0set:to:\0isClass\0isEmpty\0get:to:\0isTrue:\0isType:\0try:catch:\0"
+  "\0"
+};
+
 /******************************************************************************
  * Public API
  */
 
 void meat::initialize(int argc, const char *argv[],
-											void (*import)(const char *name),
-											class_compiler_t compiler) {
-  Class *cls;
-
+											compiler_import_fn import,
+											class_compiler_fn compiler) {
   arg_count(argc);
   args(argv);
 
   /* Create the Class base class. */
-  cls = new Class(Null());
-	cls->set_vtable(11, ClassMethods, meat::STATIC);
-  cls->set_class_vtable(12, ClassCMethods, STATIC);
-	cls->set_bytecode(1, ClassBytecode, meat::STATIC);
-  Class::record(cls, "Class");
+  Class *class_cls = new Class(Null());
+	class_cls->set_vtable(11, ClassMethods, meat::STATIC);
+  class_cls->set_class_vtable(12, ClassCMethods, STATIC);
+	class_cls->set_bytecode(1, ClassBytecode, meat::STATIC);
+	Class::record(class_cls, "Class");
 
   /* Create the Object base class. */
-  cls = new Class(meat::ClassClass());
-  cls->set_constructor(Object_constructor);
-  cls->set_vtable(11, ObjectMethods, STATIC);
-  cls->set_class_vtable(11, ObjectCMethods, STATIC);
-  cls->set_bytecode(226, ObjectBytecode, STATIC);
-  Class::record(cls, "Object");
+  Class *object_cls = new Class(meat::ClassClass());
+  object_cls->set_constructor(Object_constructor);
+  object_cls->set_vtable(11, ObjectMethods, STATIC);
+  object_cls->set_class_vtable(11, ObjectCMethods, STATIC);
+  object_cls->set_bytecode(226, ObjectBytecode, STATIC);
+  Class::record(object_cls, "Object");
 
   /*  When the first two class were created the ClassClass reference was null.
    * So here we finish the initialization of the Object and Class classes.
@@ -2119,91 +2138,91 @@ void meat::initialize(int argc, const char *argv[],
   ClassClass()->o_type = ClassClass().weak();
 
   /* Create the Null class. */
-  cls = new Class("Object", 1, 0);
-  cls->set_vtable(6, NullMethods, STATIC);
-  cls->set_class_vtable(9, NullCMethods, STATIC);
-  cls->set_bytecode(46, NullBytecode, STATIC);
-  Class::record(cls, "Null");
-  cls->property(0) = new Object(Class::resolve("Null"));
+  Class *null_cls = new Class("Object", 1, 0);
+  null_cls->set_vtable(6, NullMethods, STATIC);
+  null_cls->set_class_vtable(9, NullCMethods, STATIC);
+  null_cls->set_bytecode(46, NullBytecode, STATIC);
+  Class::record(null_cls, "Null");
+  null_cls->property(0) = new Object(Class::resolve("Null"));
 
   /* Create the Exception class. */
-  cls = new meat::Class("Object", 2);
-  cls->set_constructor(Exception_constructor);
-  cls->set_vtable(8, ExceptionMethods, STATIC);
-  cls->set_class_vtable(15, ExceptionCMethods, STATIC);
-  cls->set_bytecode(24, ExceptionBytecode, STATIC);
-  Class::record(cls, "Exception");
+  Class *except_cls = new meat::Class("Object", 2);
+  except_cls->set_constructor(Exception_constructor);
+  except_cls->set_vtable(8, ExceptionMethods, STATIC);
+  except_cls->set_class_vtable(15, ExceptionCMethods, STATIC);
+  except_cls->set_bytecode(24, ExceptionBytecode, STATIC);
+  Class::record(except_cls, "Exception");
 
   /* Create the Context class. */
-  cls = new Class("Object");
-  cls->set_constructor(Context_constructor);
-  cls->set_vtable(20, ContextMethods, STATIC);
-  cls->set_class_vtable(11, ContextCMethods, STATIC);
-  cls->set_bytecode(131, ContextBytecode, STATIC);
-  Class::record(cls, "Context");
+  Class *context_cls = new Class("Object");
+  context_cls->set_constructor(Context_constructor);
+  context_cls->set_vtable(20, ContextMethods, STATIC);
+  context_cls->set_class_vtable(11, ContextCMethods, STATIC);
+  context_cls->set_bytecode(131, ContextBytecode, STATIC);
+  Class::record(context_cls, "Context");
 
   /* Create the BlockContext class. */
-  cls = new Class("Context");
-  cls->set_vtable(24, BlockContextMethods, STATIC);
-	cls->set_class_vtable(11, BlockContextCMethods, STATIC);
-  Class::record(cls, "BlockContext");
+  Class *block_cls = new Class("Context");
+  block_cls->set_vtable(24, BlockContextMethods, STATIC);
+	block_cls->set_class_vtable(11, BlockContextCMethods, STATIC);
+  Class::record(block_cls, "BlockContext");
 
   /* Create the Numeric class. */
-  cls = new Class("Object");
-  cls->set_vtable(19, NumericMethods, STATIC);
-  cls->set_class_vtable(23, NumericCMethods, STATIC);
-  cls->set_bytecode(569, NumericBytecode, STATIC);
-  Class::record(cls, "Numeric");
+  Class *numeric_cls = new Class("Object");
+  numeric_cls->set_vtable(19, NumericMethods, STATIC);
+  numeric_cls->set_class_vtable(23, NumericCMethods, STATIC);
+  numeric_cls->set_bytecode(569, NumericBytecode, STATIC);
+  Class::record(numeric_cls, "Numeric");
 
 	/* Create the Integer class. */
-  cls = new Class("Numeric");
-	cls->set_constructor(Integer_constructor);
-  cls->set_vtable(23, IntegerMethods, STATIC);
-  Class::record(cls, "Integer");
+  Class *integer_cls = new Class("Numeric");
+	integer_cls->set_constructor(Integer_constructor);
+  integer_cls->set_vtable(23, IntegerMethods, STATIC);
+  Class::record(integer_cls, "Integer");
 
 	/* Create the Number class. */
-  cls = new Class("Numeric");
-	cls->set_constructor(Number_constructor);
-  cls->set_vtable(15, NumberMethods, STATIC);
-	cls->set_class_vtable(19, NumberCMethods, STATIC);
-  Class::record(cls, "Number");
+  Class *number_cls = new Class("Numeric");
+	number_cls->set_constructor(Number_constructor);
+  number_cls->set_vtable(15, NumberMethods, STATIC);
+	number_cls->set_class_vtable(19, NumberCMethods, STATIC);
+  Class::record(number_cls, "Number");
 
   /* Create the Text class. */
-  cls = new Class("Object");
-	cls->set_constructor(Text_constructor);
-  cls->set_vtable(16, TextMethods, STATIC);
-	cls->set_class_vtable(9, TextCMethods, STATIC);
-  Class::record(cls, "Text");
+  Class *text_cls = new Class("Object");
+	text_cls->set_constructor(Text_constructor);
+  text_cls->set_vtable(16, TextMethods, STATIC);
+	text_cls->set_class_vtable(9, TextCMethods, STATIC);
+  Class::record(text_cls, "Text");
 
   /* Create the Boolean class and objects. */
-  cls = new meat::Class("Object", 2, 0);
-  cls->set_vtable(18, BooleanMethods, meat::STATIC);
-  cls->set_class_vtable(11, BooleanCMethods, meat::STATIC);
-  cls->set_bytecode(145, BooleanBytecode, meat::STATIC);
-  Class::record(cls, "Boolean");
-  cls->property(0) = new Value(true);
-  cls->property(1) = new Value(false);
+  Class *bool_cls = new meat::Class("Object", 2, 0);
+  bool_cls->set_vtable(18, BooleanMethods, meat::STATIC);
+  bool_cls->set_class_vtable(11, BooleanCMethods, meat::STATIC);
+  bool_cls->set_bytecode(145, BooleanBytecode, meat::STATIC);
+  Class::record(bool_cls, "Boolean");
+  bool_cls->property(0) = new Value(true);
+  bool_cls->property(1) = new Value(false);
 
   /* Create the List class. */
-  cls = new Class("Object");
-  cls->set_constructor(list_constructor);
-  cls->set_vtable(21, ListMethods, STATIC);
-  cls->set_class_vtable(10, ListCMethods, STATIC);
-  Class::record(cls, "List");
+  Class *list_cls = new Class("Object");
+  list_cls->set_constructor(list_constructor);
+  list_cls->set_vtable(21, ListMethods, STATIC);
+  list_cls->set_class_vtable(10, ListCMethods, STATIC);
+  Class::record(list_cls, "List");
 
   /* Create the Index class. */
-  cls = new Class("Object");
-  cls->set_constructor(index_constructor);
-  cls->set_vtable(11, IndexMethods, STATIC);
-  cls->set_class_vtable(10, IndexCMethods, STATIC);
-  Class::record(cls, "Index");
+  Class *index_cls = new Class("Object");
+  index_cls->set_constructor(index_constructor);
+  index_cls->set_vtable(11, IndexMethods, STATIC);
+  index_cls->set_class_vtable(10, IndexCMethods, STATIC);
+  Class::record(index_cls, "Index");
 
   /* Create the Application class. */
-  cls = new Class("Object");
-  cls->set_vtable(7, ApplicationMethods, STATIC);
-  cls->set_class_vtable(13, ApplicationCMethods, STATIC);
-  cls->set_bytecode(61, ApplicationBytecode, STATIC);
-  Class::record(cls, "Application");
+  Class *app_cls = new Class("Object");
+  app_cls->set_vtable(7, ApplicationMethods, STATIC);
+  app_cls->set_class_vtable(13, ApplicationCMethods, STATIC);
+  app_cls->set_bytecode(61, ApplicationBytecode, STATIC);
+  Class::record(app_cls, "Application");
 
 	class_compiler() = compiler;
   meat::data::initialize(import);
@@ -2213,4 +2232,21 @@ void meat::initialize(int argc, const char *argv[],
 #elif defined(__linux__)
   meat::data::Library::add_path("/usr/lib/gitgo/");
 #endif
+
+	data::Library *library = data::Library::create("__builtin__");
+	library->add(class_cls, "Class");
+	library->add(object_cls, "Object");
+	library->add(null_cls, "Null");
+	library->add(except_cls, "Exception");
+	library->add(context_cls, "Context");
+	library->add(block_cls, "BlockContext");
+	library->add(numeric_cls, "Numeric");
+	library->add(integer_cls, "Integer");
+	library->add(number_cls, "Number");
+	library->add(text_cls, "Text");
+	library->add(bool_cls, "Boolean");
+	library->add(list_cls, "List");
+	library->add(index_cls, "Index");
+	library->add(app_cls, "Application");
+	library->set_symbols(Symbols, meat::STATIC);
 }

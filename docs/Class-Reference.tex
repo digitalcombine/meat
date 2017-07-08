@@ -9,10 +9,12 @@ Object subClass: Class body: {
 \end{lstlisting}
 
 \subsubsection{class method subClass: name body: definition}
-
+This method should raise an Exception. The functionality for this method
+is to be provided by a compiler library. How a compiler library hooks in the
+functionaliy is up to the underlying implementation and is not defined here.
 
 \subsubsection{class method newObject}
-Method used for creating constructor methods. This method creates a new
+Method used for creating constructor class methods. This method creates a new
 object and sets the self object to it then messages \textit{self initialize}.\\
 Constructor methods should follow the following template:
 

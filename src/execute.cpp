@@ -28,6 +28,25 @@
 #ifdef DEBUG
 #include <iostream>
 #include <iomanip>
+
+inline std::string local(meat::uint8_t id) {
+	switch (id) {
+	case 0:
+		return "self";
+	case 1:
+		return "class";
+	case 2:
+		return "context";
+	case 3:
+		return "null";
+	default: {
+		std::stringstream ss;
+		ss << "L" << (unsigned int)id;
+		return ss.str();
+	}
+	}
+}
+
 #endif
 
 /*****************
@@ -54,8 +73,8 @@ meat::Reference meat::execute(Reference context) {
 		CONTEXT(context).set_local(2, context.weak()); // context
 
 #ifdef DEBUG
-// Adds the class hash id and ip to debugging messages.
-#define BCLOC "(" << itohex(CLASS(CONTEXT(context).get_class()).get_hash_id()) \
+		// Adds the class hash id and ip to debugging messages.
+#define BCLOC "(" << (CLASS(CONTEXT(context).get_class()).get_name()) \
                   << "," << itohex(ip, 4) << ")"
 #endif
 
@@ -78,12 +97,13 @@ meat::Reference meat::execute(Reference context) {
 				uint8_t params = code[ip + 6];
 
 #ifdef DEBUG
+				Class &klass = CLASS(CONTEXT(context).get_class());
 				std::cout << "BC" << BCLOC << ": MESSAGE " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
-									<< itohex(endian::read_be(*mesg_id)) << " ";
+									<< local(code[ip + 1]) << " "
+									<< klass.lookup(endian::read_be(*mesg_id)) << " ";
 					if (params) {
 						for (uint8_t c = 0; c < params; c++) {
-							std::cout << " " << (unsigned int)code[ip + 7 + c];
+							std::cout << " " << local(code[ip + 7 + c]);
 						}
 					}
 				std::cout << std::endl;
@@ -107,7 +127,9 @@ meat::Reference meat::execute(Reference context) {
 
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
-					execute(new_ctx);
+					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
+					Reference result = CONTEXT(new_ctx).pointer(new_ctx);
+					CONTEXT(new_ctx).set_result(result);
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
@@ -127,14 +149,15 @@ meat::Reference meat::execute(Reference context) {
 				uint8_t params = code[ip + 7];
 
 #ifdef DEBUG
+				Class &klass = CLASS(CONTEXT(context).get_class());
 				std::cout << "BC" << BCLOC << ": MSGRES " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
-									<< (unsigned int)result_idx << " "
-									<< itohex(endian::read_be(*mesg_id)) << " ";
+									<< local(code[ip + 1]) << " "
+									<< local(result_idx) << " "
+									<< klass.lookup(endian::read_be(*mesg_id)) << " ";
 				if (params) {
 					//std::cout << "(";
 					for (uint8_t c = 0; c < params; c++) {
-						std::cout << (unsigned int)code[ip + 8 + c] << " ";
+						std::cout << local(code[ip + 8 + c]) << " ";
 					}
 					//std::cout << ")";
 				}
@@ -160,7 +183,9 @@ meat::Reference meat::execute(Reference context) {
 				CONTEXT(new_ctx).set_result_index(result_idx);
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
-					execute(new_ctx);
+					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
+					Reference result = CONTEXT(new_ctx).pointer(new_ctx);
+					CONTEXT(new_ctx).set_result(result);
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
@@ -180,7 +205,7 @@ meat::Reference meat::execute(Reference context) {
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": SUPER " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
+									<< local(code[ip + 1]) << " "
 									<< std::hex << endian::read_be(*mesg_id) << " "
 									<< std::dec << (unsigned int)params
 									<< std::endl;
@@ -203,9 +228,11 @@ meat::Reference meat::execute(Reference context) {
 				CONTEXT(context).ip = ip;
 
 				// Execute the message.
-				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE)
-					execute(new_ctx);
-				else {
+				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
+					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
+					Reference result = CONTEXT(new_ctx).pointer(new_ctx);
+					CONTEXT(new_ctx).set_result(result);
+				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
@@ -225,8 +252,8 @@ meat::Reference meat::execute(Reference context) {
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": SUPERRES " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
-									<< (unsigned int)result_idx << " "
+									<< local(code[ip + 1]) << " "
+									<< local(result_idx) << " "
 									<< std::hex << endian::read_be(*mesg_id) << " "
 									<< std::dec << (unsigned int)params
 									<< std::endl;
@@ -251,7 +278,9 @@ meat::Reference meat::execute(Reference context) {
 				CONTEXT(new_ctx).set_result_index(result_idx);
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
-					execute(new_ctx);
+					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
+					Reference result = CONTEXT(new_ctx).pointer(new_ctx);
+					CONTEXT(new_ctx).set_result(result);
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
@@ -293,8 +322,8 @@ meat::Reference meat::execute(Reference context) {
 			case meat::bytecode::ASSIGN: {
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": MOV " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
-									<< (unsigned int)code[ip + 2]
+									<< local(code[ip + 1]) << " "
+									<< local(code[ip + 2])
 									<< std::endl;
 #endif /* DEBUG */
 				Reference src = CONTEXT(context).get_local(code[ip + 2]);
@@ -308,7 +337,7 @@ meat::Reference meat::execute(Reference context) {
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": GETATTR " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
+									<< local(code[ip + 1]) << " "
 									<< (unsigned int)code[ip + 2]
 									<< std::endl;
 #endif /* DEBUG */
@@ -321,8 +350,8 @@ meat::Reference meat::execute(Reference context) {
 			case meat::bytecode::ASSIGN_CATTR: {
 				Reference self = CONTEXT(context).get_class();
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": GETATTR " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
+				std::cout << "BC" << BCLOC << ": GETCATTR " << std::dec
+									<< local(code[ip + 1]) << " "
 									<< (unsigned int)code[ip + 2]
 									<< std::endl;
 #endif /* DEBUG */
@@ -336,9 +365,10 @@ meat::Reference meat::execute(Reference context) {
 				uint32_t *class_id = (uint32_t *)&code[ip + 2];
 
 #ifdef DEBUG
+				Class &klass = CLASS(CONTEXT(context).get_class());
 				std::cout << "BC" << BCLOC << ": CLASS " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
-									<< itohex(endian::read_be(*class_id))
+									<< local(code[ip + 1]) << " "
+									<< klass.lookup(endian::read_be(*class_id))
 									<< std::endl;
 #endif /* DEBUG */
 
@@ -356,7 +386,7 @@ meat::Reference meat::execute(Reference context) {
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": INT " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
+									<< local(code[ip + 1]) << " "
 									<< (int)endian::read_be(*i)
 									<< std::endl;
 #endif /* DEBUG */
@@ -374,7 +404,7 @@ meat::Reference meat::execute(Reference context) {
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": FLOAT " << std::dec
-									<< (unsigned int)local_id << " "
+									<< local(local_id) << " "
 									<< (float)endian::read_be(*i)
 									<< std::endl;
 #endif /* DEBUG */
@@ -391,7 +421,7 @@ meat::Reference meat::execute(Reference context) {
 
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": STR " << std::dec
-									<< (unsigned int)code[ip + 1] << " "
+									<< local(code[ip + 1]) << " "
 									<< "\"" << str << "\""
 									<< std::endl;
 #endif /* DEBUG */
@@ -408,7 +438,7 @@ meat::Reference meat::execute(Reference context) {
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": SETATTR " << std::dec
 									<< (unsigned int)attr_id << " "
-									<< (unsigned int)local_id
+									<< local(local_id)
 									<< std::endl;
 #endif /* DEBUG */
 

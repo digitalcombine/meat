@@ -16,20 +16,34 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 Library include: {
-include <iostream>
+#include <iostream>
 }
 
 Application subClass: Console body: {
 
 	class function write: message {
-		std::cout << message->to_string();
+		std::cout << TEXT(message);
 		return null;
 	}
 
 	class function writeLn: message {
-		std::cout << message->to_string() << std::endl;
+		std::cout << TEXT(message) << std::endl;
 		return null;
 	}
+
+	class function error: message {
+		std::cerr << TEXT(message);
+		return null;
+	}
+
+	class function errorLn: message {
+		std::cerr << TEXT(message) << std::endl;
+		return null;
+	}
+
+	class function input {
+		std::string result;
+		std::cin >> result;
+		return new meat::Text(result);
+	}
 }
-
-

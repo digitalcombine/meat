@@ -19,17 +19,19 @@
 
 Library import: "UnitTest"
 Library import: "Test.Object"
+Library import: "Test.Class"
 Library import: "Test.BlockContext"
 
 Application subClass: Tests body: {
 
 	class method entry {
 		summary = [Test.Summary new]
-		
+
 		summary addSuite: [Test.Object new]
+		summary addSuite: [Test.Class new]
 		summary addSuite: [Test.BlockContext new]
-		
-		context return: [summary runAndSummarize]	
+
+		context return: [summary runAndSummarize]
 	}
 
 }

@@ -19,19 +19,18 @@
 
 Library import: UnitTest
 
-Test subClass: Test.Class body: {
+Test.Suite subClass: Test.Class body: {
 
-	method initialize {
-		super initialize
-		self setTitle: "Class test place holder"
-	}
+	method setup {
 
-	method execute {
-		#  By the time we get here, Classes have been fairly well put through their
-		# paces. So currently we don't do any actual testing but rather this is
-		# a place holder for the future for testing for bugs that we have fixed.
+		self title: "4.2.1 The subClass:body:" test: {
+      Exception try: {
+				Object subClass: "TestClass" body: ""
+			} catch: {
+				self pass
+			}
+			self fail: "Didn't raise an Exception"
+		}
 
-		self pass
 	}
 }
-

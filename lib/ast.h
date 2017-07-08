@@ -243,6 +243,7 @@ namespace meat {
       uint8_t index;
       int32_t int_value;
       float_t flt_value;
+			//std::set<std::string> &symbols;
     };
 
     class Assignment : public ASTNode {

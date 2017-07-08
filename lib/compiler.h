@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <set>
 
 #ifndef _MEAT_COMPILER_H
 #define _MEAT_COMPILER_H
@@ -300,11 +301,14 @@ namespace meat {
 			 */
 			virtual void command(Tokenizer &tokens);
 
-			void add_import(const char *name) { library->add_import(name); }
+			void add_import(const std::string &name);
 
-			void set_application(const std::string &name) {
-				library->set_application(name);
-			}
+			Reference get_imports() const;
+
+			void set_application(const std::string &name);
+
+			void add_symbol(const std::string &symbol);
+			void clear_symbols();
 
 			/** Actually create the new library file.
 			 * XXX Rename to compile
@@ -318,6 +322,7 @@ namespace meat {
 
 		private:
 			data::Library *library;
+			std::set<std::string> symbols;
 
 			bool to_cpp;
 			Reference context;
@@ -359,6 +364,8 @@ namespace meat {
 
 			virtual void command(Tokenizer &tokens);
 
+			void update_symbols(std::set<std::string> &symbols) const;
+
 			friend class Library;
 
 		private:
@@ -394,6 +401,8 @@ namespace meat {
 			 */
 			void compile();
 
+			void update_symbols(std::set<std::string> &symbols) const;
+
 			std::string cpp_hash_id();
 
 			std::string cpp_name(const char *prelim);
@@ -418,6 +427,8 @@ namespace meat {
 			bool is_cpp;
 			std::vector<uint8_t> bytecode;
 			uint8_t locals;
+
+			std::set<std::string> symbols;
 		};
 
 		namespace Utils {

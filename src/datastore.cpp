@@ -124,8 +124,8 @@ static std::string &get_includes() {
   return includes;
 }
 
-static meat::data::compiler_import_t &compiler_import() {
-	static meat::data::compiler_import_t importfn;
+static meat::compiler_import_fn &compiler_import() {
+	static meat::compiler_import_fn importfn;
 	return importfn;
 }
 
@@ -133,7 +133,9 @@ static meat::data::compiler_import_t &compiler_import() {
  * meat::data::Library::Library *
  ********************************/
 
-meat::data::Library::Library(const char *name) : dlhandle(0) {
+meat::data::Library::Library(const char *name)
+	: imports(new meat::List()), syms_free(false), syms_size(0), symbols(NULL),
+		dlhandle(0) {
   this->name = name;
   this->is_new = false;
 }
@@ -152,13 +154,15 @@ meat::data::Library::~Library() throw() {
    * any of these classes the references will keep the class until no one is
    * using them any more.
    */
-  std::deque<Reference>::iterator it;
-  for (it = classes.begin(); it != classes.end(); it++)
-    Class::unrecord(*it);
+	if (name != "__builtin__") {
+		std::deque<Reference>::iterator it;
+		for (it = classes.begin(); it != classes.end(); it++)
+			Class::unrecord(*it);
+	}
 
-  if (is_native) {
-    dl_close(dlhandle);
-  }
+	clear_symbols();
+
+  if (is_native) dl_close(dlhandle);
 }
 
 /*******************************
@@ -168,7 +172,10 @@ meat::data::Library::~Library() throw() {
 meat::data::Library *meat::data::Library::create(const char *name) {
   Library *new_lib = new Library(name);
   new_lib->name = name;
-  new_lib->is_new = true;
+	if (new_lib->name == "__builtin__")
+		new_lib->is_new = false;
+	else
+		new_lib->is_new = true;
 
   get_libraries()[name] = new_lib;
 
@@ -183,15 +190,12 @@ meat::data::Library *meat::data::Library::import(const char *name) {
   /* Check to see if we have already imported the library.
    */
   std::map<std::string, Library *>::iterator lib = get_libraries().find(name);
-  if (lib != get_libraries().end()) {
-    //std::cout << "Import hit" << std::endl;
+  if (lib != get_libraries().end())
     return lib->second;
-  }
 
   Library *imported_lib = new Library(name);
   imported_lib->import();
 
-  //std::cout << "Recording import " << name << std::endl;
   get_libraries()[name] = imported_lib;
 
   return imported_lib;
@@ -249,7 +253,7 @@ meat::data::Library::get(const std::string &name) {
  * meat::data::Library::unload *
  *******************************/
 
-void meat::data::Library::unload(const char *name) {
+void meat::data::Library::unload(const std::string &name) {
 
 #ifdef DEBUG
   std::cout << "LIBRARY: Unloading " << name << std::endl;
@@ -325,21 +329,45 @@ void meat::data::Library::add_path(const char *name) {
  * meat::data::Library::add_import *
  ***********************************/
 
-void meat::data::Library::add_import(const char *name) {
+void meat::data::Library::add_import(const std::string &name) {
   // Import the library.
-  import(name);
+  import(name.c_str());
 
   /* Record that the library should always be imported when this library
    * is loaded.
    */
-  imports.push_back(name);
+  LIST(imports).push_back(new meat::Text(name));
+}
+
+/************************************
+ * meat::data::Library::get_imports *
+ ************************************/
+
+meat::Reference meat::data::Library::get_imports() const {
+	meat::Reference copy = new meat::List();
+	LIST(copy) = CONST_LIST(imports);
+	return copy;
+}
+
+/**************************************
+ * meat::data::Library::remove_import *
+ **************************************/
+
+void meat::data::Library::remove_import(const std::string &name) {
+	meat::List::iterator it = LIST(imports).begin();
+	for (; it != LIST(imports).end(); ++it) {
+		if (TEXT(*it) == name) {
+			LIST(imports).erase(it);
+			return;
+		}
+	}
 }
 
 /****************************
  * meat::data::Library::add *
  ****************************/
 
-void meat::data::Library::add(Class *cls, const char *id) {
+void meat::data::Library::add(Class *cls, const std::string &id) {
   if (!cls->is_class()) {
     throw meat::Exception("Only classes can be added to library files.");
   }
@@ -349,7 +377,9 @@ void meat::data::Library::add(Class *cls, const char *id) {
 #endif /* DEBUG */
   Reference newcls = cls;
   classes.push_back(newcls);
-  Class::record(newcls, id);
+	if (name != "__builtin__")
+		Class::record(newcls, id.c_str());
+	cls->library = this;
 }
 
 /****************************************
@@ -379,6 +409,62 @@ void *meat::data::Library::dlsymbol(const std::string &name) {
 	}
 	throw Exception(std::string("Unable to load DL symbol from non-native "
 															"library ") + this->name);
+}
+
+/************************************
+ * meat::data::Library::set_symbols *
+ ************************************/
+
+void meat::data::Library::set_symbols(meat::uint8_t *symbols,
+																			meat::alloc_t sym_alloc) {
+	if (this->symbols and syms_free) delete[] symbols;
+
+	// Build symbol index table.
+	this->symbols = symbols;
+	const char *sym = (const char *)this->symbols;
+	while (*sym != 0) {
+		syms_table[hash(sym)] = sym;
+		sym += std::strlen(sym) + 1;
+	}
+
+	// Record the size of the symbols table.
+	syms_size = (unsigned int)(sym - (const char *)this->symbols) + 1;
+
+	// Deal with memory management.
+	switch (sym_alloc) {
+	case meat::STATIC:
+		syms_free = false;
+		break;
+	case meat::DYNAMIC:
+		syms_free = true;
+		break;
+	case meat::COPY:
+		syms_free = true;
+		this->symbols = new meat::uint8_t[syms_size];
+		std::memcpy(this->symbols, symbols, syms_size);
+		break;
+	}
+}
+
+/**************************************
+ * meat::data::Library::clear_symbols *
+ **************************************/
+
+void meat::data::Library::clear_symbols() {
+	if (syms_free) delete[] symbols;
+	symbols = NULL;
+	syms_size = 0;
+	syms_free = false;
+	syms_table.clear();
+}
+
+std::string meat::data::Library::lookup(meat::uint32_t hash_id) const {
+	std::map<meat::uint32_t, const char *>::const_iterator it =
+		syms_table.find(hash_id);
+	if (it != syms_table.end()) {
+		return it->second;
+	}
+	return itohex(hash_id);
 }
 
 /******************************
@@ -423,7 +509,7 @@ void meat::data::Library::write() {
 		// Reserved for future flags.
 		lib_file.put(0);
 
-		// The library is not executable.
+		// Add the application class hash ID if the library is executable.
 		uint32_t app_hash_id = 0;
 		if (!application.is_null()) {
 			app_hash_id = endian::write_be(CLASS(application).get_hash_id());
@@ -431,17 +517,17 @@ void meat::data::Library::write() {
 		lib_file.write((const char *)&app_hash_id, 4);
 
 #ifdef DEBUG
-    std::cout << "LIBRARY: Adding " << (int)this->imports.size()
+    std::cout << "LIBRARY: Adding " << (int)LIST(imports).size()
               << " imports" << std::endl;
 #endif /* DEBUG */
     /* Write all import strings to the library file next. */
-    meat::uint8_t import_cnt = imports.size();
+    meat::uint8_t import_cnt = LIST(imports).size();
 
     lib_file.put(import_cnt);
-    for (std::deque<std::string>::iterator it = imports.begin();
-         it != imports.end();
+    for (meat::List::iterator it = LIST(imports).begin();
+         it != LIST(imports).end();
          it++) {
-      lib_file.write(it->data(), it->length());
+      lib_file.write(TEXT(*it).data(), TEXT(*it).length());
       lib_file.put('\0');
     }
 
@@ -449,13 +535,17 @@ void meat::data::Library::write() {
     std::cout << "LIBRARY: Adding " << (int)this->classes.size()
               << " classes" << std::endl;
 #endif /* DEBUG */
-    //meat::uint16_t class_cnt =
-    //  endian::write_be((meat::uint16_t)classes.size());
     lib_file.put((uint8_t)classes.size());
     for (std::deque<Reference>::iterator it = classes.begin();
          it != classes.end(); it++) {
       ((Class &)*(*it)).write(lib_file);
     }
+
+		// Write the symbols table to the file.
+		uint32_t sz = endian::write_be(syms_size);
+		lib_file.write((const char *)&sz, 4);
+		if (symbols)
+			lib_file.write((const char *)symbols, syms_size);
 
     lib_file.close();
   }
@@ -521,9 +611,20 @@ void meat::data::Library::import_from_archive(const char *name) {
     Reference cls = meat::Class::import(lib_file);
     classes.push_back(cls);
     Class::record(cls);
+		CLASS(cls).library = this;
 		if (app_id && CLASS(cls).get_hash_id() == app_id)
 			application = cls;
   }
+
+	// Read in the symbols table.
+	uint32_t sz;
+	lib_file.read((char *)&sz, 4);
+	sz = endian::read_be(sz);
+	if (sz) {
+		meat::uint8_t *syms = new meat::uint8_t[sz];
+		lib_file.read((char *)syms, sz);
+		set_symbols(syms, meat::DYNAMIC);
+	}
 
   lib_file.close();
 
@@ -586,7 +687,7 @@ static meat::Reference Library_cm_import_(meat::Reference context) {
 #endif /* DEBUG */
 
   if (compiler_import() != NULL) {
-    compiler_import()(TEXT(filename).c_str());
+    compiler_import()(TEXT(filename), context);
   } else {
     meat::data::Library::import(TEXT(filename).c_str());
   }
@@ -598,7 +699,7 @@ static meat::Reference Library_cm_include_(meat::Reference context) {
   //meat::Reference self = CONTEXT(context).get_self();
   meat::Reference cpp_includes = CONTEXT(context).get_param(0);
 
-	meat::data::compiler_import_t &import = compiler_import();
+	meat::compiler_import_fn &import = compiler_import();
 
   if (import != NULL) {
     meat::data::Library::include(TEXT(cpp_includes).c_str());
@@ -1275,7 +1376,7 @@ static meat::vtable_entry_t ArchiveMethods[] = {
  * Public Interface
  */
 
-void meat::data::initialize(void (*import)(const char *name)) {
+void meat::data::initialize(compiler_import_fn import) {
   meat::Class *cls;
 
   Library::add_path("");

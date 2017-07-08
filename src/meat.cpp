@@ -175,7 +175,7 @@ static class_registry_t &class_registry() {
  **********************/
 
 meat::Class::Class(const char *parent, uint8_t obj_props)
-	: Object(meat::ClassClass(), 0) {
+	: Object(meat::ClassClass(), 0), library(NULL) {
 
 	this->hash_id = 0;
 	this->super = resolve(parent);
@@ -183,7 +183,7 @@ meat::Class::Class(const char *parent, uint8_t obj_props)
 }
 
 meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
-	: Object(meat::ClassClass(), cls_props) {
+	: Object(meat::ClassClass(), cls_props), library(NULL) {
 
 	this->hash_id = 0;
 	this->super = resolve(parent);
@@ -191,7 +191,7 @@ meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
 }
 
 meat::Class::Class(meat::Reference &parent, uint8_t obj_props)
-	: Object(meat::ClassClass(true), 0) {
+	: Object(meat::ClassClass(true), 0), library(NULL) {
 
 	this->hash_id = 0;
 	this->super = parent;
@@ -201,7 +201,7 @@ meat::Class::Class(meat::Reference &parent, uint8_t obj_props)
 meat::Class::Class(meat::Reference &parent,
 									 uint8_t cls_props,
 									 uint8_t obj_props)
-	: Object(meat::ClassClass(), cls_props) {
+	: Object(meat::ClassClass(), cls_props), library(NULL) {
 
 	this->hash_id = 0;
 	this->super = parent;
@@ -389,6 +389,15 @@ meat::Class *meat::Class::import(std::istream &lib_file) {
 	}
 
 	return cls;
+}
+
+/***********************
+ * meat::Class::lookup *
+ ***********************/
+
+std::string meat::Class::lookup(uint32_t hash_id) const {
+	if (library) return library->lookup(hash_id);
+	return itohex(hash_id);
 }
 
 /***********************

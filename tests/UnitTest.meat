@@ -231,14 +231,14 @@ Object subClass: Test.Test body: {
 	# Pass and exit the test.
 	method pass {
 		passed = [Boolean true]
-		[context messenger] return
+		test return
 	}
 
 	# Fail and exit the test, setting the reason why.
 	method fail: reason {
 		passed = [Boolean false]
 		failReason = reason
-		[context messenger] return
+		test return
 	}
 }
 

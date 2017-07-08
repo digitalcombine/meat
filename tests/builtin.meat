@@ -729,7 +729,7 @@ Numeric subClass: Integerᶲ body: {
 }
 
 #==============================================================================
-# Number
+# Number Class
 
 Numeric subClass: Numberᶲ body: {
 
@@ -1140,7 +1140,7 @@ Object subClass: Listᶲ body: {
     return null;
   }
 
-  function makeCopy {
+  function copy {
     Reference new_list = meat::List();
     LIST(new_list) = LIST(self);
     return new_list;

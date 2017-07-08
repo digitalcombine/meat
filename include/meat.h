@@ -55,8 +55,9 @@ namespace meat {
 	class DECLSPEC Context;
 	class DECLSPEC BlockContext;
 	class DECLSPEC Exception;
-	namespace data {
-		class Archive; // Found in datastore.h
+	namespace data { // Found in datastore.h
+		class Library;
+		class Archive;
 	};
 
 	/** A reference counter pointer to Script Objects and classes.
@@ -70,15 +71,18 @@ namespace meat {
 #define BLOCK(ref) (dynamic_cast<meat::BlockContext &>(*(ref)))
 #define CONST_BLOCK(ref) (dynamic_cast<const meat::BlockContext &>(*(ref)))
 
-	typedef void (*class_compiler_t)(meat::Reference &super,
-                                   const char *cls_name,
-                                   const char *cls_body);
+	typedef void (*class_compiler_fn)(meat::Reference super,
+																		const std::string &cls_name,
+																		const std::string &cls_body,
+																	 meat::Reference context);
+	typedef void (*compiler_import_fn)(const std::string &name,
+																		 meat::Reference context);
 
 	/** Initializes the scripting engine.
 	 */
 	void DECLSPEC initialize(int argc, const char *argv[],
-													 void (*import)(const char *name) = 0,
-													 class_compiler_t compiler = 0);
+													 compiler_import_fn import = 0,
+													 class_compiler_fn compiler = 0);
 
 	/** Creates a new message context to an Object.
 	 * @param Object The Object to send the message to.
@@ -166,8 +170,8 @@ namespace meat {
     virtual Reference &property(uint8_t index) const;
 
 		friend void initialize(int argc, const char *argv[],
-													 void (*import)(const char *name),
-													 class_compiler_t compiler);
+													 compiler_import_fn import,
+													 class_compiler_fn compiler);
 
 	private:
 		meat::Reference o_type;
@@ -208,6 +212,11 @@ namespace meat {
 		} method;
 	} vtable_entry_t;
 
+	typedef struct _symbol_entry_s {
+		uint32_t hash_id;
+		const char *symbol;
+	} symbol_entry_t;
+
   typedef enum {STATIC, DYNAMIC, COPY} alloc_t;
 
 	/**
@@ -216,12 +225,12 @@ namespace meat {
 	public:
 		/** Creates a new class Object.
      */
-		Class (const char *parent, uint8_t obj_props = 0);
-		Class (const char *parent, uint8_t cls_props, uint8_t obj_props);
-		Class (Reference &parent, uint8_t obj_props = 0);
-		Class (Reference &parent, uint8_t cls_props, uint8_t obj_props);
+		Class(const char *parent, uint8_t obj_props = 0);
+		Class(const char *parent, uint8_t cls_props, uint8_t obj_props);
+		Class(Reference &parent, uint8_t obj_props = 0);
+		Class(Reference &parent, uint8_t cls_props, uint8_t obj_props);
 
-		virtual ~Class () throw ();
+		virtual ~Class() throw ();
 
 		/** Get the meat super class for this class.
      * @return A Reference to the class's super class.
@@ -244,6 +253,7 @@ namespace meat {
     /** Gets the internal 32bit hash id for the class.
      */
 		uint32_t get_hash_id() const { return hash_id; };
+		std::string get_name() const { return lookup(hash_id); }
 
     /** Set the constructor function. The constructor is used by the method
      * new_Object() to create the actual internal Object. If a constructor
@@ -252,7 +262,7 @@ namespace meat {
      * is enough unless a unique C++ class was created for the Object.
      *
      * @param constructor Pointer to the contructor function.
-     * @see new_Object()
+     * @see new_object()
      */
 		void set_constructor(constructor_t constructor);
 		void set_vtable(uint8_t entries, vtable_entry_t table[],
@@ -269,6 +279,8 @@ namespace meat {
 
 		virtual void write(std::ostream &lib_file) const;
 		static Class *import(std::istream &lib_file);
+
+		std::string lookup(uint32_t hash_id) const;
 
     //@{
 		/** Register a class with the give id name.
@@ -318,8 +330,8 @@ namespace meat {
 		friend std::ostream &operator <<(std::ostream &out, Class &cls);
 #endif /* DEBUG */
 		friend void initialize(int argc, const char *argv[],
-													 void (*import)(const char *name),
-													 class_compiler_t compiler);
+													 compiler_import_fn import,
+													 class_compiler_fn compiler);
 		friend Reference message(Reference object,
                                       uint32_t hash_id,
                                       Reference context);
@@ -327,6 +339,7 @@ namespace meat {
                                             uint32_t hash_id,
                                             Reference context);
 		friend Reference execute(Reference context);
+		friend class data::Library;
 
 	private:
     /** The virtual method table for class Objects.
@@ -398,6 +411,7 @@ namespace meat {
 		const vtable_entry_t *class_find(uint32_t hash_id) const;
 
 		uint32_t hash_id;
+		data::Library *library;
 #ifdef DEBUG
 		std::string name;
 #endif /* DEBUG */

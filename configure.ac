@@ -19,7 +19,7 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.68])
-AC_INIT([meat], [0.1.0], [ron.rwsoft@gmail.com])
+AC_INIT([meat], [0.2.0], [ron.rwsoft@gmail.com])
 AM_INIT_AUTOMAKE
 AM_SILENT_RULES
 AC_CONFIG_SRCDIR([src/meat.cpp])
@@ -48,7 +48,7 @@ AC_ARG_ENABLE([debug],
        esac], [debug=false])
 AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
-AC_DEFINE([GITGO_BUILD])
+AC_DEFINE([MEAT_BUILD])
 
 # Checks for programs.
 AC_PROG_CXX

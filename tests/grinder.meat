@@ -52,21 +52,25 @@ Object subClass: Grinder.Libraryᶲ body: {
 
     name = libraryName;
     dynamic_cast<meat::grinder::Library &>
-		  (*new_object).register_as(name->to_string());
+		  (*new_object).register_as(TEXT(name));
 
     return new_object;
   }
 
   function addImport: libraryName {
     dynamic_cast<meat::grinder::Library &>
-      (*self).add_import(libraryName->to_string());
+      (*self).add_import(TEXT(libraryName));
     return null;
   }
 
 	function removeImport: libraryName {
+	  dynamic_cast<meat::grinder::Library &>
+      (*self).remove_import(TEXT(libraryName));
+		return null;
 	}
 
 	function getImportList {
+		return dynamic_cast<meat::grinder::Library &>(*self).get_imports();
 	}
 
   method getName {
@@ -159,7 +163,7 @@ Object subClass: Grinder.Classᶲ body: {
   }
 
   method getPropertiesList {
-    context return: [objectProperties makeCopy]
+    context return: [objectProperties copy]
   }
 
   method addClassProperty: propertyName {
@@ -167,7 +171,7 @@ Object subClass: Grinder.Classᶲ body: {
   }
 
   method getClassPropertiesList {
-    context return: [classProperties clone]
+    context return: [classProperties copy]
   }
 
   method addMethod: theMethod {
@@ -200,7 +204,7 @@ Object subClass: Grinder.Methodᶲ body: {
 
   class method new: name {
     self newObject
-    methodName = name
+    methodName = [name asText]
     context return: self
   }
 
@@ -217,7 +221,7 @@ Object subClass: Grinder.Methodᶲ body: {
   }
 
   method getParameterList {
-    context return: [parameters makeCopy]
+    context return: [parameters copy]
   }
 
   method getBody {
@@ -233,4 +237,7 @@ Object subClass: Grinder.Methodᶲ body: {
       return meat::True();
     return meat::False();
   }
+
+	function isNative: value {
+	}
 }
