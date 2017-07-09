@@ -42,10 +42,132 @@ Free Documentation License"}.
 
 \section {Introduction}
 \subsection {Scope}
+The purpose of this document is not to be a learning guide to the language but
+to define the Meat language itself.
 
 \newpage
 \section {Lexical Elements and Parsing}
 \subsection {Characters}
+The Unicode UTF-8 character set
+
+The Unicode white space characters \texttt{U+0009}
+\textit{(the TAB character \textbackslash t)}, \texttt{U+0020}
+\textit{(the SPACE character)} and
+\texttt{U+00A0} \textit{(the NO-BREAK SPACE character)} are used as delimiters
+between the token components of a command. These characters can be used
+multiple times togethers to form a single delimiter.
+
+A line termination or a \textit{newline} is definied by the character set
+described in the following table. Code parsers must accept all of these
+characters as a line termination.
+
+\begin{center}
+  \begin{tabular}{|l|l|l|}
+    \hline
+    & \textbf{Unicode} & \textbf{Escaped Character} \\ \hline
+    \textbf{LF} & \texttt{U+000A} & \textbackslash n \\ \hline
+    \textbf{VT} & \texttt{U+000B} & \textbackslash v \\ \hline
+    \textbf{FF} & \texttt{U+000C} & \textbackslash f \\ \hline
+    \textbf{CR} & \texttt{U+000D} & \textbackslash r \\ \hline
+    \textbf{CR} + \textbf{LF} & \texttt{U+000D} \texttt{U+000A} &
+    \textbackslash r \textbackslash n \\ \hline
+    \textbf{LS} & \texttt{U+2028} & \\ \hline
+    \textbf{PS} & \texttt{U+2029} & \\ \hline
+  \end{tabular}
+\end{center}
+
+\subsubsection {Numeric Chararcters}
+
+Using the unicode character set allows code to be in any language supported.
+This also extends to numeric character sets. The following table describes the
+numeric characters that meat parsers must recognize as numeric values and
+translate into their binary equivalent.
+
+\begin{center}
+  \begin{tabular}{|l|c|}
+    \hline
+    & \textbf{Unicode} \\ \hline
+    \textbf{Digits} & \texttt{U+0030}-\texttt{U+0039} \\ \hline
+    \textbf{Arabic-Indic Digits} & \texttt{U+0660}-\texttt{U+0669} \\ \hline
+    \textbf{Extended Arabic-Indic Digit}
+    & \texttt{U+06F0}-\texttt{U+06F9} \\ \hline
+    \textbf{NKo Digits} & \texttt{U+07C0}-\texttt{U+07C9} \\ \hline
+    \textbf{Devavagari Digits} & \texttt{U+0966}-\texttt{U+096F} \\ \hline
+    \textbf{Bengali Digits} & \texttt{U+09E6}-\texttt{U+09EF} \\ \hline
+    \textbf{Gurmukhi Digits} & \texttt{U+0A66}-\texttt{U+0A6F} \\ \hline
+    \textbf{Gujarati Digits} & \texttt{U+0AE6}-\texttt{U+0AEF} \\ \hline
+    \textbf{Oriya Digits} & \texttt{U+0B66}-\texttt{U+0B6F} \\ \hline
+    \textbf{Tamil Digits} & \texttt{U+0BE6}-\texttt{U+0BEF} \\ \hline
+    \textbf{Telugu Digits} & \texttt{U+0C66}-\texttt{U+0C6F} \\ \hline
+    \textbf{Kannada Digits} & \texttt{U+0CE6}-\texttt{U+0CEF} \\ \hline
+    \textbf{Malayalam Digits} & \texttt{U+0D66}-\texttt{U+0D6F} \\ \hline
+    \textbf{Sinhala Digits} & \texttt{U+0DE6}-\texttt{U+0DEF} \\ \hline
+    \textbf{Thai Digits} & \texttt{U+0E50}-\texttt{U+0E59} \\ \hline
+    \textbf{Lao Digits} & \texttt{U+0ED0}-\texttt{U+0ED9} \\ \hline
+    \textbf{Tibetan Digits} & \texttt{U+0F20}-\texttt{U+0F29} \\ \hline
+    \end{tabular}
+\end{center}
+\begin{center}
+  \begin{tabular}{|l|c|}
+    \hline
+    & \textbf{Unicode} \\ \hline
+    \textbf{Myanmar Digits} & \texttt{U+1040}-\texttt{U+1049} \\ \hline
+    \textbf{Myanmar Shan Digits} & \texttt{U+1090}-\texttt{U+1099} \\ \hline
+    \textbf{Khmer Digits} & \texttt{U+17E0}-\texttt{U+17E9} \\ \hline
+    \textbf{Mongolian Digits} & \texttt{U+1810}-\texttt{U+1819} \\ \hline
+    \textbf{Limbu Digits} & \texttt{U+1946}-\texttt{U+194F} \\ \hline
+    \textbf{New Tai Lue Digits} & \texttt{U+19D0}-\texttt{U+19D9} \\ \hline
+    \textbf{Tai Tham Hora Digits} & \texttt{U+1A80}-\texttt{U+1A89} \\ \hline
+    \textbf{Tai Tham Tham Digits} & \texttt{U+1A90}-\texttt{U+1A99} \\ \hline
+    \textbf{Balinese Digits} & \texttt{U+1B50}-\texttt{U+1B59} \\ \hline
+    \textbf{Sundanese Digits} & \texttt{U+1BB0}-\texttt{U+1BB9} \\ \hline
+    \textbf{Lepcha Digits} & \texttt{U+1C40}-\texttt{U+1C49} \\ \hline
+    \textbf{Ol Chiki Digits} & \texttt{U+1C50}-\texttt{U+1C59} \\ \hline
+    \textbf{Vai Digits} & \texttt{U+A620}-\texttt{U+A629} \\ \hline
+    \textbf{Saurashtra Digits} & \texttt{U+A8D0}-\texttt{U+A8D9} \\ \hline
+    \textbf{Kayah Li Digits} & \texttt{U+A900}-\texttt{U+A909} \\ \hline
+    \textbf{Javanese Digits} & \texttt{U+A9D0}-\texttt{U+A9D9} \\ \hline
+    \textbf{Myanmar Tai Laing Digits}
+    & \texttt{U+A9F0}-\texttt{U+A9F9} \\ \hline
+    \textbf{Cham Digits} & \texttt{U+AA50}-\texttt{U+AA59} \\ \hline
+    \textbf{Meetei Mayek Digits} & \texttt{U+ABF0}-\texttt{U+ABF9} \\ \hline
+    \textbf{Fullwidth Digits} & \texttt{U+FF10}-\texttt{U+FF19} \\ \hline
+    \end{tabular}
+\end{center}
+\begin{center}
+  \begin{tabular}{|l|c|}
+    \hline
+    & \textbf{Unicode} \\ \hline
+    \textbf{Osmanya Digits} & \texttt{U+104A0}-\texttt{U+104A9} \\ \hline
+    \textbf{Brahmi Digits} & \texttt{U+11066}-\texttt{U+1106F} \\ \hline
+    \textbf{Sora Sompeng Digits} & \texttt{U+110F0}-\texttt{U+110F9} \\ \hline
+    \textbf{Chakma Digits} & \texttt{U+11136}-\texttt{U+1113F} \\ \hline
+    \textbf{Sharada Digits} & \texttt{U+111D0}-\texttt{U+111DF} \\ \hline
+    \textbf{Khudawadi Digits} & \texttt{U+112F0}-\texttt{U+112F9} \\ \hline
+    \textbf{Newa Digits} & \texttt{U+11450}-\texttt{U+11459} \\ \hline
+    \textbf{Tirhuta Digits} & \texttt{U+114D0}-\texttt{U+114D9} \\ \hline
+    \textbf{Modi Digits} & \texttt{U+11650}-\texttt{U+11659} \\ \hline
+    \textbf{Takri Digits} & \texttt{U+116C0}-\texttt{U+116C9} \\ \hline
+    \textbf{Ahom Digits} & \texttt{U+11730}-\texttt{U+11739} \\ \hline
+    \textbf{Warang Citi Digits} & \texttt{U+118E0}-\texttt{U+118E9} \\ \hline
+    \textbf{Bhaiksuki Digits} & \texttt{U+11C50}-\texttt{U+11C59} \\ \hline
+    \textbf{Masaram Digits} & \texttt{U+11D50}-\texttt{U+11D59} \\ \hline
+    \textbf{Mro Digits} & \texttt{U+16A60}-\texttt{U+16A69} \\ \hline
+    \textbf{Pahawh Digits} & \texttt{U+16B50}-\texttt{U+16B59} \\ \hline
+    \textbf{Mathematical Bold Digits}
+    & \texttt{U+1D7CE}-\texttt{U+1D7D7} \\ \hline
+    \textbf{Mathematical Double-Struck Digits}
+    & \texttt{U+1D7D8}-\texttt{U+1D7EF} \\ \hline
+    \textbf{Mathematical Sans-Serif Digits}
+    & \texttt{U+1D7E2}-\texttt{U+1D7EB} \\ \hline
+    \textbf{Mathematical Sans-Serif Bold Digits}
+    & \texttt{U+1D7EC}-\texttt{U+1D7F5} \\ \hline
+    \textbf{Mathematical Monospace Digits}
+    & \texttt{U+1D7F6}-\texttt{U+1D7FF} \\ \hline
+    \textbf{Adlam Digits}
+    & \texttt{U+1E950}-\texttt{U+1E959} \\ \hline
+  \end{tabular}
+\end{center}
 
 \newpage
 \section {Core Language Components}
@@ -61,13 +183,16 @@ mandatory to the language.
 \input {Class-Reference}
 \input {Context-Reference}
 \input {BlockContext-Reference}
-\input {Exception-Reference}
 \input {Null-Reference}
+\input {Exception-Reference}
 \input {Boolean-Reference}
 \input {Numeric-Reference}
 \input {Integer-Reference}
 \input {Number-Reference}
 \input {Text-Reference}
+\input {List-Reference}
+\input {Set-Reference}
+\input {Index-Reference}
 
 \newpage
 \section {Appendix}
