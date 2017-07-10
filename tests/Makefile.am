@@ -4,14 +4,16 @@ TESTS = tests.mapp libtests.mlib hello.mlib
 LOG_COMPILER = @top_srcdir@/bin/meat
 AM_LOG_FLAGS = -i ../lib/.libs/
 
-EXTRA_DIST = UnitTest.meat Test.Object.meat Test.Boolean.meat \
+EXTRA_DIST = UnitTest.meat Test.Characters.meat \
+			 Test.Object.meat Test.Boolean.meat \
 			 Test.Exception.meat Test.Class.meat Test.BlockContext \
 			 Test.Numeric.meat Test.Number.meat Test.Integer.meat \
 			 Test.Text.meat Test.Index.meat Test.List.meat Test.Data.meat \
 			 Test.Application.meat Test.Compiler.meat \
 			 tests.meat data.meat Console.meat builtin.meat Datastore.meat \
 			 grinder.meat
-CLEANFILES = UnitTest.mlib Test.Boolean.mlib Test.Object.mlib \
+CLEANFILES = UnitTest.mlib Test.Characters.mlib \
+			 Test.Boolean.mlib Test.Object.mlib \
 			 Test.Exception.mlib Test.Class.mlib  Test.BlockContext.mlib\
 			 Test.Numeric.mlib Test.Number.mlib Test.Integer.mlib \
 			 Test.Text.mlib Test.Index.mlib Test.List.mlib Test.Data.mlib \
@@ -27,6 +29,7 @@ CLEANFILES = UnitTest.mlib Test.Boolean.mlib Test.Object.mlib \
 	@cat $*.cpp | sed -e 's/ᶲ//g' > $*.cpp.fixed
 	@mv -f $*.cpp.fixed $*.cpp
 
+Test.Characters.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.Object.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.Class.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
 Test.BlockContext.mlib: UnitTest.mlib @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
@@ -63,6 +66,8 @@ tests.mapp: data.mar
 tests.mapp: tests.meat
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -a tests.mapp tests.meat
 
+libtests.mlib: @top_srcdir@/bin/grinder @top_srcdir@/bin/meat
+libtests.mlib: Test.Characters.mlib
 libtests.mlib: libtests.meat
 	@top_srcdir@/bin/grinder -i ../lib/.libs/ -c Tests -l libtests libtests.meat
 

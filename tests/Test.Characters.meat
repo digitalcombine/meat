@@ -1,0 +1,247 @@
+# Object Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library import: UnitTest
+
+Test.Suite subClass: Test.Characters body: {
+
+  method setup {
+    digits = 0123456789
+
+    self title: "2.1.1 Numeric Characters (Integers)" test: {
+      [digits == ٠١٢٣٤٥٦٧٨٩] isFalse: {
+        self fail: "Arabic-Indic integer failed"
+      }
+
+      [digits == ۰۱۲۳۴۵۶۷۸۹] isFalse: {
+        self fail: "Extented Arabic-Indic integer failed"
+      }
+
+      [digits == ߀߁߂߃߄߅߆߇߈߉] isFalse: {
+        self fail: "N'Ko integer failed"
+      }
+
+      [digits == ०१२३४५६७८९] isFalse: {
+        self fail: "Devavagari integer failed"
+      }
+
+      [digits == ০১২৩৪৫৬৭৮৯] isFalse: {
+        self fail: "Bengali integer failed"
+      }
+      
+      [digits == ੦੧੨੩੪੫੬੭੮੯] isFalse: {
+        self fail: "Gurmukhi integer failed"
+      }
+      
+      [digits == ૦૧૨૩૪૫૬૭૮૯] isFalse: {
+        self fail: "Gujarati integer failed"
+      }
+      
+      [digits == ୦୧୨୩୪୫୬୭୮୯] isFalse: {
+        self fail: "Oriya integer failed"
+      }
+
+      [digits == ௦௧௨௩௪௫௬௭௮௯] isFalse: {
+        self fail: "Tamil integer failed"
+      }
+      
+      [digits == ౦౧౨౩౪౫౬౭౮౯] isFalse: {
+        self fail: "Telugu integer failed"
+      }
+      
+      [digits == ೦೧೨೩೪೫೬೭೮೯] isFalse: {
+        self fail: "Kannada integer failed"
+      }
+      
+      [digits == ൦൧൨൩൪൫൬൭൮൯] isFalse: {
+        self fail: "Malayalam integer failed"
+      }
+
+      [digits == ෦෧෨෩෪෫෬෭෮෯] isFalse: {
+        self fail: "Sinhala integer failed"
+      }
+      
+      [digits == ๐๑๒๓๔๕๖๗๘๙] isFalse: {
+        self fail: "Thai integer failed"
+      }
+      
+      [digits == ໐໑໒໓໔໕໖໗໘໙] isFalse: {
+        self fail: "Lao integer failed"
+      }
+      
+      [digits == ༠༡༢༣༤༥༦༧༨༩] isFalse: {
+        self fail: "Tibetan integer failed"
+      }
+
+      [digits == ၀၁၂၃၄၅၆၇၈၉] isFalse: {
+        self fail: "Myanmar integer failed"
+      }
+
+      [digits == ႐႑႒႓႔႕႖႗႘႙] isFalse: {
+        self fail: "Myanmar Shan integer failed"
+      }
+
+      [digits == ០១២៣៤៥៦៧៨៩] isFalse: {
+        self fail: "Khmer integer failed"
+      }
+
+      [digits == ᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙] isFalse: {
+        self fail: "Mongolian integer failed"
+      }
+
+      [digits == ᥆᥇᥈᥉᥊᥋᥌᥍᥎᥏] isFalse: {
+        self fail: "Limbu integer failed"
+      }
+
+      [digits == ᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙] isFalse: {
+        self fail: "New Tai Lue integer failed"
+      }
+
+      [digits == ᪀᪁᪂᪃᪄᪅᪆᪇᪈᪉] isFalse: {
+        self fail: "Tai Tham Hora integer failed"
+      }
+
+      [digits == ᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙] isFalse: {
+        self fail: "Tai Tham Tham integer failed"
+      }
+      
+      [digits == ᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙] isFalse: {
+        self fail: "Balinese integer failed"
+      }
+
+      [digits == ᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹] isFalse: {
+        self fail: "Sundanese integer failed"
+      }
+      
+      [digits == ᱀᱁᱂᱃᱄᱅᱆᱇᱈᱉] isFalse: {
+        self fail: "Lepcha integer failed"
+      }
+
+      [digits == ᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙] isFalse: {
+        self fail: "Ol Chiki integer failed"
+      }
+      
+      [digits == ꘠꘡꘢꘣꘤꘥꘦꘧꘨꘩] isFalse: {
+        self fail: "Vai integer failed"
+      }
+
+      [digits == ꣐꣑꣒꣓꣔꣕꣖꣗꣘꣙] isFalse: {
+        self fail: "Saurashtra integer failed"
+      }
+
+      [digits == ꤀꤁꤂꤃꤄꤅꤆꤇꤈꤉] isFalse: {
+        self fail: "Kayah Li integer failed"
+      }
+
+      [digits == ꧐꧑꧒꧓꧔꧕꧖꧗꧘꧙] isFalse: {
+        self fail: "Javanese integer failed"
+      }
+      
+      [digits == ꧰꧱꧲꧳꧴꧵꧶꧷꧸꧹] isFalse: {
+        self fail: "Myanmar Tai Laing integer failed"
+      }
+
+      [digits == ꩐꩑꩒꩓꩔꩕꩖꩗꩘꩙] isFalse: {
+        self fail: "Cham integer failed"
+      }
+
+      [digits == ꯰꯱꯲꯳꯴꯵꯶꯷꯸꯹] isFalse: {
+        self fail: "Meetei Mayek integer failed"
+      }
+      
+      [digits == ０１２３４５６７８９] isFalse: {
+        self fail: "Fullwidth integer failed"
+      }
+
+      [digits == 𐒠𐒡𐒢𐒣𐒤𐒥𐒦𐒧𐒨𐒩] isFalse: {
+        self fail: "Osmanya integer failed"
+      }
+      
+      [digits == 𑁦𑁧𑁨𑁩𑁪𑁫𑁬𑁭𑁮𑁯] isFalse: {
+        self fail: "Brahmi integer failed"
+      }
+      
+      [digits == 𑃰𑃱𑃲𑃳𑃴𑃵𑃶𑃷𑃸𑃹] isFalse: {
+        self fail: "Sora Sompeng integer failed"
+      }
+      
+      [digits == 𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿] isFalse: {
+        self fail: "Chakma integer failed"
+      }
+
+      [digits == 𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙] isFalse: {
+        self fail: "Sharada integer failed"
+      }
+      
+      [digits == 𑋰𑋱𑋲𑋳𑋴𑋵𑋶𑋷𑋸𑋹] isFalse: {
+        self fail: "Khudawadi integer failed"
+      }
+      
+      [digits == 𑓐𑓑𑓒𑓓𑓔𑓕𑓖𑓗𑓘𑓙] isFalse: {
+        self fail: "Tirhuta integer failed"
+      }
+      
+      [digits == 𑙐𑙑𑙒𑙓𑙔𑙕𑙖𑙗𑙘𑙙] isFalse: {
+        self fail: "Modi integer failed"
+      }
+      
+      [digits == 𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉] isFalse: {
+        self fail: "Takri integer failed"
+      }
+      
+      [digits == 𑜰𑜱𑜲𑜳𑜴𑜵𑜶𑜷𑜸𑜹] isFalse: {
+        self fail: "Ahom integer failed"
+      }
+      
+      [digits == 𑣠𑣡𑣢𑣣𑣤𑣥𑣦𑣧𑣨𑣩] isFalse: {
+        self fail: "Warang Citi integer failed"
+      }
+      
+      [digits == 𖩠𖩡𖩢𖩣𖩤𖩥𖩦𖩧𖩨𖩩] isFalse: {
+        self fail: "Mro integer failed"
+      }
+
+      [digits == 𖭐𖭑𖭒𖭓𖭔𖭕𖭖𖭗𖭘𖭙] isFalse: {
+        self fail: "Pahawh Hmong integer failed"
+      }
+
+      [digits == 𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗] isFalse: {
+        self fail: "Mathematical Bold integer failed"
+      }
+      
+      [digits == 𝟘𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡] isFalse: {
+        self fail: "Mathematical Double-Struck integer failed"
+      }
+      
+      [digits == 𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫] isFalse: {
+        self fail: "Mathematical Sans-Serif integer failed"
+      }
+      
+      [digits == 𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵] isFalse: {
+        self fail: "Mathematical Sans-Serif Bold integer failed"
+      }
+      
+      [digits == 𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿] isFalse: {
+        self fail: "Mathematical Monospace integer failed"
+      }
+
+      self pass
+    }
+  }
+}

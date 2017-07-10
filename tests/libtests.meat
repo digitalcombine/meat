@@ -18,6 +18,7 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 Library import: "UnitTest"
+Library import: "Test.Characters"
 Library import: "Test.Object"
 Library import: "Test.Class"
 Library import: "Test.BlockContext"
@@ -27,6 +28,7 @@ Application subClass: Tests body: {
 	class method entry {
 		summary = [Test.Summary new]
 
+    summary addSuite: [Test.Characters new]
 		summary addSuite: [Test.Object new]
 		summary addSuite: [Test.Class new]
 		summary addSuite: [Test.BlockContext new]
