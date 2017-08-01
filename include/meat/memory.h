@@ -217,17 +217,17 @@ namespace memory {
 
     /** Check if the reference is referencing the same object as @c other.
      */
-    bool operator ==(const reference<Ty> &other) {
+    bool operator ==(const reference<Ty> &other) const {
       return (obj == other.obj);
     }
 
     /** Check if the reference is referencing @c other.
      */
-    bool operator ==(const Ty *other) {
+    bool operator ==(const Ty *other) const {
       return ((Ty *)(obj) == other);
     }
 
-    bool operator !=(const reference<Ty> &obj) {
+    bool operator !=(const reference<Ty> &obj) const {
       return (this->obj != obj.obj);
     }
 

@@ -26,7 +26,6 @@ archive import: "Test.Number"
 archive import: "Test.Integer"
 archive import: "Test.Text"
 archive import: "Test.Index"
-archive import: "Test.List"
 archive import: "Test.Data"
 archive import: "Test.Compiler"
 
@@ -44,7 +43,6 @@ suite add: [Test.Integer new]
 suite add: [Test.NumberBadness new]
 suite add: [Test.Text new]
 suite add: [Test.Index new]
-suite add: [Test.List new]
 suite add: [Test.Data new]
 suite add: [Test.Compiler new]
 

@@ -1,3 +1,4 @@
+\newpage
 \subsection{Class Class}
 
 The class Class is the base type for all Class objects.
@@ -7,6 +8,8 @@ Object subClass: Class body: {
   class method subClass: name body: definition
   class method newObject
   class method superClass
+  class method initialize
+  method getName
 }
 \end{lstlisting}
 
@@ -32,3 +35,20 @@ class method new {
 
 \subsubsection{class method superClass}
 Returns the super class for the Class.
+
+\subsubsection{class method initialize}
+When a library is loaded and the class is unserialized, this method is
+messaged to populate any class properties with default values. Any class
+properties that are not set by this method will default to the Null object.
+This method can be overridden by sub-classes and must always message the
+super class initialize method.
+
+\begin{lstlisting}
+  method initialize {
+    super initialize
+    # Populate object's properties here.
+  }
+\end{lstlisting}
+
+\subsubsection{method getName}
+Returns the Text representation of the class name.

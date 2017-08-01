@@ -122,10 +122,11 @@ Class.
 \subsubsection {method initialize}
 When a class creates a new object
 (\hyperref[sec:class_method_newobject]{see newObject method}) this method is
-messaged to populate the objects properties with sane default values. By
-default, the properties of a new object are all initially set to null. This
-method can be overridden by sub-classes to set it's properties to something
-other than null and must always message the super class initialize method.
+messaged to populate the objects properties with default values. By
+default, the properties of a new object are all initially set to the Null
+object. This method can be overridden by sub-classes to set it's properties
+to something other than null and must always message the super class
+initialize method.
 
 \begin{lstlisting}
   method initialize {

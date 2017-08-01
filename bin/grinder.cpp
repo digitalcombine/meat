@@ -69,7 +69,7 @@ static void classbuilder_int(meat::Reference super,
 
 	meat::Reference ctx =
 		meat::message(meat::Class::resolve("Grinder.Class"),
-									"subClassFrom:as:",
+									"subClass:as:",
 									context);
 	CONTEXT(ctx).set_param(0, super);
 	CONTEXT(ctx).set_param(1, new meat::Text(cls_name));

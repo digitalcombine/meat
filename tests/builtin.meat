@@ -149,12 +149,16 @@ Object subClass: Classᶲ body: {
     return null;
   }
 
-  class function super {
-    return ((meat::Class &)(*self)).get_super();
+  class function superClass {
+    return CLASS(self).get_super();
   }
 
   class method initialize {
   }
+
+	class function getName {
+		return new meat::Text(CLASS(self).get_name());
+	}
 }
 
 #==============================================================================
@@ -184,25 +188,28 @@ Object subClass: Contextᶲ body: {
   }
 
   function getLocal: index {
-    return CONTEXT(self).get_local((int32_t)(*index));
+    return CONTEXT(self).get_local(INTEGER(index));
   }
 
   function setLocal: index to: value {
-    CONTEXT(self).set_local(index->to_int(), value);
+    CONTEXT(self).set_local(INTEGER(index), value);
     return null;
   }
 
   function repeat: block {
-    CONTEXT(block).set_uplevel(context);
+    CONTEXT(block).set_messenger(context);
 
-    dynamic_cast<meat::BlockContext &>(*block).set_break_trap();
     for (;;) {
+      BLOCK(block).set_break_trap();
+      BLOCK(block).set_continue_trap();
       execute(block);
-      dynamic_cast<meat::BlockContext &>(*block).reset();
 
-      if (dynamic_cast<meat::BlockContext &>(*block).break_called())
+      if (BLOCK(block).break_called() or CONTEXT(block).is_done())
         break;
+
+      BLOCK(block).reset();
     }
+    BLOCK(block).reset();
 
     return null;
   }
@@ -231,66 +238,58 @@ Object subClass: Contextᶲ body: {
 Object subClass: BlockContextᶲ body: {
 
   function execute {
-    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
-
-    block.set_messenger(context);
+    BLOCK(self).set_messenger(context);
     execute(self);
-    block.reset();
+    BLOCK(self).reset();
 
     return null;
   }
 
   function executeOnBreak: breakBlock {
-    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
-
-    block.set_break_trap();
-    block.set_messenger(context);
+    BLOCK(self).set_break_trap();
+    BLOCK(self).set_messenger(context);
     execute(self);
 
-    if (block.break_called()) {
+    if (BLOCK(self).break_called()) {
       meat::Reference up_context = message(breakBlock, "execute", context);
       execute(up_context);
     }
 
-    block.reset();
+    BLOCK(self).reset();
 
     return null;
   }
 
   function executeOnBreak: breakBlock onContinue: continueBlock {
-    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
-
-    block.set_break_trap();
-    block.set_continue_trap();
-    block.set_messenger(context);
+    BLOCK(self).set_break_trap();
+    BLOCK(self).set_continue_trap();
+    BLOCK(self).set_messenger(context);
     execute(self);
 
-    if (block.break_called()) {
+    if (BLOCK(self).break_called()) {
       meat::Reference up_context = message(breakBlock, "execute", context);
       execute(up_context);
-    } else if (block.continue_called()) {
+    } else if (BLOCK(self).continue_called()) {
       meat::Reference up_context = message(continueBlock, "execute", context);
       execute(up_context);
     }
 
-    block.reset();
+    BLOCK(self).reset();
 
     return null;
   }
 
   function executeOnContinue: continueBlock {
-    meat::BlockContext &block = dynamic_cast<meat::BlockContext &>(*self);
-
-    block.set_continue_trap();
-    block.set_messenger(context);
+    BLOCK(self).set_continue_trap();
+    BLOCK(self).set_messenger(context);
     execute(self);
 
-    if (block.continue_called()) {
+    if (BLOCK(self).continue_called()) {
       meat::Reference up_context = message(continueBlock, "execute", context);
       execute(up_context);
     }
 
-    block.reset();
+    BLOCK(self).reset();
 
     return null;
   }
@@ -322,10 +321,9 @@ Object subClass: BlockContextᶲ body: {
   }
 
   function continue {
-    (dynamic_cast<meat::BlockContext &>(*self)).c_continue();
-    if (!dynamic_cast<meat::BlockContext &>(*self).continue_trap_set()) {
-      meat::Reference init_ctx =
-        dynamic_cast<meat::BlockContext &>(*self).get_origin();
+    BLOCK(self).c_continue();
+    if (not BLOCK(self).continue_trap_set()) {
+      meat::Reference init_ctx = BLOCK(self).get_origin();
       meat::Reference up_context = message(init_ctx, "continue", context);
       execute(up_context);
     }
@@ -333,10 +331,9 @@ Object subClass: BlockContextᶲ body: {
   }
 
   function break {
-    (dynamic_cast<meat::BlockContext &>(*self)).c_break();
-    if (!dynamic_cast<meat::BlockContext &>(*self).break_trap_set()) {
-      meat::Reference init_ctx =
-        dynamic_cast<meat::BlockContext &>(*self).get_origin();
+    BLOCK(self).c_break();
+    if (not BLOCK(self).break_trap_set()) {
+      meat::Reference init_ctx = BLOCK(self).get_origin();
       meat::Reference up_context = message(init_ctx, "break", context);
       execute(up_context);
     }
@@ -843,8 +840,7 @@ Object subClass: Booleanᶲ body: {
   }
 
   function isTrue: block {
-    if (self == meat::True())
-      execute(block);
+    if (self == trueObject) execute(block);
     return null;
   }
 
@@ -858,8 +854,7 @@ Object subClass: Booleanᶲ body: {
   }
 
   function isFalse: block {
-    if (self == meat::False())
-      execute(block);
+    if (self == falseObject) execute(block);
     return null;
   }
 
@@ -924,83 +919,75 @@ Object subClass: Textᶲ body: {
   }
 
   function length {
-    unsigned int len = 0
-    const char *str = self->to_string();
+    unsigned int len = 0;
+    meat::Text &str = TEXT(self);
 
     // Count UTF-8 characters not bytes.
     for (unsigned int i = 0; str[i]; ++i)
       if ((str[i] & 0xC0) != 0x80) len++;
 
-    return new meat::Object(len));
+    return new meat::Value((meat::int32_t)len);
   }
 
   function getCharAt: index {
-    char new_string[2] = " ";
-    new_string[0] = self->to_string()[(int32_t)(*index) - 1];
-    return new meat::Object(new_string);
+	  return new meat::Text(&(TEXT(self)[INTEGER(index) - 1]));
   }
 
   function get: start to: end {
-    int32_t start_pos = (int32_t)(*start) - 1;
-    int32_t end_pos = (int32_t)(*end);
-    int32_t len = end_pos - start_pos;
+    meat::Reference self = CONTEXT(context).get_self();
+  	meat::Reference start = CONTEXT(context).get_param(0);
+  	meat::Reference end = CONTEXT(context).get_param(1);
 
-    char new_string[len + 1];
-    std::strncpy(new_string, &((self->to_string())[start_pos]), len);
-    new_string[len] = 0;
-    return new meat::Object(new_string);
+  	meat::int32_t start_pos = INTEGER(start) - 1;
+  	meat::int32_t len = INTEGER(end) - start_pos;
+
+		meat::Text *new_string = new meat::Text();
+  	(*new_string) += TEXT(self).substr(start_pos, len);
+  	return new_string;
   }
 
   function == other {
-    if (std::strcmp(self->to_string(), other->to_string()) == 0)
-      return meat::True();
-    return meat::False();
+	  return (TEXT(self).compare(TEXT(other)) == 0 ?
+		  meat::BTrue() : meat::BFalse());
   }
 
   function != other {
-    if (std::strcmp(self->to_string(), other->to_string()) != 0)
-      return meat::True();
-    return meat::False();
+	  return (TEXT(self).compare(TEXT(other)) != 0 ?
+			meat::BTrue() : meat::BFalse());
   }
 
   function < other {
-    if (std::strcmp(self->to_string(), other->to_string()) < 0)
-      return meat::True();
-    return meat::False();
+	  return (TEXT(self).compare(TEXT(other)) < 0 ?
+			meat::BTrue() : meat::BFalse());
   }
 
   function <= other {
-    if (std::strcmp(self->to_string(), other->to_string()) <= 0)
-      return meat::True();
-    return meat::False();
+	  return (TEXT(self).compare(TEXT(other)) <= 0 ?
+		  meat::BTrue() : meat::BFalse());
   }
 
   function > other {
-    if (std::strcmp(self->to_string(), other->to_string()) > 0)
-      return meat::True();
-    return meat::False();
+	  return (TEXT(self).compare(TEXT(other)) > 0 ?
+			meat::BTrue() : meat::BFalse());
   }
 
   function >= other {
-    if (std::strcmp(self->to_string(), other->to_string()) >= 0)
-      return meat::True();
-    return meat::False();
+		return (TEXT(self).compare(TEXT(other)) >= 0 ?
+			meat::BTrue() : meat::BFalse());
   }
 
   function + other {
-    return new meat::Object(self->to_string(), other->to_string());
+    return new meat::Text(TEXT(self) +  TEXT(other));
   }
 
   function * count {
-    meat::int32_t cnt_value = (int32_t)(*count);
-    meat::uint32_t self_len = strlen(self->to_string());
-    char result[(self_len * cnt_value) + 1]; // Could be nasty having on the stack
+		meat::int32_t cnt_value = INTEGER(count);
+		meat::Text *result = new meat::Text();
 
-    for (int c = 0; c < cnt_value; c++)
-      strcpy(&(result[self_len * c]), self->to_string());
-    result[self_len * cnt_value] = 0;
+  	for (int c = 0; c < cnt_value; c++)
+    	(*result) += TEXT(self);
 
-    return new meat::Object(result);
+		return result;
   }
 
   method asText {
@@ -1014,24 +1001,26 @@ Object subClass: Textᶲ body: {
 Object subClass: Listᶲ body: {
 
   constructor {
-    return new meat::List(cls, properties);
+    return new meat::List(klass, properties);
   }
 
-  class function new {
-    return new meat::List;
+  class method new {
+		self newObject
+		context return: self
   }
 
   function get: index {
-    try {
-      return ((meat::List &)(*self)).at((int32_t)(*index) - 1);
-    } catch (std::out_of_range &err) {
-      throw meat::Exception("List index out of Range", context);
-    }
+	  try {
+	  	return LIST(self).at(INTEGER(index) - 1);
+	  } catch (std::out_of_range &err) {
+  		throw meat::Exception("List index out of Range", context);
+  	}
+		return null;
   }
 
   function set: index to: value {
-    try {
-      ((meat::List &)(*self)).at((int32_t)(*index) - 1) = value;
+	  try {
+      LIST(self).at(INTEGER(index) - 1) = value;
     } catch (std::out_of_range &err) {
       throw meat::Exception("Index out of Range", context);
     }
@@ -1039,16 +1028,15 @@ Object subClass: Listᶲ body: {
   }
 
   function at: index insert: value {
-    ((meat::List &)(*self)).insert(((meat::List &)(*self)).begin() +
-      ((int32_t)(*index) - 1), value);
+    LIST(self).insert(LIST(self).begin() + (INTEGER(index) - 1), value);
     return null;
   }
 
   function remove: value {
-    meat::List::iterator it = ((meat::List &)(*self)).begin();
-    while (it != ((meat::List &)(*self)).end()) {
+    meat::List::iterator it = LIST(self).begin();
+    while (it != LIST(self).end()) {
       if (*it == value)
-        ((meat::List &)(*self)).erase(it);
+        LIST(self).erase(it);
       it++;
     }
 
@@ -1056,26 +1044,23 @@ Object subClass: Listᶲ body: {
   }
 
   function removeAt: index {
-    ((meat::List &)(*self)).erase(((meat::List &)(*self)).begin() +
-      ((int32_t)(*index) - 1));
+	  LIST(self).erase(LIST(self).begin() + (INTEGER(index) - 1));
     return null;
   }
 
   function removeFrom: start to: end {
-    ((meat::List &)(*self)).erase(((meat::List &)(*self)).begin() +
-      ((int32_t)(*start) - 1),
-      ((meat::List &)(*self)).begin() +
-      ((int32_t)(*end) - 1));
+	  LIST(self).erase(LIST(self).begin() + (INTEGER(start) - 1),
+                     LIST(self).begin() + (INTEGER(end) - 1));
     return null;
   }
 
   function append: value {
     if (other->is_type(meat::Class::resolve("List"))) {
-      ((meat::List &)(*self)).insert(((meat::List &)(*self)).end(),
-        ((meat::List &)(*value)).begin(),
-        ((meat::List &)(*value)).end());
+      LIST(self).insert(LIST(self).end(),
+                        LIST(value).begin(),
+                        LIST(value).end());
     } else {
-      ((meat::List &)(*self)).push_back(value);
+      LIST(self).push_back(value);
     }
 
     return null;
@@ -1087,12 +1072,12 @@ Object subClass: Listᶲ body: {
   }
 
   function pop {
-    ((meat::List &)(*self)).pop_back();
+    LIST(self).pop_back();
     return null;
   }
 
   function isEmpty {
-    return (((meat::List &)(*self)).empty() ? meat::True() : meat::False());
+    return (LIST(self).empty() ? meat::True() : meat::False());
   }
 
   function swap: first with: second {
@@ -1109,16 +1094,16 @@ Object subClass: Listᶲ body: {
   }
 
   function last {
-    return ((meat::List &)(*self)).back();
+    return LIST(self).back();
   }
 
   function clear {
-    ((meat::List &)(*self)).clear();
+    LIST(self).clear();
     return null;
   }
 
   function items {
-    return new meat::Object((int32_t)((meat::List &)(*self)).size());
+    return new meat::Value((int32_t)(LIST(self).size()));
   }
 
   function forEach: item do: block {
@@ -1148,6 +1133,87 @@ Object subClass: Listᶲ body: {
 }
 
 #==============================================================================
+# Set Class
+
+Object subClass: Setᶲ body: {
+
+  constructor {
+    return new meat::Set(cls, properties);
+  }
+
+  class method new {
+		self newObject
+		context return: self
+  }
+
+  function remove: value {
+    meat::List::iterator it = ((meat::List &)(*self)).begin();
+    while (it != ((meat::List &)(*self)).end()) {
+      if (*it == value)
+        ((meat::List &)(*self)).erase(it);
+      it++;
+    }
+
+    return null;
+  }
+
+  function insert: value {
+    SET(self).insert(value);
+    return null;
+  }
+
+  function hasEntry: value {
+    return (SET(self).find(value) != SET(self).end()
+            ? meat::True() : meat::False());
+  }
+
+  function isEmpty {
+    return (SET(self).empty() ? meat::True() : meat::False());
+  }
+
+  function swap: other {
+    SET(self).swap(SET(other));
+    return null;
+  }
+
+  function clear {
+    SET(self).clear();
+    return null;
+  }
+
+  function entries {
+    return new meat::Value(SET(size).size());
+  }
+
+  function forEach: item do: block {
+    meat::uint8_t local_id = INTEGER(item);
+
+    CONTEXT(block).set_messenger(context);
+
+    meat::List::iterator it = SET(self).begin();
+    for (; it != SET(self).end(); it++) {
+      BLOCK(block).set_local(local_id, *it);
+      execute(block);
+
+      if (BLOCK(block).break_called() or CONTEXT(block).is_done())
+        break;
+
+      BLOCK(block).reset();
+    }
+    BLOCK(block).reset();
+
+    return null;
+  }
+
+  function copy {
+    Reference new_set = meat::Set();
+    SET(new_set) = SET(self);
+    return new_set;
+  }
+}
+
+
+#==============================================================================
 # Index Class
 
 Object subClass: Indexᶲ body: {
@@ -1156,37 +1222,49 @@ Object subClass: Indexᶲ body: {
     return new meat::Index(cls, properties);
   }
 
-  class function new {
-    return new meat::Index
+  class method new {
+		self newObject
+		context return: self
   }
 
   function get: key {
-    if (((meat::Index &)(*self)).find(key) != ((meat::Index &)(*self)).end())
-      return ((meat::Index &)(*self))[key];
+		meat::Index::iterator it = INDEX(self).find(key);
+    if (it == INDEX(self).end())
+		  throw meat::Exception("Invalid key in index");
 
-    throw meat::Exception("Invalid key in index");
+		return *it;
   }
 
   function set: key to: value {
-    ((meat::Index &)(*self))[key] = value;
+    INDEX(self)[key] = value;
     return null;
   }
 
   function has: key {
-    if (((meat::Index &)(*self)).find(key) != ((meat::Index &)(*self)).end())
+    if (INDEX(*self).find(key) != INDEX(self).end())
       return meat::True();
     return meat::False();
   }
 
   function remove: key {
-    ((meat::Index &)(*self)).erase(key);
+    INDEX(self).erase(key);
     return null;
   }
 
-  function size {
-    int32_t size = ((meat::Index &)(*self)).size();
-    return new meat::Object(size);
+  function entries {
+    int32_t size = INDEX(*self).size();
+    return new meat::Value(size);
   }
+
+  function isEmpty {
+	  return (INDEX(self).empty() ? meat::True() : meat::False());
+	}
+
+	function copy {
+	  meat::Index *result = new meat::Index();
+    *result = INDEX(self);
+		return result;
+	}
 }
 
 #==============================================================================

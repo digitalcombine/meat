@@ -302,6 +302,7 @@ namespace meat {
 			virtual void command(Tokenizer &tokens);
 
 			void add_import(const std::string &name);
+			void remove_import(const std::string &name);
 
 			Reference get_imports() const;
 
@@ -314,6 +315,9 @@ namespace meat {
 			 * XXX Rename to compile
 			 */
 			void write();
+
+			virtual void unserialize(data::Archive &store,
+															 std::istream &data_stream);
 
 			friend class Class;
 
@@ -347,7 +351,12 @@ namespace meat {
 			uint8_t cls_property(const std::string &name);
 			int16_t have_obj_property(const std::string &name) const;
 			int16_t have_cls_property(const std::string &name) const;
-      Reference get_super() const { return property(1); };
+      Reference get_super() const {
+				return meat::Class::resolve(CONST_TEXT(property(1)));
+			}
+
+			void add_method(Reference method);
+			void add_class_method(Reference method);
 
 			uint8_t constant(const std::string name);
 
@@ -366,6 +375,9 @@ namespace meat {
 
 			void update_symbols(std::set<std::string> &symbols) const;
 
+			virtual void unserialize(data::Archive &store,
+															 std::istream &data_stream);
+
 			friend class Library;
 
 		private:
@@ -373,9 +385,6 @@ namespace meat {
 			uint16_t cpp_bytecode;
 			uint8_t m_count;
 			uint8_t cm_count;
-
-			//Class(Library &library, Reference &super,
-			//			const char *cls_name);
 
 			uint8_t method_count() const;
 			uint8_t class_method_count() const;
@@ -387,10 +396,11 @@ namespace meat {
 		 * Property 2 Body
 		 */
 
-		class DECLSPEC MethodBuilder : public Language, public Object {
+		class DECLSPEC Method : public Language, public Object {
 		public:
-			MethodBuilder(Class &cb, bool is_cpp = false);
-			virtual ~MethodBuilder() throw() {};
+			Method(Reference klass, uint8_t properties);
+			Method(Class &cb, bool is_cpp = false);
+			virtual ~Method() throw() {};
 
 			virtual void command(Tokenizer &tokens);
 
@@ -414,7 +424,10 @@ namespace meat {
 			void gen_bytecode(std::vector<uint8_t> &bytecode);
 			uint8_t local_count() { return locals; }
 
-			bool is_cpp_method() const { return is_cpp; };
+			void is_cpp(bool value) { _is_cpp = value; }
+			bool is_cpp() const { return _is_cpp; }
+
+			friend class Class;
 
 		protected:
 			void *parse_message(Tokenizer &tokens);
@@ -424,7 +437,7 @@ namespace meat {
 			Class *cb;
 			void *astree;
 
-			bool is_cpp;
+			bool _is_cpp;
 			std::vector<uint8_t> bytecode;
 			uint8_t locals;
 

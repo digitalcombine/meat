@@ -38,7 +38,7 @@
  * meat::Object::Object *
  ************************/
 
-meat::Object::Object(Reference &type) {
+meat::Object::Object(Reference type) {
 #ifdef TESTING
 	meat::test::test("Object type setting", false);
 	if (!type.is_null()) {
@@ -59,7 +59,7 @@ meat::Object::Object(Reference &type) {
 		properties = 0;
 }
 
-meat::Object::Object(Reference &type, meat::uint8_t properties) {
+meat::Object::Object(Reference type, meat::uint8_t properties) {
 #ifdef TESTING
 	static bool first_fail = true;
 
@@ -98,7 +98,7 @@ meat::Object::~Object() throw () {
  * meat::Object::is_type *
  *************************/
 
-bool meat::Object::is_type(Reference &cls) const {
+bool meat::Object::is_type(Reference cls) const {
 	Reference my_type = o_type;
 
 #ifdef TESTING
@@ -146,7 +146,7 @@ meat::Reference &meat::Object::property(meat::uint8_t index) {
 	throw Exception("Invalid property index.");
 }
 
-meat::Reference &meat::Object::property(meat::uint8_t index) const {
+const meat::Reference &meat::Object::property(meat::uint8_t index) const {
 	if (index < num_of_props)
 		return properties[index];
 	throw Exception("Invalid property index.");
@@ -190,7 +190,7 @@ meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
 	this->obj_properties = obj_props;
 }
 
-meat::Class::Class(meat::Reference &parent, uint8_t obj_props)
+meat::Class::Class(meat::Reference parent, uint8_t obj_props)
 	: Object(meat::ClassClass(true), 0), library(NULL) {
 
 	this->hash_id = 0;
@@ -198,7 +198,7 @@ meat::Class::Class(meat::Reference &parent, uint8_t obj_props)
 	this->obj_properties = obj_props;
 }
 
-meat::Class::Class(meat::Reference &parent,
+meat::Class::Class(meat::Reference parent,
 									 uint8_t cls_props,
 									 uint8_t obj_props)
 	: Object(meat::ClassClass(), cls_props), library(NULL) {
@@ -248,7 +248,7 @@ meat::Reference meat::Class::new_object() {
 		 * does.
 		 */
 		Reference csuper = this->super;
-		while (!csuper.is_null()) {
+		while (not csuper.is_null()) {
 			if (CLASS(csuper).vtable.constructor) {
         return CLASS(csuper).vtable.constructor((Reference &)(*this),
                                                 get_obj_properties());
@@ -257,7 +257,8 @@ meat::Reference meat::Class::new_object() {
 		}
 	}
 
-	throw Exception("Unable to create new Object");
+	throw Exception(std::string("Unable to create new object for ") +
+									get_name());
 }
 
 /********************************
@@ -320,6 +321,15 @@ meat::Class::get_class_vtable(uint8_t &count) const {
 
 const meat::uint8_t *meat::Class::get_bytecode() const {
 	return bytecode.get();
+}
+
+/**************************
+ * meat::Class::serialize *
+ **************************/
+
+void meat::Class::serialize(data::Archive &store,
+														std::ostream &data_stream) const {
+	throw Exception("Classes cannot be serialized");
 }
 
 /**********************
@@ -1025,15 +1035,15 @@ meat::Context::Context(meat::uint8_t locals)
 	this->locals = new Reference[num_of_locals];
 }
 
-meat::Context::Context(Reference &context, meat::uint8_t locals)
+meat::Context::Context(Reference context, meat::uint8_t locals)
 	: Object(Class::resolve("Context")), messenger(context), result_index(0),
 		done(false) {
 	num_of_locals = locals + 4;
 	this->locals = new Reference[num_of_locals];
 }
 
-meat::Context::Context(Reference &cls,
-											 Reference &context,
+meat::Context::Context(Reference cls,
+											 Reference context,
 											 meat::uint8_t locals)
 	: Object(cls), messenger(context), result_index(0), done(false) {
 	num_of_locals = locals + 4;
@@ -1115,7 +1125,7 @@ void meat::Context::set_local(uint8_t index, Reference value) {
  ****************************/
 
 meat::Reference meat::Context::get_local(uint8_t index) const {
-	if (index < num_of_locals) return locals[index];
+	if (index >= 0 and index < num_of_locals) return locals[index];
 	else {
 		std::stringstream msg;
 		msg << "Getting local variable " << (unsigned int)index
@@ -1165,7 +1175,7 @@ meat::Reference meat::Context::get_result() const {
  * meat::BlockContext::BlockContext *
  ************************************/
 
-meat::BlockContext::BlockContext(Reference &context, meat::uint8_t locals,
+meat::BlockContext::BlockContext(Reference context, meat::uint8_t locals,
 																 uint16_t ip)
 	: Context(Class::resolve("BlockContext"), context, locals),
 		origin(context), bc_flags(0), start_ip(ip) {
@@ -1281,7 +1291,7 @@ meat::Exception::Exception(const Exception &other)
 	this->property(1) = other.property(1);
 }
 
-meat::Exception::Exception(Reference &cls, meat::uint8_t properties)
+meat::Exception::Exception(Reference cls, meat::uint8_t properties)
 	: Object(cls, properties) {
 	// Empty Exception constructor used for class inheritance.
 }
@@ -1292,13 +1302,13 @@ meat::Exception::Exception(const std::string &message)
 	this->property(0) = new Text(message);
 }
 
-meat::Exception::Exception(const std::string &message, Reference &context)
+meat::Exception::Exception(const std::string &message, Reference context)
 	: Object(Class::resolve("Exception"), 2) {
 	this->property(0) = new Text(message);
 	this->property(1) = context;
 }
 
-meat::Exception::Exception(Reference &message, Reference &context)
+meat::Exception::Exception(Reference message, Reference context)
 	: Object(Class::resolve("Exception"), 2) {
 	this->property(0) = message;
 	this->property(1) = context;
@@ -1314,7 +1324,7 @@ const char* meat::Exception::what() const throw() {
 		if (this->property(0) == Null())
 			return "";
 		else
-			return TEXT(this->property(0)).c_str();
+			return CONST_TEXT(this->property(0)).c_str();
 	} catch (...) {
 		// If property 0 cannot be converted to a string then return nothing.
 		return "";
@@ -1329,7 +1339,7 @@ const char* meat::Exception::what() const throw() {
  * meat::Value::Value *
  **********************/
 
-meat::Value::Value(Reference &cls, uint8_t properties)
+meat::Value::Value(Reference cls, uint8_t properties)
 	: Object(cls, properties), data_type(INTEGER) {
 	data.i = 0;
 }
@@ -1422,7 +1432,7 @@ meat::Text::Text(const Text &other)
 	: std::string(other), Object(Class::resolve("Text")) {
 }
 
-meat::Text::Text(Reference &cls, uint8_t properties)
+meat::Text::Text(Reference cls, uint8_t properties)
 	: Object(cls, properties) {
 }
 
@@ -1467,7 +1477,7 @@ void meat::Text::unserialize(data::Archive &store,
 meat::List::List() : Object(Class::resolve("List")) {
 }
 
-meat::List::List(Reference &cls, meat::uint8_t properties)
+meat::List::List(Reference cls, meat::uint8_t properties)
 	: Object(cls, properties) {
 }
 
@@ -1506,6 +1516,54 @@ void meat::List::unserialize(data::Archive &store,
 }
 
 /******************************************************************************
+ * Set Class Implemenation
+ */
+
+/******************
+ * meat::Set::Set *
+ ******************/
+
+meat::Set::Set() : Object(Class::resolve("Set")) {
+}
+
+meat::Set::Set(Reference cls, meat::uint8_t properties)
+	: Object(cls, properties) {
+}
+
+/************************
+ * meat::Set::serialize *
+ ************************/
+
+void meat::Set::serialize(data::Archive &store,
+													std::ostream &data_stream) const {
+	// Record the size of the list.
+	store << (uint32_t)size();
+
+	// Add all the list entries to the store.
+	meat::Set::const_iterator it = begin();
+	for (; it != end(); ++it)
+		store << store.add_property(*it);
+}
+
+/**************************
+ * meat::Set::unserialize *
+ **************************/
+
+void meat::Set::unserialize(data::Archive &store,
+														std::istream &data_stream) {
+	// Read in the size of the list
+	uint32_t elements;
+	store >> elements;
+
+	// Read in all the Objects that are in the list.
+	meat::uint32_t index;
+	for (unsigned int c = 0; c < elements; c++) {
+		store >> index;
+		insert(store.get_object(index));
+	}
+}
+
+/******************************************************************************
  * Index Class Implemenation
  */
 
@@ -1514,7 +1572,7 @@ bool meat::obj_less::operator()(const Reference &first,
 	Reference ctx = message((Reference)first, "<", meat::Null());
 	CONTEXT(ctx).set_param(0, (Reference)second);
 	Reference result = execute(ctx);
-	if (result == meat::True())
+	if (result == meat::BTrue())
 		return true;
 	return false;
 }
@@ -1526,7 +1584,7 @@ bool meat::obj_less::operator()(const Reference &first,
 meat::Index::Index() : Object(Class::resolve("Index")) {
 }
 
-meat::Index::Index(Reference &cls, meat::uint8_t properties)
+meat::Index::Index(Reference cls, meat::uint8_t properties)
 	: Object(cls, properties) {
 }
 
@@ -1549,9 +1607,9 @@ void meat::Index::serialize(data::Archive &store,
 	}
 }
 
-/**********************
- * Index::unserialize *
- **********************/
+/****************************
+ * meat::Index::unserialize *
+ ****************************/
 
 void meat::Index::unserialize(data::Archive &store,
 															std::istream &data_stream) {
@@ -1580,7 +1638,7 @@ meat::Reference meat::message(meat::Reference object,
 															meat::uint32_t hash_id,
 															meat::Reference context) {
 
-	Reference cls;
+	Reference cls, obj_cls;
 	const vtable_entry_t *m_entry = 0;
 
 #ifdef TESTING
@@ -1593,7 +1651,7 @@ meat::Reference meat::message(meat::Reference object,
 
 	// Resolve the message with the hash_id.
 	if (object->is_class()) {
-    cls = object;
+    obj_cls = cls = object;
 
 		/*  If the method is inherited then start looking through the parent
 		 * classes to find the actual method entry.
@@ -1604,7 +1662,7 @@ meat::Reference meat::message(meat::Reference object,
 		}
 
 	} else {
-		cls = object->get_type();
+		obj_cls = cls = object->get_type();
 
 		/*  If the method is inherited then start looking through the parent
 		 * classes to find the actual method entry.
@@ -1617,7 +1675,8 @@ meat::Reference meat::message(meat::Reference object,
 
 	// Raise an error if we couldn't resolve the method name.
 	if (m_entry == 0)
-		throw Exception(std::string("Message is unresolved"), context);
+		throw Exception(std::string("Message ") + CLASS(obj_cls).lookup(hash_id) +
+										" is unresolved", context);
 
   // Now create the new context.
   Context *ctx = new Context(context, m_entry->locals);
@@ -1720,7 +1779,7 @@ std::ostream &meat::operator <<(std::ostream &out, Class &cls) {
  * meat::ClassClass *
  ********************/
 
-meat::Reference &meat::ClassClass(bool initializing) {
+meat::Reference meat::ClassClass(bool initializing) {
 	static Reference cls;
 
 	if (cls.is_null() and not initializing) {
@@ -1734,7 +1793,7 @@ meat::Reference &meat::ClassClass(bool initializing) {
  * meat::True *
  **************/
 
-meat::Reference &meat::True() {
+meat::Reference meat::BTrue() {
 	static Reference true_object;
 
 	if (true_object.is_null()) {
@@ -1748,7 +1807,7 @@ meat::Reference &meat::True() {
  * meat::False *
  ***************/
 
-meat::Reference &meat::False() {
+meat::Reference meat::BFalse() {
 	static Reference false_object;
 
 	if (false_object.is_null()) {
@@ -1762,7 +1821,7 @@ meat::Reference &meat::False() {
  * meat::Null *
  **************/
 
-meat::Reference &meat::Null() {
+meat::Reference meat::Null() {
 	static Reference null_object;
 
 	if (null_object.is_null()) {

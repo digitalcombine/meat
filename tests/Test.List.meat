@@ -19,41 +19,33 @@
 
 Library import: UnitTest
 
-Test subClass: Test.List body: {
+Test.Suite subClass: Test.List body: {
 
-	method initialize {
-		super initialize
-		self setTitle: "List basic functionallity"
+  method setup {
+	  alist = [List new]
+
+	  self title: "4.?.? Method copy" test: {
+		  alist clear
+
+			alist append: 1
+			alist append: "Hello"
+			alist append: 2
+
+		  acopy = [alist copy]
+
+			[acopy is: alist] isTrue: {
+			  self fail: "Copy method just returned itself."
+			}
+
+			[acopy isType: List] isFalse: {
+				self fail: "Copy method didn't return a list."
+			}
+
+			[[acopy size] == 3] isFalse: {
+			  self fail: "Copy method didn't return a shallow copy of the proper size."
+			}
+
+		  self pass
+		}
 	}
-
-	method execute {
-		list = [List new]
-		obj = "Hello"
-	
-		list append: 1
-		list append: 2
-		list append: obj
-		list append: 3
-		list append: 4
-		
-		[[list size] == 5] isFalse: {
-			self fail: "List returned incorrect size"
-		}
-		
-		[[list get: 2] == 2] isFalse: {
-			self fail: "Unable to retreive value from list"
-		}
-				
-		list removeAt: 2
-		[[list size]  == 4] isFalse: {
-			self fail: "Failed to remove item from list"
-		}
-		
-		list remove: obj
-		[[list size]  == 3] isFalse: {
-			self fail: "Failed to remove item from list"
-		}
-		
-		self pass
-	}	
 }

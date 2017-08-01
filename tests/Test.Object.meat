@@ -19,46 +19,6 @@
 
 Library import: UnitTest
 
-Object subClass: OTest1 body: {
-
-  method superTest {
-  }
-
-}
-
-OTest1 subClass: OTest2 body: {
-
-  method superTest {
-    super superTest
-  }
-
-}
-
-OTest2 subClass: OTest3 body: {
-
-  property initCalled
-  property isGood
-
-  class method new {
-    self newObject
-    context return: self
-  }
-
-  method initialize {
-    initCalled = [Boolean true]
-    super initialize
-    isGood = [Boolean true]
-  }
-
-  method superTest {
-    super superTest
-  }
-
-  method good {
-    context return: isGood
-  }
-}
-
 Test.Suite subClass: Test.Object body: {
 
   method setup {
@@ -173,11 +133,11 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.9 method initialize" test: {
+    self title: "4.1.9 Method initialize" test: {
       self pass
     }
 
-    self title: "4.1.10 method weak" test: {
+    self title: "4.1.10 Method weak" test: {
       self pass
     }
   }

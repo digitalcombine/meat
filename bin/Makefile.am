@@ -1,6 +1,6 @@
 #                                                           -*- Makefile.am -*-
 
-bin_PROGRAMS = meat grinder
+bin_PROGRAMS = meat meat-grinder
 
 meat_SOURCES = meat.cpp
 if TESTING
@@ -10,10 +10,10 @@ meat_CPPFLAGS = -I@top_srcdir@/include
 meat_LDADD = @top_srcdir@/src/libmeat.la
 meat_LDFLAGS = -rdynamic
 
-grinder_SOURCES = grinder.cpp
+meat_grinder_SOURCES = grinder.cpp
 if TESTING
-grinder_SOURCES += testing.cpp misc.cpp
+meat_grinder_SOURCES += testing.cpp misc.cpp
 endif
-grinder_CPPFLAGS = -I@top_srcdir@/include
-grinder_LDADD = @top_srcdir@/src/libmeat.la
-grinder_LDFLAGS = -rdynamic
+meat_grinder_CPPFLAGS = -I@top_srcdir@/include
+meat_grinder_LDADD = @top_srcdir@/src/libmeat.la
+meat_grinder_LDFLAGS = -rdynamic

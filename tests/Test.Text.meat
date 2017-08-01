@@ -28,7 +28,7 @@ Test subClass: Test.Text body: {
 
 	method execute {
 		sample = "Hello World"
-		
+
 		# Test isEmpty method
 		["" isEmpty] isFalse: {
 			self fail: "Empty text says it's not empty"
@@ -36,15 +36,15 @@ Test subClass: Test.Text body: {
 		[sample isEmpty] isTrue: {
 			self fail: "Sample text says it's empty when it's not"
 		}
-		
+
 		[[sample length] == 11] isFalse: {
 			self fail: "Sample text length is wrong"
 		}
-		
-		[[sample get: 1] == "H"] isFalse: {
+
+		[[sample getCharAt: 1] == "H"] isFalse: {
 			self fail: "First index of 1 not returning first character"
 		}
-		
+
 		[[sample get: 7 to: 11] == "World"] isFalse: {
 			self fail: "Invalid sub text returned"
 		}
@@ -52,12 +52,11 @@ Test subClass: Test.Text body: {
 		[["Hello " + "World"] == "Hello World] isFalse: {
 			self fail: "Text append operator returned invalid result"
 		}
-		
+
 		[["hi" * 3] == "hihihi"] isFalse: {
 			self fail: "Text repeat operator returned invalid result"
 		}
-				
+
 		self pass
 	}
 }
-

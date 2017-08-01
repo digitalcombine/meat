@@ -23,6 +23,7 @@
 #include <meat/types.h>
 
 #include <map>
+#include <set>
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -123,11 +124,11 @@ namespace meat {
 		/** Creates a new Object of the given class type.
 		 * @param type A Reference to the class for the new Object.
 		 */
-		explicit Object(Reference &type);
+		explicit Object(Reference type);
 
 		/**
 		 */
-		Object(Reference &type, uint8_t properties);
+		Object(Reference type, uint8_t properties);
 
 		/** Destroy and clean up the Object.
 		 */
@@ -139,7 +140,7 @@ namespace meat {
 
 		/** Tests Object if it is of type class.
 		 */
-		bool is_type(Reference &cls) const;
+		bool is_type(Reference cls) const;
 		bool is_type(const char *class_name) const;
 
 		virtual bool is_class() const { return false; };
@@ -167,7 +168,7 @@ namespace meat {
 		 */
 		uint8_t get_num_of_props() const { return num_of_props; }
     virtual Reference &property(uint8_t index);
-    virtual Reference &property(uint8_t index) const;
+    virtual const Reference &property(uint8_t index) const;
 
 		friend void initialize(int argc, const char *argv[],
 													 compiler_import_fn import,
@@ -227,8 +228,8 @@ namespace meat {
      */
 		Class(const char *parent, uint8_t obj_props = 0);
 		Class(const char *parent, uint8_t cls_props, uint8_t obj_props);
-		Class(Reference &parent, uint8_t obj_props = 0);
-		Class(Reference &parent, uint8_t cls_props, uint8_t obj_props);
+		Class(Reference parent, uint8_t obj_props = 0);
+		Class(Reference parent, uint8_t cls_props, uint8_t obj_props);
 
 		virtual ~Class() throw ();
 
@@ -274,6 +275,9 @@ namespace meat {
 		const vtable_entry_t *get_vtable(uint8_t &count) const;
 		const vtable_entry_t *get_class_vtable(uint8_t &count) const;
 		const uint8_t *get_bytecode() const;
+
+		virtual void serialize(data::Archive &store,
+													 std::ostream &data_stream) const;
 
 		virtual operator Class &() { return *this; };
 
@@ -447,8 +451,8 @@ namespace meat {
 		 * @locals The number of local variables to allocate.
 		 */
 		explicit Context(uint8_t locals);
-		Context(Reference &context, uint8_t locals);
-		Context(Reference &cls, Reference &context, uint8_t locals);
+		Context(Reference context, uint8_t locals);
+		Context(Reference cls, Reference context, uint8_t locals);
 		virtual ~Context() throw();
 
 		virtual Reference get_self() const;
@@ -541,7 +545,7 @@ namespace meat {
 	 */
 	class DECLSPEC BlockContext : public Context {
 	public:
-		BlockContext(Reference &context, uint8_t locals, uint16_t ip);
+		BlockContext(Reference context, uint8_t locals, uint16_t ip);
 		virtual ~BlockContext() throw();
 
 		virtual Reference get_self() const {
@@ -607,10 +611,10 @@ namespace meat {
 	public:
 		Exception();
 		Exception(const Exception &other);
-		Exception(Reference &cls, uint8_t properties);
+		Exception(Reference cls, uint8_t properties);
 		Exception(const std::string &message);
-		Exception(const std::string &message, Reference &context);
-		Exception(Reference &message, Reference &context);
+		Exception(const std::string &message, Reference context);
+		Exception(Reference message, Reference context);
 		virtual ~Exception() throw() {}
 
 		virtual const char* what() const throw();
@@ -621,7 +625,7 @@ namespace meat {
 
 	class DECLSPEC Value : public Object {
 	public:
-		Value(Reference &cls, uint8_t properties);
+		Value(Reference cls, uint8_t properties);
 		Value(int32_t value);
 		Value(float_t value);
 		Value(bool value);
@@ -659,7 +663,7 @@ namespace meat {
 	public:
 		Text();
 		Text(const Text &other);
-		Text(Reference &cls, uint8_t properties);
+		Text(Reference cls, uint8_t properties);
 		Text(const std::string &value);
 		Text(const char *value);
 		virtual ~Text() throw() {}
@@ -678,7 +682,7 @@ namespace meat {
 	class DECLSPEC List : private std::deque<Reference>, public Object {
 	public:
 		List();
-		List(Reference &cls, uint8_t properties);
+		List(Reference cls, uint8_t properties);
 		virtual ~List() throw() {}
 
 		using std::deque<Reference>::push_back;
@@ -714,11 +718,41 @@ namespace meat {
 		bool operator()(const Reference &first, const Reference &second) const;
 	};
 
+	class DECLSPEC Set : private std::set<Reference, obj_less>, public Object {
+	public:
+		Set();
+		Set(Reference cls, uint8_t properties);
+		virtual ~Set() throw() {}
+
+		using std::set<Reference, obj_less>::clear;
+		using std::set<Reference, obj_less>::operator=;
+		using std::set<Reference, obj_less>::insert;
+		using std::set<Reference, obj_less>::erase;
+		using std::set<Reference, obj_less>::swap;
+		using std::set<Reference, obj_less>::size;
+		using std::set<Reference, obj_less>::empty;
+		using std::set<Reference, obj_less>::begin;
+		using std::set<Reference, obj_less>::end;
+
+		using std::set<Reference, obj_less>::iterator;
+		using std::set<Reference, obj_less>::const_iterator;
+
+		virtual void serialize(data::Archive &store,
+													 std::ostream &data_stream) const;
+		virtual void unserialize(data::Archive &store, std::istream &data_stream);
+	};
+
+#define SET(ref) (dynamic_cast<meat::Set &>(*(ref)))
+#define CONST_SET(ref) (dynamic_cast<const meat::Set &>(*(ref)))
+
+	/****************************************************************************
+	 */
+
 	class DECLSPEC Index : private std::map<Reference, Reference, obj_less>,
 												 public Object {
 	public:
 		Index();
-		Index(Reference &cls, uint8_t properties);
+		Index(Reference cls, uint8_t properties);
 		virtual ~Index() throw() {}
 
 		using std::map<Reference, Reference, obj_less>::clear;
@@ -747,16 +781,16 @@ namespace meat {
 	 *                     used otherwise.
 	 * @return A reference to the Class class Object.
 	 */
-	DECLSPEC Reference &ClassClass(bool initializing = false);
+	Reference DECLSPEC ClassClass(bool initializing = false);
 
 	/** A quick way of resolving a Reference to the True Object.
 	 * @return A Reference to the True Object.
 	 */
-	DECLSPEC Reference &True();
+	Reference DECLSPEC BTrue();
 
-	DECLSPEC Reference &False();
+	Reference DECLSPEC BFalse();
 
-	DECLSPEC Reference &Null();
+	Reference DECLSPEC Null();
 
 };
 

@@ -47,6 +47,7 @@ Object subClass: Grinder.Libraryᶲ body: {
     classes = [List new]
   }
 
+	# Create a new Library Object with the given name.
   class function new: libraryName {
     meat::Reference new_object = CLASS(klass).new_object();
 
@@ -57,7 +58,7 @@ Object subClass: Grinder.Libraryᶲ body: {
     return new_object;
   }
 
-  function addImport: libraryName {
+  function import: libraryName {
     dynamic_cast<meat::grinder::Library &>
       (*self).add_import(TEXT(libraryName));
     return null;
@@ -73,6 +74,7 @@ Object subClass: Grinder.Libraryᶲ body: {
 		return dynamic_cast<meat::grinder::Library &>(*self).get_imports();
 	}
 
+	# Return the name of the Library.
   method getName {
     context return: name
   }
@@ -80,6 +82,14 @@ Object subClass: Grinder.Libraryᶲ body: {
   method renameTo: newName {
     Exception throw: "Currently unable to rename libraries."
     name = [newName asText]
+  }
+
+  method setDocumentation: document {
+    documentation = [document asText]
+  }
+
+  method getDocumentation {
+    context return: documentation
   }
 
   function addClass: theClass {
@@ -93,15 +103,11 @@ Object subClass: Grinder.Libraryᶲ body: {
         context return: .cls
       }
     }
-    Exception throw: [[["Class " + name] + " not found in library "] + name]
+    Exception throw: [[["Class " + className] + " was not found in library "] + name]
   }
 
   method getClassList {
-    names = [List new]
-    classes forEach: .cls do: {
-      names append: [.cls getName]
-    }
-    context return: names
+    context return: [classes copy]
   }
 
   method removeClass: className {
@@ -147,16 +153,20 @@ Object subClass: Grinder.Classᶲ body: {
     classMethods = [Index new]
   }
 
-  class method subClassFrom: aClass as: name {
+  class method subClass: aClass as: name {
     self newObject
     className = name
-    superClass = aClass
+    superClass = [aClass getName]
     context return: self
   }
 
   method getName {
     context return: className
   }
+
+  method getSuperName {
+	  context return: superClass
+	}
 
   method addProperty: propertyName {
     objectProperties push: [propertyName asText]
@@ -174,12 +184,38 @@ Object subClass: Grinder.Classᶲ body: {
     context return: [classProperties copy]
   }
 
-  method addMethod: theMethod {
-    objectMethods set: [theMethod getName] to: theMethod
+  function addMethod: theMethod {
+    if (theMethod->is_type("Grinder.Method")) {
+      add_method(theMethod);
+		} else {
+			throw Exception("Attempting to add a non Grinder.Method to a "
+			                "Grinder.Class");
+		}
   }
+
+	method getMethodList {
+		context return: [objectMethods copy]
+	}
 
   method removeMethod: methodName {
     objectMethods remove: methodName
+  }
+
+  function addClassMethod: theMethod {
+    if (theMethod->is_type("Grinder.Method")) {
+      add_method(theMethod);
+		} else {
+			throw Exception("Attempting to add a non Grinder.Method to a "
+			                "Grinder.Class");
+		}
+  }
+
+  method getClassMethodList {
+		context return: [classMethods copy]
+	}
+
+	method removeClassMethod: methodName {
+    classMethods remove: methodName
   }
 }
 
@@ -233,11 +269,17 @@ Object subClass: Grinder.Methodᶲ body: {
   }
 
   function isNative {
-    if (dynamic_cast<meat::grinder::Method &>(*self).is_cpp_method())
+    if (dynamic_cast<meat::grinder::Method &>(*self).is_cpp())
       return meat::True();
     return meat::False();
   }
 
 	function isNative: value {
+	  if (value == meat::True())
+	    dynamic_cast<meat::grinder::Method &>(*self).is_cpp(true);
+	  else if (value == meat::False())
+	    dynamic_cast<meat::grinder::Method &>(*self).is_cpp(false);
+	  else
+	    throw meat::Exception("Grinder.Method isNative value is not a boolean");
 	}
 }

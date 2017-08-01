@@ -22,6 +22,7 @@ Library import: "Test.Characters"
 Library import: "Test.Object"
 Library import: "Test.Class"
 Library import: "Test.BlockContext"
+Library import: "Test.List"
 
 Application subClass: Tests body: {
 
@@ -32,6 +33,7 @@ Application subClass: Tests body: {
 		summary addSuite: [Test.Object new]
 		summary addSuite: [Test.Class new]
 		summary addSuite: [Test.BlockContext new]
+		summary addSuite: [Test.List new]
 
 		context return: [summary runAndSummarize]
 	}

@@ -23,7 +23,7 @@ Test.Suite subClass: Test.Class body: {
 
 	method setup {
 
-		self title: "4.2.1 The subClass:body:" test: {
+		self title: "4.2.1 method subClass:body:" test: {
       Exception try: {
 				Object subClass: "TestClass" body: ""
 			} catch: {
@@ -32,5 +32,11 @@ Test.Suite subClass: Test.Class body: {
 			self fail: "Didn't raise an Exception"
 		}
 
+		self title: "4.2.5 method getName" test: {
+			[[[10 type] getName] == "Integer"] isFalse: {
+			  self fail: ["Integer object type name returned " + [[10 type] getName]]
+			}
+			self pass
+		}
 	}
 }

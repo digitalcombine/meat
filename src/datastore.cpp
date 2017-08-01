@@ -344,9 +344,7 @@ void meat::data::Library::add_import(const std::string &name) {
  ************************************/
 
 meat::Reference meat::data::Library::get_imports() const {
-	meat::Reference copy = new meat::List();
-	LIST(copy) = CONST_LIST(imports);
-	return copy;
+	return imports;
 }
 
 /**************************************
@@ -982,9 +980,9 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
     data_stream.seekg(save_pos);
     switch (value) {
     case 0:
-      return meat::False();
+      return meat::BFalse();
     default:
-      return meat::True();
+      return meat::BTrue();
     }
   } else if (not this->index.at(index).object.is_null()) {
     return this->index.at(index).object;
@@ -1009,8 +1007,6 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
 #endif /* DEBUG */
 
   Reference obj = CLASS(obj_class).new_object();
-
-  obj->unserialize(*this, data_stream);
 
   // Read in all the index offsets for the object's properties.
   meat::uint8_t num_of_props = CLASS(obj_class).get_obj_properties();
@@ -1044,6 +1040,8 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
     else
       obj->property(c) = this->get_object(prop_idxs[c].offset);
   }
+
+	obj->unserialize(*this, data_stream);
 
   data_stream.seekg(save_pos);
   return obj;
@@ -1087,8 +1085,6 @@ void meat::data::Archive::sync() {
 
       // Now serialize any object data to the file
       if (!(index[c].object.is_null())) {
-        index[c].object->serialize(*this, data_stream);
-
         uint8_t props = index[c].object->get_num_of_props();
 
 #ifdef TESTING
@@ -1115,6 +1111,9 @@ void meat::data::Archive::sync() {
           else
             data_stream.put(OBJECT_PROP);
         }
+
+				// Now add any binary object data
+				index[c].object->serialize(*this, data_stream);
       } else
         index[c].obj_offset = 0;
     }
