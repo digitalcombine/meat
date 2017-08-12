@@ -73,6 +73,8 @@ namespace meat {
 
       static void add_path(const char *path);
 
+			void init_classes();
+
       void add_import(const std::string &name);
 			Reference get_imports() const;
 			void remove_import(const std::string &name);
