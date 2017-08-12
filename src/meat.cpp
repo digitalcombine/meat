@@ -143,13 +143,21 @@ void meat::Object::unserialize(data::Archive &store,
 meat::Reference &meat::Object::property(meat::uint8_t index) {
 	if (index < num_of_props)
 		return properties[index];
-	throw Exception("Invalid property index.");
+	std::stringstream msg;
+	msg << "Invalid property index " << (unsigned int)index
+			<< " ( >= " << (unsigned int)num_of_props << ")"
+			<< std::endl;
+	throw Exception(msg.str());
 }
 
 const meat::Reference &meat::Object::property(meat::uint8_t index) const {
 	if (index < num_of_props)
 		return properties[index];
-	throw Exception("Invalid property index.");
+	std::stringstream msg;
+	msg << "Invalid property index " << (unsigned int)index
+			<< " ( >= " << (unsigned int)num_of_props << ")"
+			<< std::endl;
+	throw Exception(msg.str());
 }
 
 /******************************************************************************
