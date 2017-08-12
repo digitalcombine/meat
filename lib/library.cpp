@@ -283,6 +283,17 @@ void grinder::Library::write() {
     cppcode += "void init_" + std::string(library->get_name()) +
       "(meat::data::Library &library) {\n  meat::Class *cls;\n";
 
+		// Import required libraries
+		if (not (property(3) == meat::Null())) {
+			cppcode += "\n  // Import required libraries.\n";
+
+			List &imports = LIST(property(3));
+			for (cit = imports.begin(); cit != imports.end(); ++cit) {
+        cppcode += "  meat::data::Library::import(\"" + CONST_TEXT(*cit) +
+          "\");\n";
+      }
+    }
+
     // Create all the class methods and vtables.
     for (cit = classes.begin(); cit != classes.end(); cit++) {
       cppcode += ((Class &)(*(*cit))).cpp_new_class();
