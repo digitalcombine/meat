@@ -310,6 +310,14 @@ void meat::data::Library::import() {
 	}
 
 	// Initialize all the imported classes.
+	init_classes();
+}
+
+/*************************************
+ * meat::data::Library::init_classes *
+ *************************************/
+
+void meat::data::Library::init_classes() {
 	std::deque<Reference>::iterator class_it = classes.begin();
 	for (; class_it != classes.end(); ++class_it) {
 		Reference context = message(*class_it, "initialize", meat::Null());
