@@ -975,8 +975,8 @@ std::string meat::grinder::Class::cpp_new_class() const {
   hex << CONST_CLASS(super).get_hash_id();
 
   cppcode += "\n  cls = new meat::Class(meat::Class::resolve(" + hex.str() +
-    "), " + ::to_string(CONST_LIST(objectProperties).size()) + ", " +
-    ::to_string(CONST_LIST(classProperties).size() +
+    "), " + ::to_string(CONST_LIST(classProperties).size()) + ", " +
+    ::to_string(CONST_LIST(objectProperties).size() +
 								CONST_CLASS(super).get_obj_properties()) + ");\n";
 
   if (!(constr == meat::Null())) {
