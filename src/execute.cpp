@@ -449,6 +449,24 @@ meat::Reference meat::execute(Reference context) {
 				break;
 			}
 
+			case meat::bytecode::SET_CATTR: { // Set an class property
+				uint8_t attr_id = code[ip + 1];
+				uint8_t local_id = code[ip + 2];
+
+#ifdef DEBUG
+				std::cout << "BC" << BCLOC << ": SETCATTR " << std::dec
+									<< (unsigned int)attr_id << " "
+									<< local(local_id)
+									<< std::endl;
+#endif /* DEBUG */
+
+				Reference cls = CONTEXT(context).get_class();
+
+				cls->property(attr_id) = CONTEXT(context).get_local(local_id);
+				ip += 3;
+				break;
+			}
+
 			default: {
 				std::stringstream errmsg;
 				errmsg << "Unknown bytecode " << std::showbase << std::hex
