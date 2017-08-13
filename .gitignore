@@ -41,7 +41,7 @@ Makefile.in
 
 # Built files
 /bin/meat
-/bin/grinder
+/bin/meat-grinder
 .libs/
 .deps/
 meat-*.tar.gz
