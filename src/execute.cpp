@@ -481,8 +481,15 @@ meat::Reference meat::execute(Reference context) {
 			 * look for the next upper level not done context.
 			 */
 			while (CONTEXT(context).is_done()) {
+				/*  Get the result and the messaging context to the current context.
+				 * We also clean up the reference to the messaging context in the old
+				 * context. This ensures when a block context is kept that only
+				 * necessary contexts are kept.
+				 */
 				Reference result = CONTEXT(context).get_result();
+				Reference old_ctx = context;
 				context = CONTEXT(context).get_messenger();
+				CONTEXT(old_ctx).set_messenger(meat::Null());
 
 				// If we are the top level context then return.
 				if (context.is_null() || context == meat::Null()) {
