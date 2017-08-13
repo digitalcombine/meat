@@ -486,8 +486,8 @@ static meat::Reference BlockContext_om_return(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 
 	// We need to get the actual context to message the return method from.
-	meat::Reference messenger = BLOCK(self).get_messenger();
-	meat::Reference up_context = message(messenger, "return", context);
+	meat::Reference origin = BLOCK(self).get_origin();
+	meat::Reference up_context = message(origin, "return", context);
 	execute(up_context);
 
 	CONTEXT(self).finish(); // Tell the context it's done.
@@ -500,8 +500,8 @@ static meat::Reference BlockContext_om_return_(meat::Reference context) {
 	meat::Reference self = CONTEXT(context).get_self();
 	meat::Reference value = CONTEXT(context).get_param(0);
 
-	meat::Reference messenger = BLOCK(self).get_messenger();
-	meat::Reference up_context = message(messenger, "return:", context);
+	meat::Reference origin = BLOCK(self).get_origin();
+	meat::Reference up_context = message(origin, "return:", context);
 	CONTEXT(up_context).set_param(0, value);
 	execute(up_context);
 
@@ -1444,7 +1444,7 @@ static meat::Reference Boolean_om_xor_(meat::Reference context) {
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference other = CONTEXT(context).get_param(0);
 
-	return ((self == trueObject xor other == trueObject) ?
+	return (((self == trueObject) xor (other == trueObject)) ?
 					trueObject : falseObject);
 }
 

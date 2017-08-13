@@ -156,9 +156,9 @@ Object subClass: Classᶲ body: {
   class method initialize {
   }
 
-	class function getName {
-		return new meat::Text(CLASS(self).get_name());
-	}
+  class function getName {
+    return new meat::Text(CLASS(self).get_name());
+  }
 }
 
 #==============================================================================
@@ -296,10 +296,10 @@ Object subClass: BlockContextᶲ body: {
 
   function return {
     // We need to get the actual context to message the return method from.
-    meat::Reference messenger =
-      ((meat::BlockContext &)(*self)).get_messenger();
+    meat::Reference origin =
+      ((meat::BlockContext &)(*self)).get_origin();
 
-    meat::Reference up_context = message(messenger, "return", context);
+    meat::Reference up_context = message(origin, "return", context);
     execute(up_context);
 
     CONTEXT(self).finish(); // Tell the context it's done.
@@ -308,10 +308,10 @@ Object subClass: BlockContextᶲ body: {
   }
 
   function return: value {
-    meat::Reference messenger =
-      ((meat::BlockContext &)(*self)).get_messenger();
+    meat::Reference origin =
+      ((meat::BlockContext &)(*self)).get_origin();
 
-    meat::Reference up_context = message(messenger, "return:", context);
+    meat::Reference up_context = message(origin, "return:", context);
     CONTEXT(up_context).set_param(0, value);
     execute(up_context);
 
@@ -910,9 +910,9 @@ Object subClass: Booleanᶲ body: {
 
 Object subClass: Textᶲ body: {
 
-	constructor {
+  constructor {
     new meat::Text(klass, properties);
-	}
+  }
 
   function isEmpty {
     return (TEXT(self).empty() ? meat::True() : meat::False());
@@ -930,50 +930,50 @@ Object subClass: Textᶲ body: {
   }
 
   function getCharAt: index {
-	  return new meat::Text(&(TEXT(self)[INTEGER(index) - 1]));
+    return new meat::Text(&(TEXT(self)[INTEGER(index) - 1]));
   }
 
   function get: start to: end {
     meat::Reference self = CONTEXT(context).get_self();
-  	meat::Reference start = CONTEXT(context).get_param(0);
-  	meat::Reference end = CONTEXT(context).get_param(1);
+    meat::Reference start = CONTEXT(context).get_param(0);
+    meat::Reference end = CONTEXT(context).get_param(1);
 
-  	meat::int32_t start_pos = INTEGER(start) - 1;
-  	meat::int32_t len = INTEGER(end) - start_pos;
+    meat::int32_t start_pos = INTEGER(start) - 1;
+    meat::int32_t len = INTEGER(end) - start_pos;
 
-		meat::Text *new_string = new meat::Text();
-  	(*new_string) += TEXT(self).substr(start_pos, len);
-  	return new_string;
+    meat::Text *new_string = new meat::Text();
+    (*new_string) += TEXT(self).substr(start_pos, len);
+    return new_string;
   }
 
   function == other {
-	  return (TEXT(self).compare(TEXT(other)) == 0 ?
-		  meat::BTrue() : meat::BFalse());
+    return (TEXT(self).compare(TEXT(other)) == 0 ?
+      meat::BTrue() : meat::BFalse());
   }
 
   function != other {
-	  return (TEXT(self).compare(TEXT(other)) != 0 ?
-			meat::BTrue() : meat::BFalse());
+    return (TEXT(self).compare(TEXT(other)) != 0 ?
+      meat::BTrue() : meat::BFalse());
   }
 
   function < other {
-	  return (TEXT(self).compare(TEXT(other)) < 0 ?
-			meat::BTrue() : meat::BFalse());
+    return (TEXT(self).compare(TEXT(other)) < 0 ?
+      meat::BTrue() : meat::BFalse());
   }
 
   function <= other {
-	  return (TEXT(self).compare(TEXT(other)) <= 0 ?
-		  meat::BTrue() : meat::BFalse());
+    return (TEXT(self).compare(TEXT(other)) <= 0 ?
+      meat::BTrue() : meat::BFalse());
   }
 
   function > other {
-	  return (TEXT(self).compare(TEXT(other)) > 0 ?
-			meat::BTrue() : meat::BFalse());
+    return (TEXT(self).compare(TEXT(other)) > 0 ?
+      meat::BTrue() : meat::BFalse());
   }
 
   function >= other {
-		return (TEXT(self).compare(TEXT(other)) >= 0 ?
-			meat::BTrue() : meat::BFalse());
+    return (TEXT(self).compare(TEXT(other)) >= 0 ?
+      meat::BTrue() : meat::BFalse());
   }
 
   function + other {
@@ -981,13 +981,13 @@ Object subClass: Textᶲ body: {
   }
 
   function * count {
-		meat::int32_t cnt_value = INTEGER(count);
-		meat::Text *result = new meat::Text();
+    meat::int32_t cnt_value = INTEGER(count);
+    meat::Text *result = new meat::Text();
 
-  	for (int c = 0; c < cnt_value; c++)
-    	(*result) += TEXT(self);
+    for (int c = 0; c < cnt_value; c++)
+      (*result) += TEXT(self);
 
-		return result;
+    return result;
   }
 
   method asText {
@@ -1005,21 +1005,21 @@ Object subClass: Listᶲ body: {
   }
 
   class method new {
-		self newObject
-		context return: self
+    self newObject
+    context return: self
   }
 
   function get: index {
-	  try {
-	  	return LIST(self).at(INTEGER(index) - 1);
-	  } catch (std::out_of_range &err) {
-  		throw meat::Exception("List index out of Range", context);
-  	}
-		return null;
+    try {
+      return LIST(self).at(INTEGER(index) - 1);
+    } catch (std::out_of_range &err) {
+      throw meat::Exception("List index out of Range", context);
+    }
+    return null;
   }
 
   function set: index to: value {
-	  try {
+    try {
       LIST(self).at(INTEGER(index) - 1) = value;
     } catch (std::out_of_range &err) {
       throw meat::Exception("Index out of Range", context);
@@ -1044,12 +1044,12 @@ Object subClass: Listᶲ body: {
   }
 
   function removeAt: index {
-	  LIST(self).erase(LIST(self).begin() + (INTEGER(index) - 1));
+    LIST(self).erase(LIST(self).begin() + (INTEGER(index) - 1));
     return null;
   }
 
   function removeFrom: start to: end {
-	  LIST(self).erase(LIST(self).begin() + (INTEGER(start) - 1),
+    LIST(self).erase(LIST(self).begin() + (INTEGER(start) - 1),
                      LIST(self).begin() + (INTEGER(end) - 1));
     return null;
   }
@@ -1142,8 +1142,8 @@ Object subClass: Setᶲ body: {
   }
 
   class method new {
-		self newObject
-		context return: self
+    self newObject
+    context return: self
   }
 
   function remove: value {
@@ -1223,16 +1223,16 @@ Object subClass: Indexᶲ body: {
   }
 
   class method new {
-		self newObject
-		context return: self
+    self newObject
+    context return: self
   }
 
   function get: key {
-		meat::Index::iterator it = INDEX(self).find(key);
+    meat::Index::iterator it = INDEX(self).find(key);
     if (it == INDEX(self).end())
-		  throw meat::Exception("Invalid key in index");
+      throw meat::Exception("Invalid key in index");
 
-		return *it;
+    return *it;
   }
 
   function set: key to: value {
@@ -1257,14 +1257,14 @@ Object subClass: Indexᶲ body: {
   }
 
   function isEmpty {
-	  return (INDEX(self).empty() ? meat::True() : meat::False());
-	}
+    return (INDEX(self).empty() ? meat::True() : meat::False());
+  }
 
-	function copy {
-	  meat::Index *result = new meat::Index();
+  function copy {
+    meat::Index *result = new meat::Index();
     *result = INDEX(self);
-		return result;
-	}
+    return result;
+  }
 }
 
 #==============================================================================
@@ -1321,39 +1321,39 @@ Object subClass: Libraryᶲ body: {
   property imports
   property classes
 
-	class function import: filename {
+  class function import: filename {
 #ifdef DEBUG
-		std::cout << "DEBUG: Importing library " << filename->to_string()
-  	          << std::endl;
+    std::cout << "DEBUG: Importing library " << filename->to_string()
+              << std::endl;
 #endif /* DEBUG */
 
-		if (meat::data::compiler_import != 0)
-			meat::data::compiler_import(filename->to_string());
-		else {
-			meat::data::Library::import(filename->to_string());
-		}
+    if (meat::data::compiler_import != 0)
+      meat::data::compiler_import(filename->to_string());
+    else {
+      meat::data::Library::import(filename->to_string());
+    }
 
-		return null;
-	}
+    return null;
+  }
 
-	#class function include: cpp_includes {
-	#	if (meat::data::compiler_import != 0)
-	#	  meat::data::Library::include(cpp_includes->to_string());
-	#	else
-	#	  throw Exception("Method Library include is only with the compiler");
+  #class function include: cpp_includes {
+  # if (meat::data::compiler_import != 0)
+  #   meat::data::Library::include(cpp_includes->to_string());
+  # else
+  #   throw Exception("Method Library include is only with the compiler");
   #
-	#	return null;
-	#}
+  # return null;
+  #}
 
-	class method include: includes {
-	  [newLibrary isNull] isFalse: {
-	    cppIncludes = includes
-	  } else: {
-	    Exception throw: "Library method include: can only be used with Grinder"
-	  }
-	}
+  class method include: includes {
+    [newLibrary isNull] isFalse: {
+      cppIncludes = includes
+    } else: {
+      Exception throw: "Library method include: can only be used with Grinder"
+    }
+  }
 
-	class function setApplication: class_name {
-		((meat::data::Library &)(*self)).set_application(class_name->to_string());
-	}
+  class function setApplication: class_name {
+    ((meat::data::Library &)(*self)).set_application(class_name->to_string());
+  }
 }

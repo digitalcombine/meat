@@ -19,23 +19,183 @@
 
 Library import: UnitTest
 
-Test.Suite subClass: Test.BlockContext body: {
+#==============================================================================
+# Class BlockTests
+#
+#  This class contains various block scenarios to be tested.
 
-  # Creates a new TestSuite object.
-  class method new {
-    self newObject
-    context return: self
+Object subClass: BlockTests body: {
+
+	class method executeBlock: block {
+	  [block isType: BlockContext] isFalse: {
+      self fail: "The context is not a BlockContext object."
+    }
+	  block execute
+	}
+
+  class method breakBlock {
+	  context return: {
+		  context break
+			Exception throw: "BlockContext failed to break"
+		}
+	}
+
+	class method nestedBreakBlock {
+    context return: {
+      self executeBlock: {
+        context break
+        Exception throw: "Nested BlockContext failed to break"
+      }
+			Exception throw: "Nested BlockContext failed to break"
+		}
+	}
+
+  class method returnBlock {
+    self executeBlock: {
+      context return
+    }
+
+    Exception throw: "Failed to return from BlockContext"
   }
+
+  # Make sure we return as expected in nested block contexts.
+  class method returnBlockInBlock {
+    self executeBlock: {
+      self executeBlock: {
+        context return
+      }
+    }
+
+    Exception throw: "Failed to return in nested BlockContexts"
+  }
+
+	class method returnBlockResult {
+    self executeBlock: {
+      context return: 10
+    }
+
+    Exception throw: "Failed to return result from BlockContext"
+  }
+
+  # Make sure we return as expected in nested block contexts.
+  class method returnBlockInBlockResult {
+    self executeBlock: {
+      self executeBlock: {
+        context return: 10
+      }
+    }
+
+    Exception throw: "Failed to return result in nested BlockContexts"
+  }
+
+}
+
+#==============================================================================
+# Class Test.BlockContext
+
+Test.Suite subClass: Test.BlockContext body: {
 
   method setup {
     other = ""
 
     self title: "4.4.1 Method execute" test: {
-      self pass
+		  BlockTests executeBlock: {
+        self pass
+		  }
+			self fail: "Failed to execute the block"
     }
 
-    self title: "4.4.2 Method executeOnBreak" test: {
+    self title: "4.4.2 Method executeOnBreak:" test: {
+			# Test that we can capture a break event from a block context.
+			failed = [Boolean true]
+			block = [BlockTests breakBlock]
+			block executeOnBreak: {
+			  failed = [Boolean false]
+			}
+			failed isTrue: {
+        self fail: "executeOnBreak failed to capture break"
+		  }
+
+			# Test that we can capture a break event from a nested block context.
+			failed = [Boolean true]
+			block = [BlockTests nestedBreakBlock]
+			block executeOnBreak: {
+			  failed = [Boolean false]
+			}
+			failed isTrue: {
+        self fail: "executeOnBreak failed to capture break"
+		  }
+
+			self pass
+    }
+
+		self title: "4.4.3 Method executeOnBreak:onContinue:" test: {
+			# Test that we can capture a break event from a block context.
+			failed = [Boolean true]
+			block = [BlockTests breakBlock]
+			block executeOnBreak: {
+			  failed = [Boolean false]
+			}
+			failed isTrue: {
+        self fail: "executeOnBreak failed to capture break"
+		  }
+
+			# Test that we can capture a break event from a nested block context.
+			failed = [Boolean true]
+			block = [BlockTests nestedBreakBlock]
+			block executeOnBreak: {
+			  failed = [Boolean false]
+			}
+			failed isTrue: {
+        self fail: "executeOnBreak failed to capture break"
+		  }
+
+			self pass
+    }
+
+		self title: "4.4.8 Method return" test: {
+
+			BlockTests returnBlock
+			BlockTests returnBlockInBlock
+
+		  self pass
+		}
+
+    self title: "4.4.9 Method return:" test: {
+
+			[[BlockTests returnBlockResult] == 10] isFalse: {
+			  self fail: "BlockContext return: failed to return the expected result"
+			}
+
+			[[BlockTests returnBlockInBlockResult] == 10] isFalse: {
+			  self fail: "Nested BlockContext return: failed to return the expected result"
+			}
+
+		  self pass
+		}
+
+		self title: "4.4.10 Method continue" test: {
+		  counter = 1
       context repeat: {
+        [context isType: BlockContext] isFalse: {
+          self fail: "Context is not a BlockContext object."
+        }
+
+				[counter == 1] isTrue: {
+				  counter = 3
+				  context continue
+					counter = 2
+				}
+
+				[counter == 2] isTrue: {
+				  self fail: "BlockContext failed to continue properly"
+				}
+      }
+			self pass
+		}
+
+		self title: "4.4.11 Method break" test: {
+		  context repeat: {
         [context isType: BlockContext] isFalse: {
           self fail: "Context is not a BlockContext object."
         }
@@ -43,7 +203,8 @@ Test.Suite subClass: Test.BlockContext body: {
         context break
         self fail: "BlockContext break didn't stop block execution."
       }
-      self pass
-    }
+
+			self pass
+		}
   }
 }
