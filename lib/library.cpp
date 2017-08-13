@@ -619,7 +619,8 @@ void grinder::Class::add_class_method(Reference method) {
 void grinder::Class::create_class() const {
 
 #ifdef DEBUG
-  std::cout << "COMPILER: Creating class " << TEXT(className) << std::endl;
+  std::cout << "COMPILER: Creating class " << CONST_TEXT(className)
+						<< std::endl;
 #endif /* DEBUG */
 
   const List &properties = CONST_LIST(objectProperties);
