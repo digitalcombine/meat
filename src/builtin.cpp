@@ -1384,7 +1384,10 @@ static meat::Reference Boolean_om_isFalse_(meat::Reference context) {
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference block = CONTEXT(context).get_param(0);
 
-	if (self == falseObject) execute(block);
+	if (self == falseObject) {
+		meat::Reference ctx = message(block, "execute", context);
+		execute(ctx);
+	}
 	return null;
 }
 
@@ -1392,13 +1395,15 @@ static meat::Reference Boolean_om_isFalse_(meat::Reference context) {
 static meat::Reference Boolean_om_isFalse_else_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference true_block = CONTEXT(context).get_param(0);
-  meat::Reference else_block = CONTEXT(context).get_param(1);
+  meat::Reference falseBlock = CONTEXT(context).get_param(0);
+  meat::Reference elseBlock = CONTEXT(context).get_param(1);
 
 	if (self == falseObject) {
-		execute(true_block);
+		meat::Reference ctx = message(falseBlock, "execute", context);
+		execute(ctx);
 	} else {
-		execute(else_block);
+		meat::Reference ctx = message(elseBlock, "execute", context);
+		execute(ctx);
 	}
 	return null;
 }
@@ -1409,7 +1414,10 @@ static meat::Reference Boolean_om_isTrue_(meat::Reference context) {
   meat::Reference klass = CONTEXT(context).get_class();
   meat::Reference block = CONTEXT(context).get_param(0);
 
-	if (self == trueObject) execute(block);
+	if (self == trueObject)  {
+		meat::Reference ctx = message(block, "execute", context);
+		execute(ctx);
+	}
 	return null;
 }
 
@@ -1417,13 +1425,15 @@ static meat::Reference Boolean_om_isTrue_(meat::Reference context) {
 static meat::Reference Boolean_om_isTrue_else_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference true_block = CONTEXT(context).get_param(0);
-  meat::Reference else_block = CONTEXT(context).get_param(1);
+  meat::Reference trueBlock = CONTEXT(context).get_param(0);
+  meat::Reference elseBlock = CONTEXT(context).get_param(1);
 
 	if (self == trueObject) {
-		execute(true_block);
+		meat::Reference ctx = message(trueBlock, "execute", context);
+		execute(ctx);
 	} else {
-		execute(else_block);
+		meat::Reference ctx = message(elseBlock, "execute", context);
+		execute(ctx);
 	}
 	return null;
 }
