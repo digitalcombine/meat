@@ -129,7 +129,7 @@ int main(int argc, const char *argv[]) {
 		 * value return from entry is not an integer then we return 1 (error).
 		 * If no value was returned then we return 0 (success).
 		 */
-		if (!result.is_null() || result == meat::Null()) {
+		if (not result.is_null() and not (result == meat::Null())) {
 #ifdef TESTING
 			meat::test::summary();
 #endif
