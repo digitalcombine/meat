@@ -128,8 +128,9 @@ meat::Reference meat::execute(Reference context) {
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
 					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
-					Reference result = CONTEXT(new_ctx).pointer(new_ctx);
-					CONTEXT(new_ctx).set_result(result);
+					CONTEXT(new_ctx).pointer(new_ctx);
+					//Reference result = CONTEXT(new_ctx).pointer(new_ctx);
+					//CONTEXT(new_ctx).set_result(result);
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
@@ -181,6 +182,7 @@ meat::Reference meat::execute(Reference context) {
 				CONTEXT(context).ip = ip;
 
 				CONTEXT(new_ctx).set_result_index(result_idx);
+
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
 					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
@@ -190,8 +192,8 @@ meat::Reference meat::execute(Reference context) {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+					CONTEXT(context).set_local(2, context.weak()); // context
 				}
-				CONTEXT(context).set_local(2, context.weak()); // context
 
 				break;
 			}
@@ -230,14 +232,13 @@ meat::Reference meat::execute(Reference context) {
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
 					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
-					Reference result = CONTEXT(new_ctx).pointer(new_ctx);
-					CONTEXT(new_ctx).set_result(result);
+					CONTEXT(new_ctx).pointer(new_ctx);
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+					CONTEXT(context).set_local(2, context.weak()); // context
 				}
-				CONTEXT(context).set_local(2, context.weak()); // context
 
 				break;
 			}
@@ -285,8 +286,8 @@ meat::Reference meat::execute(Reference context) {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
 					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+					CONTEXT(context).set_local(2, context.weak()); // context
 				}
-				CONTEXT(context).set_local(2, context.weak()); // context
 
 				break;
 			}
@@ -486,26 +487,28 @@ meat::Reference meat::execute(Reference context) {
 				 * context. This ensures when a block context is kept that only
 				 * necessary contexts are kept.
 				 */
-				Reference result = CONTEXT(context).get_result();
+				//Reference result = CONTEXT(context).get_result();
 				Reference old_ctx = context;
 				context = CONTEXT(context).get_messenger();
 				CONTEXT(old_ctx).set_messenger(meat::Null());
 
 				// If we are the top level context then return.
-				if (context.is_null() || context == meat::Null()) {
-					return result;
+				if (context.is_null() or context == meat::Null()) {
+					return CONTEXT(old_ctx).get_result();
 				}
 
 				/*  If we were called by a primative method then we need to return back
 				 * to it.
 				 */
 				if (CONTEXT(context).flags == meat::Context::PRIMATIVE) {
-					return result;
+					return CONTEXT(old_ctx).get_result();
 				}
 
-				ip = CONTEXT(context).ip;
-				code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-				CONTEXT(context).set_local(2, context.weak()); // context
+				if (not CONTEXT(context).is_done()) {
+					ip = CONTEXT(context).ip;
+					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+					CONTEXT(context).set_local(2, context.weak()); // context
+				}
 			}
 		}
 	}
