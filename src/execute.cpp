@@ -28,6 +28,7 @@
 #ifdef DEBUG
 #include <iostream>
 #include <iomanip>
+#include <cstddef>
 
 inline std::string local(meat::uint8_t id) {
 	switch (id) {
@@ -82,55 +83,62 @@ meat::Reference meat::execute(Reference context) {
 
 			/* Execute the byte code.
 			 */
-			switch (code[ip]) {
+			bytecode::bytecode_t *bc = (bytecode::bytecode_t *)&code[ip];
+			switch (bc->code) {
 
 			case meat::bytecode::NOOP:
 				// No Operations, possibly could be used for byte alignment.
-				ip += 1;
+				ip++;
 				break;
 
+			case meat::bytecode::MESG_SUPER:
 			case meat::bytecode::MESSAGE: {
-				/* Send a message to an object.
-				 * MESSAGE obj mesg_id param_cnt params...
-				 */
-				uint32_t *mesg_id = (uint32_t *)&code[ip + 2];
-				uint8_t params = code[ip + 6];
+				// Send a message to an object.
 
 #ifdef DEBUG
 				Class &klass = CLASS(CONTEXT(context).get_class());
-				std::cout << "BC" << BCLOC << ": MESSAGE " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< klass.lookup(endian::read_be(*mesg_id)) << " ";
-					if (params) {
-						for (uint8_t c = 0; c < params; c++) {
-							std::cout << " " << local(code[ip + 7 + c]);
-						}
-					}
+        std::cout << "BC" << BCLOC;
+        switch (bc->code) {
+        case meat::bytecode::MESSAGE:
+          std::cout << ": MESSAGE "; break;
+        case meat::bytecode::MESG_SUPER:
+          std::cout << ": MESSAGE SUPER "; break;
+        default: break;
+        }
+        std::cout << local(bc->o.m.object) << " "
+                  << klass.lookup(endian::read_be(bc->o.m.message_id)) << " ";
+        if (bc->o.m.parameters) {
+          for (uint8_t c = 0; c < bc->o.m.parameters; c++) {
+            std::cout << " " << local(bc->o.m.parameter[c]);
+          }
+        }
 				std::cout << std::endl;
 #endif /* DEBUG */
 
-				Reference obj = CONTEXT(context).get_local(code[ip + 1]);
-				meat::uint32_t method_id = endian::read_be(*mesg_id);
+				Reference obj = CONTEXT(context).get_local(bc->o.m.object);
+				meat::uint32_t method_id = endian::read_be(bc->o.m.message_id);
 
 				// Create the new context in which to execute the message in.
-				Reference new_ctx = message(obj, method_id, context);
+				Reference new_ctx;
+				if (code[ip] == meat::bytecode::MESSAGE)
+					new_ctx = message(obj, method_id, context);
+				else
+					new_ctx = message_super(obj, method_id, context);
 
 				// Add the parameters to the new context.
-				for (uint8_t c = 0; c < params; c++) {
-					Reference param = CONTEXT(context).get_local(code[ip + 7 + c]);
+				for (uint8_t c = 0; c < bc->o.m.parameters; c++) {
+					Reference param = CONTEXT(context).get_local(bc->o.m.parameter[c]);
 					CONTEXT(new_ctx).set_param(c, param);
 				}
 
 				// Update the code pointer in the context.
-				ip += 7 + params;
+				ip += 7 + bc->o.m.parameters;
 				CONTEXT(context).ip = ip;
 
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
 					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
 					CONTEXT(new_ctx).pointer(new_ctx);
-					//Reference result = CONTEXT(new_ctx).pointer(new_ctx);
-					//CONTEXT(new_ctx).set_result(result);
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
@@ -141,142 +149,53 @@ meat::Reference meat::execute(Reference context) {
 				break;
 			}
 
+			case meat::bytecode::MESG_SUPER_RESULT:
 			case meat::bytecode::MESG_RESULT: {
-				/* Send a message to an object.
-				 * MESSAGE obj result_idx mesg_id param_cnt params...
-				 */
-				uint8_t result_idx = code[ip + 2];
-				uint32_t *mesg_id = (uint32_t *)&code[ip + 3];
-				uint8_t params = code[ip + 7];
+				// Send a message to an object with results.
 
 #ifdef DEBUG
 				Class &klass = CLASS(CONTEXT(context).get_class());
-				std::cout << "BC" << BCLOC << ": MSGRES " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< local(result_idx) << " "
-									<< klass.lookup(endian::read_be(*mesg_id)) << " ";
-				if (params) {
-					//std::cout << "(";
-					for (uint8_t c = 0; c < params; c++) {
-						std::cout << local(code[ip + 8 + c]) << " ";
+				std::cout << "BC" << BCLOC;
+        switch (bc->code) {
+        case meat::bytecode::MESG_RESULT:
+          std::cout << ": MESSAGE RESULT "; break;
+        case meat::bytecode::MESG_SUPER:
+          std::cout << ": MESSAGE SUPER RESULT "; break;
+        default: break;
+        }
+        std::cout << local(bc->o.mr.result) << " = "
+									<< local(bc->o.mr.object) << " "
+									<< klass.lookup(endian::read_be(bc->o.mr.message_id)) << " ";
+				if (bc->o.mr.parameters) {
+					for (uint8_t c = 0; c < bc->o.mr.parameters; c++) {
+						std::cout << local(bc->o.mr.parameter[c]) << " ";
 					}
-					//std::cout << ")";
 				}
 				std::cout << std::endl;
 #endif /* DEBUG */
 
-				Reference obj = CONTEXT(context).get_local(code[ip + 1]);
-				meat::uint32_t method_id = endian::read_be(*mesg_id);
+				Reference obj = CONTEXT(context).get_local(bc->o.mr.object);
+				meat::uint32_t method_id = endian::read_be(bc->o.mr.message_id);
 
 				// Create the new context in which to execute the message in.
-				Reference new_ctx = message(obj, method_id, context);
+				Reference new_ctx;
+				if (code[ip] == meat::bytecode::MESG_RESULT)
+					new_ctx = message(obj, method_id, context);
+				else
+					new_ctx = message_super(obj, method_id, context);
 
 				// Add the parameters to the new context.
-				for (uint8_t c = 0; c < params; c++) {
-					Reference param = CONTEXT(context).get_local(code[ip + 8 + c]);
+				for (uint8_t c = 0; c < bc->o.mr.parameters; c++) {
+					Reference param = CONTEXT(context).get_local(bc->o.mr.parameter[c]);
 					CONTEXT(new_ctx).set_param(c, param);
 				}
 
 				// Update the code pointer in the context.
-				ip += 8 + params;
+				ip += 8 + bc->o.mr.parameters;
 				CONTEXT(context).ip = ip;
 
-				CONTEXT(new_ctx).set_result_index(result_idx);
+				CONTEXT(new_ctx).set_result_index(bc->o.mr.result);
 
-				// Execute the message.
-				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
-					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
-					Reference result = CONTEXT(new_ctx).pointer(new_ctx);
-					CONTEXT(new_ctx).set_result(result);
-				} else {
-					context = new_ctx;
-					ip = CONTEXT(context).ip;
-					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-					CONTEXT(context).set_local(2, context.weak()); // context
-				}
-
-				break;
-			}
-
-			case meat::bytecode::MESG_SUPER: {
-				/* Send a message to an object.
-				 * SUPER obj mesg_id param_cnt params...
-				 */
-				uint32_t *mesg_id = (uint32_t *)&code[ip + 2];
-				uint8_t params = code[ip + 6];
-
-#ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": SUPER " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< std::hex << endian::read_be(*mesg_id) << " "
-									<< std::dec << (unsigned int)params
-									<< std::endl;
-#endif /* DEBUG */
-
-				Reference obj = CONTEXT(context).get_local(code[ip + 1]);
-				meat::uint32_t method_id = endian::read_be(*mesg_id);
-
-				// Create the new context in which to execute the message in.
-				Reference new_ctx = message_super(obj, method_id, context);
-
-				// Add the parameters to the new context.
-				for (uint8_t c = 0; c < params; c++) {
-					Reference param = CONTEXT(context).get_local(code[ip + 7 + c]);
-					CONTEXT(new_ctx).set_param(c, param);
-				}
-
-				// Update the code pointer in the context.
-				ip += 7 + params;
-				CONTEXT(context).ip = ip;
-
-				// Execute the message.
-				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
-					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
-					CONTEXT(new_ctx).pointer(new_ctx);
-				} else {
-					context = new_ctx;
-					ip = CONTEXT(context).ip;
-					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
-					CONTEXT(context).set_local(2, context.weak()); // context
-				}
-
-				break;
-			}
-
-			case meat::bytecode::MESG_SUPER_RESULT: {
-				/* Send a message to an object.
-				 * SUPER_RES obj result_idx mesg_id param_cnt params...
-				 */
-				uint8_t result_idx = code[ip + 2];
-				uint32_t *mesg_id = (uint32_t *)&code[ip + 3];
-				uint8_t params = code[ip + 7];
-
-#ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": SUPERRES " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< local(result_idx) << " "
-									<< std::hex << endian::read_be(*mesg_id) << " "
-									<< std::dec << (unsigned int)params
-									<< std::endl;
-#endif /* DEBUG */
-
-				Reference obj = CONTEXT(context).get_local(code[ip + 1]);
-				meat::uint32_t method_id = endian::read_be(*mesg_id);
-
-				// Create the new context in which to execute the message in.
-				Reference new_ctx = message_super(obj, method_id, context);
-
-				// Add the parameters to the new context.
-				for (uint8_t c = 0; c < params; c++) {
-					Reference param = CONTEXT(context).get_local(code[ip + 8 + c]);
-					CONTEXT(new_ctx).set_param(c, param);
-				}
-
-				// Update the code pointer in the context.
-				ip += 8 + params;
-				CONTEXT(context).ip = ip;
-
-				CONTEXT(new_ctx).set_result_index(result_idx);
 				// Execute the message.
 				if (CONTEXT(new_ctx).flags == meat::Context::PRIMATIVE) {
 					CONTEXT(new_ctx).set_local(2, new_ctx.weak()); // context
@@ -293,42 +212,38 @@ meat::Reference meat::execute(Reference context) {
 			}
 
 			case meat::bytecode::BLOCK: {
-				uint8_t local_id = code[ip + 1];
-				uint8_t locals = code[ip + 2];
-				uint16_t *block_size = (uint16_t *)&code[ip + 3];
-
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": BLOCK " << std::dec
-									<< (unsigned int)local_id << " "
-									<< (unsigned int)locals << " "
-									<< (unsigned int)endian::read_be(*block_size)
+				std::cout << "BC" << BCLOC << ": BLOCK CONTEXT " << std::dec
+									<< local(bc->o.bc.result) << " "
+									<< (unsigned int)bc->o.bc.locals << " "
+									<< (unsigned int)endian::read_be(bc->o.bc.code_size)
 									<< std::endl;
 #endif /* DEBUG */
 
-				Reference block = new BlockContext(context, locals, ip + 5);
-				CONTEXT(context).set_local(local_id, block);
+				Reference block = new BlockContext(context, bc->o.bc.locals, ip + 5);
+				CONTEXT(context).set_local(bc->o.bc.result, block);
 
-				ip += endian::read_be(*block_size) + 5;
+				ip += endian::read_be(bc->o.bc.code_size) + 5;
 				CONTEXT(context).ip = ip;
 				break;
 			}
 
 			case meat::bytecode::CONTEXT_END:
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": CTXEND" << std::endl;
+				std::cout << "BC" << BCLOC << ": CONTEXT END" << std::endl;
 #endif /* DEBUG */
 				CONTEXT(context).finish();
 				break;
 
 			case meat::bytecode::ASSIGN: {
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": MOV " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< local(code[ip + 2])
+				std::cout << "BC" << BCLOC << ": ASSIGN " << std::dec
+									<< local(bc->o.a.destination) << " = "
+									<< local(bc->o.a.source)
 									<< std::endl;
 #endif /* DEBUG */
-				Reference src = CONTEXT(context).get_local(code[ip + 2]);
-				CONTEXT(context).set_local(code[ip + 1], src);
+				Reference src = CONTEXT(context).get_local(bc->o.a.source);
+				CONTEXT(context).set_local(bc->o.a.destination, src);
 				ip += 3;
 				break;
 			}
@@ -337,133 +252,116 @@ meat::Reference meat::execute(Reference context) {
 				Reference self = CONTEXT(context).get_self();
 
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": GETATTR " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< (unsigned int)code[ip + 2]
+				std::cout << "BC" << BCLOC << ": GET PROPERTY " << std::dec
+									<< local(bc->o.ap.destination) << " = "
+									<< (unsigned int)bc->o.ap.property_id
 									<< std::endl;
 #endif /* DEBUG */
 
-				CONTEXT(context).set_local(code[ip + 1], self->property(code[ip + 2]));
+				CONTEXT(context).set_local(bc->o.ap.destination,
+																	 self->property(bc->o.ap.property_id));
 				ip += 3;
 				break;
 			}
 
 			case meat::bytecode::ASSIGN_CATTR: {
 				Reference self = CONTEXT(context).get_class();
+
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": GETCATTR " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< (unsigned int)code[ip + 2]
+				std::cout << "BC" << BCLOC << ": GET CLASS PROPERTY " << std::dec
+									<< local(bc->o.ap.destination) << " = "
+									<< (unsigned int)bc->o.ap.property_id
 									<< std::endl;
 #endif /* DEBUG */
-				CONTEXT(context).set_local(code[ip + 1], self->property(code[ip + 2]));
+				CONTEXT(context).set_local(bc->o.ap.destination,
+																	 self->property(bc->o.ap.property_id));
 				ip += 3;
 				break;
 			}
 
 			case meat::bytecode::ASSIGN_CLASS: {
-				uint8_t local_id = code[ip + 1];
-				uint32_t *class_id = (uint32_t *)&code[ip + 2];
-
 #ifdef DEBUG
 				Class &klass = CLASS(CONTEXT(context).get_class());
-				std::cout << "BC" << BCLOC << ": CLASS " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< klass.lookup(endian::read_be(*class_id))
+				std::cout << "BC" << BCLOC << ": GET CLASS " << std::dec
+									<< local(bc->o.c.destination) << " = "
+									<< klass.lookup(endian::read_be(bc->o.c.class_id))
 									<< std::endl;
 #endif /* DEBUG */
 
-				CONTEXT(context).set_local(local_id,
-																	 Class::resolve(endian::read_be(*class_id)));
+				CONTEXT(context).set_local(bc->o.c.destination,
+					Class::resolve(endian::read_be(bc->o.c.class_id)));
 				ip += 6;
 				break;
 			}
 
 			case meat::bytecode::ASSIGN_CONST_INT: {
-				uint8_t local_id = code[ip + 1];
-				int32_t *i = (int32_t *)&code[ip + 2];
-
-				Reference intobj = new Value(endian::read_be(*i));
-
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": INT " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< (int)endian::read_be(*i)
+				std::cout << "BC" << BCLOC << ": INTEGER " << std::dec
+									<< local(bc->o.ci.destination) << " = "
+									<< (int)endian::read_be(bc->o.ci.value)
 									<< std::endl;
 #endif /* DEBUG */
 
-				CONTEXT(context).set_local(local_id, intobj);
+				Reference intobj = new Value(endian::read_be(bc->o.ci.value));
+				CONTEXT(context).set_local(bc->o.ci.destination, intobj);
 				ip += 6;
 				break;
 			}
 
 			case meat::bytecode::ASSIGN_CONST_FLT: {
-				uint8_t local_id = code[ip + 1];
-				float_t *i = (float_t *)&code[ip + 2];
-
-				Reference float_obj = new Value(endian::read_be(*i));
-
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": FLOAT " << std::dec
-									<< local(local_id) << " "
-									<< (float)endian::read_be(*i)
+				std::cout << "BC" << BCLOC << ": NUMBER " << std::dec
+									<< local(bc->o.cn.destination) << " = "
+									<< (float)endian::read_be(bc->o.cn.value)
 									<< std::endl;
 #endif /* DEBUG */
 
-				CONTEXT(context).set_local(local_id, float_obj);
+				Reference float_obj = new Value(endian::read_be(bc->o.cn.value));
+				CONTEXT(context).set_local(bc->o.cn.destination, float_obj);
 				ip += 6;
 				break;
 			}
 
 			case meat::bytecode::ASSIGN_CONST_STR: {
-				uint8_t local_id = code[ip + 1];
-				const char *str = (const char *)&code[ip + 2];
-				Reference strobj = new Text(str);
-
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": STR " << std::dec
-									<< local(code[ip + 1]) << " "
-									<< "\"" << str << "\""
+				std::cout << "BC" << BCLOC << ": TEXT " << std::dec
+									<< local(bc->o.ct.destination) << " = "
+									<< "\"" << bc->o.ct.value << "\""
 									<< std::endl;
 #endif /* DEBUG */
 
-				CONTEXT(context).set_local(local_id, strobj);
-				ip += strlen(str) + 3;
+				Reference strobj = new Text((const char *)bc->o.ct.value);
+				CONTEXT(context).set_local(bc->o.ct.destination, strobj);
+				ip += strlen((const char *)bc->o.ct.value) + 3;
 				break;
 			}
 
 			case meat::bytecode::SET_OATTR: { // Set an object property
-				uint8_t attr_id = code[ip + 1];
-				uint8_t local_id = code[ip + 2];
-
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": SETATTR " << std::dec
-									<< (unsigned int)attr_id << " "
-									<< local(local_id)
+				std::cout << "BC" << BCLOC << ": SET PROPERTY " << std::dec
+									<< (unsigned int)bc->o.sp.destination << " = "
+									<< local(bc->o.sp.source)
 									<< std::endl;
 #endif /* DEBUG */
 
 				Reference self = CONTEXT(context).get_self();
-
-				self->property(attr_id) = CONTEXT(context).get_local(local_id);
+				self->property(bc->o.sp.destination) =
+					CONTEXT(context).get_local(bc->o.sp.source);
 				ip += 3;
 				break;
 			}
 
 			case meat::bytecode::SET_CATTR: { // Set an class property
-				uint8_t attr_id = code[ip + 1];
-				uint8_t local_id = code[ip + 2];
-
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": SETCATTR " << std::dec
-									<< (unsigned int)attr_id << " "
-									<< local(local_id)
+				std::cout << "BC" << BCLOC << ": SET CLASS PROPERTY " << std::dec
+									<< (unsigned int)bc->o.sp.destination << " = "
+									<< local(bc->o.sp.source)
 									<< std::endl;
 #endif /* DEBUG */
 
 				Reference cls = CONTEXT(context).get_class();
-
-				cls->property(attr_id) = CONTEXT(context).get_local(local_id);
+				cls->property(bc->o.sp.destination) =
+					CONTEXT(context).get_local(bc->o.sp.source);
 				ip += 3;
 				break;
 			}

@@ -49,6 +49,78 @@ namespace meat {
 
     const uint8_t SET_OATTR         = 0x20; // attr local
     const uint8_t SET_CATTR         = 0x21; // attr const
+
+		typedef struct __attribute__((packed)) _message_s {
+			uint8_t object;
+			uint32_t message_id;
+			uint8_t parameters;
+			uint8_t parameter[];
+		} message_t;
+
+		typedef struct __attribute__((packed)) _message_result_s {
+			uint8_t object;
+			uint8_t result;
+			uint32_t message_id;
+			uint8_t parameters;
+			uint8_t parameter[];
+		} message_result_t;
+
+		typedef struct __attribute__((packed)) _block_context_s {
+			uint8_t result;
+			uint8_t locals;
+			uint16_t code_size;
+		} block_context_t;
+
+		typedef struct __attribute__((packed)) _assign_s {
+			uint8_t destination;
+			uint8_t source;
+		} assign_t;
+
+		typedef struct __attribute__((packed)) _assign_property_s {
+			uint8_t destination;
+			uint8_t property_id;
+		} assign_property_t;
+
+		typedef struct __attribute__((packed)) _class_s {
+			uint8_t destination;
+			uint32_t class_id;
+		} class_t;
+
+		typedef struct __attribute__((packed)) _const_integer_s {
+			uint8_t destination;
+			int32_t value;
+		} const_integer_t;
+
+		typedef struct __attribute__((packed)) _const_number_s {
+			uint8_t destination;
+			float_t value;
+		} const_number_t;
+
+		typedef struct __attribute__((packed)) _const_text_s {
+			uint8_t destination;
+			unsigned char value[]; // This is 0 terminated
+		} const_text_t;
+
+		typedef struct __attribute__((packed)) _set_property_s {
+			uint8_t destination;
+			uint8_t source;
+		} set_property_t;
+
+		typedef struct __attribute__((packed)) _bytecode_s {
+			uint8_t code;
+			union {
+				message_t m;
+				message_result_t mr;
+				block_context_t bc;
+				assign_t a;
+				assign_property_t ap;
+				class_t c;
+				const_integer_t ci;
+				const_number_t cn;
+				const_text_t ct;
+				set_property_t sp;
+			} o;
+		} bytecode_t;
   };
 };
 
