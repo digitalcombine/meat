@@ -592,7 +592,7 @@ LocalVariable Value::gen_result(bool prelim) {
       std::cout << "BC: STR " << result.get_name()
                 << " \"" << value << "\"" << std::endl;
 #endif
-      bytecode(bytecode::ASSIGN_CONST_STR);
+      bytecode(bytecode::ASSIGN_CONST_TXT);
       bytecode(result.get_index());
       for (unsigned int c = 0; c < value.size(); c++)
         bytecode((uint8_t)value[c]);
@@ -614,7 +614,7 @@ LocalVariable Value::gen_result(bool prelim) {
       std::cout << "BC: NUM " << result.get_name()
                 << " \"" << (float)flt_value << "\"" << std::endl;
 #endif
-      bytecode(bytecode::ASSIGN_CONST_FLT);
+      bytecode(bytecode::ASSIGN_CONST_NUM);
       bytecode(result.get_index());
       bytecode((float_t)flt_value);
       return result;
@@ -633,7 +633,7 @@ LocalVariable Value::gen_result(bool prelim) {
       std::cout << "BC: PROP " << result.get_name() << " "
                 << std::dec << (unsigned int)index << std::endl;
 #endif
-      bytecode(bytecode::ASSIGN_OATTR);
+      bytecode(bytecode::ASSIGN_PROP);
       bytecode(result.get_index());
       bytecode((uint8_t)index);
       return result;
@@ -643,7 +643,7 @@ LocalVariable Value::gen_result(bool prelim) {
       std::cout << "BC: CLASS PROP " << result.get_name() << " "
                 << std::dec << (unsigned int)index << std::endl;
 #endif
-      bytecode(bytecode::ASSIGN_CATTR);
+      bytecode(bytecode::ASSIGN_CLASS_PROP);
       bytecode(result.get_index());
       bytecode((uint8_t)index);
       return result;
@@ -732,7 +732,7 @@ void Assignment::gen_bytecode(bool prelim) {
       std::cout << "BC: SETATTR " << std::dec
     << (unsigned int)dest->get_index() << " ";
 #endif
-      bytecode(meat::bytecode::SET_OATTR);
+      bytecode(meat::bytecode::SET_PROP);
       bytecode(dest->get_index());
 #ifdef DEBUG
     std::cout << source.get_name() << std::endl;
@@ -745,7 +745,7 @@ void Assignment::gen_bytecode(bool prelim) {
     << (unsigned int)dest->get_index() << " ";
 #endif
       // Assign to a class property.
-      bytecode(meat::bytecode::SET_CATTR);
+      bytecode(meat::bytecode::SET_CLASS_PROP);
       bytecode(dest->get_index());
 #ifdef DEBUG
     std::cout << source.get_name() << std::endl;

@@ -248,28 +248,24 @@ meat::Reference meat::execute(Reference context) {
 				break;
 			}
 
-			case meat::bytecode::ASSIGN_OATTR: {
-				Reference self = CONTEXT(context).get_self();
+			case meat::bytecode::ASSIGN_PROP:
+			case meat::bytecode::ASSIGN_CLASS_PROP: {
+				Reference self;
+				if (bc->code == bytecode::ASSIGN_PROP)
+					self = CONTEXT(context).get_self();
+				else
+					self = CONTEXT(context).get_class();
 
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": GET PROPERTY " << std::dec
-									<< local(bc->o.ap.destination) << " = "
-									<< (unsigned int)bc->o.ap.property_id
-									<< std::endl;
-#endif /* DEBUG */
-
-				CONTEXT(context).set_local(bc->o.ap.destination,
-																	 self->property(bc->o.ap.property_id));
-				ip += 3;
-				break;
-			}
-
-			case meat::bytecode::ASSIGN_CATTR: {
-				Reference self = CONTEXT(context).get_class();
-
-#ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": GET CLASS PROPERTY " << std::dec
-									<< local(bc->o.ap.destination) << " = "
+				std::cout << "BC" << BCLOC << ": GET CLASS PROPERTY ";
+				switch (bc->code) {
+        case bytecode::ASSIGN_PROP:
+          std::cout << ": GET PROPERTY "; break;
+        case bytecode::ASSIGN_CLASS_PROP:
+          std::cout << ": GET CLASS PROPERTY "; break;
+        default: break;
+        }
+				std::cout	<< local(bc->o.ap.destination) << " = "
 									<< (unsigned int)bc->o.ap.property_id
 									<< std::endl;
 #endif /* DEBUG */
@@ -308,7 +304,7 @@ meat::Reference meat::execute(Reference context) {
 				break;
 			}
 
-			case meat::bytecode::ASSIGN_CONST_FLT: {
+			case meat::bytecode::ASSIGN_CONST_NUM: {
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": NUMBER " << std::dec
 									<< local(bc->o.cn.destination) << " = "
@@ -322,7 +318,7 @@ meat::Reference meat::execute(Reference context) {
 				break;
 			}
 
-			case meat::bytecode::ASSIGN_CONST_STR: {
+			case meat::bytecode::ASSIGN_CONST_TXT: {
 #ifdef DEBUG
 				std::cout << "BC" << BCLOC << ": TEXT " << std::dec
 									<< local(bc->o.ct.destination) << " = "
@@ -336,31 +332,28 @@ meat::Reference meat::execute(Reference context) {
 				break;
 			}
 
-			case meat::bytecode::SET_OATTR: { // Set an object property
+			case meat::bytecode::SET_PROP:
+			case meat::bytecode::SET_CLASS_PROP: {
 #ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": SET PROPERTY " << std::dec
-									<< (unsigned int)bc->o.sp.destination << " = "
+				std::cout << "BC" << BCLOC;
+				switch (bc->code) {
+        case bytecode::ASSIGN_PROP:
+          std::cout << ": SET PROPERTY "; break;
+        case bytecode::ASSIGN_CLASS_PROP:
+          std::cout << ": SET CLASS PROPERTY "; break;
+        default: break;
+        }
+				std::cout << (unsigned int)bc->o.sp.destination << " = "
 									<< local(bc->o.sp.source)
 									<< std::endl;
 #endif /* DEBUG */
 
-				Reference self = CONTEXT(context).get_self();
+				Reference self;
+				if (bc->code == bytecode::SET_PROP)
+					self = CONTEXT(context).get_self();
+				else
+					self = CONTEXT(context).get_class();
 				self->property(bc->o.sp.destination) =
-					CONTEXT(context).get_local(bc->o.sp.source);
-				ip += 3;
-				break;
-			}
-
-			case meat::bytecode::SET_CATTR: { // Set an class property
-#ifdef DEBUG
-				std::cout << "BC" << BCLOC << ": SET CLASS PROPERTY " << std::dec
-									<< (unsigned int)bc->o.sp.destination << " = "
-									<< local(bc->o.sp.source)
-									<< std::endl;
-#endif /* DEBUG */
-
-				Reference cls = CONTEXT(context).get_class();
-				cls->property(bc->o.sp.destination) =
 					CONTEXT(context).get_local(bc->o.sp.source);
 				ip += 3;
 				break;

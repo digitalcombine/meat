@@ -39,16 +39,16 @@ namespace meat {
     const uint8_t CONTEXT_END       = 0x0b;
 
     const uint8_t ASSIGN            = 0x10; // local local
-    const uint8_t ASSIGN_OATTR      = 0x11; // local object_attr
-    const uint8_t ASSIGN_CATTR      = 0x12; // local class_attr
+    const uint8_t ASSIGN_PROP       = 0x11; // local object_attr
+    const uint8_t ASSIGN_CLASS_PROP = 0x12; // local class_attr
     const uint8_t ASSIGN_CLASS      = 0x13; // local class_hash_id
 
     const uint8_t ASSIGN_CONST_INT  = 0x14; // local const
-    const uint8_t ASSIGN_CONST_FLT  = 0x15;
-    const uint8_t ASSIGN_CONST_STR  = 0x16;
+    const uint8_t ASSIGN_CONST_NUM  = 0x15;
+    const uint8_t ASSIGN_CONST_TXT  = 0x16;
 
-    const uint8_t SET_OATTR         = 0x20; // attr local
-    const uint8_t SET_CATTR         = 0x21; // attr const
+    const uint8_t SET_PROP          = 0x20; // attr local
+    const uint8_t SET_CLASS_PROP    = 0x21; // attr const
 
 		typedef struct __attribute__((packed)) _message_s {
 			uint8_t object;
