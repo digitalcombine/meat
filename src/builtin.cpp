@@ -72,7 +72,7 @@ static meat::Reference Object_om_isType_(meat::Reference context) {
 static meat::Reference Object_om_type(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-  return self->get_type();
+  return self->type();
 }
 
 // method weak
@@ -181,7 +181,7 @@ static meat::Reference Class_cm_getName(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference klass = CONTEXT(context).get_class();
 
-	return new meat::Text(CLASS(self).get_name());
+	return new meat::Text(CLASS(self).name());
 }
 
 // class method newObject
@@ -219,7 +219,7 @@ static meat::Reference Class_cm_subClass_body_(meat::Reference context) {
 static meat::Reference Class_cm_superClass(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
 
-	return CLASS(self).get_super();
+	return CLASS(self).super();
 }
 
 static meat::vtable_entry_t ClassCMethods[] = {
@@ -2161,7 +2161,7 @@ void meat::initialize(int argc, const char *argv[],
   Class *class_cls = new Class(Null());
 	class_cls->set_vtable(11, ClassMethods, meat::STATIC);
   class_cls->set_class_vtable(14, ClassCMethods, STATIC);
-	class_cls->set_bytecode(1, ClassBytecode, meat::STATIC);
+	class_cls->bytecode(1, ClassBytecode, meat::STATIC);
 	Class::record(class_cls, "Class");
 
   /* Create the Object base class. */
@@ -2169,21 +2169,21 @@ void meat::initialize(int argc, const char *argv[],
   object_cls->set_constructor(Object_constructor);
   object_cls->set_vtable(11, ObjectMethods, STATIC);
   object_cls->set_class_vtable(11, ObjectCMethods, STATIC);
-  object_cls->set_bytecode(226, ObjectBytecode, STATIC);
+  object_cls->bytecode(226, ObjectBytecode, STATIC);
   Class::record(object_cls, "Object");
 
   /*  When the first two class were created the ClassClass reference was null.
    * So here we finish the initialization of the Object and Class classes.
    */
   Reference ObjectClass = Class::resolve("Object");
-  ObjectClass->o_type = ClassClass();
-  ClassClass()->o_type = ClassClass().weak();
+  ObjectClass->_type = ClassClass();
+  ClassClass()->_type = ClassClass().weak();
 
   /* Create the Null class. */
   Class *null_cls = new Class("Object", 1, 0);
   null_cls->set_vtable(6, NullMethods, STATIC);
   null_cls->set_class_vtable(9, NullCMethods, STATIC);
-  null_cls->set_bytecode(46, NullBytecode, STATIC);
+  null_cls->bytecode(46, NullBytecode, STATIC);
   Class::record(null_cls, "Null");
   null_cls->property(0) = new Object(Class::resolve("Null"));
 
@@ -2192,7 +2192,7 @@ void meat::initialize(int argc, const char *argv[],
   except_cls->set_constructor(Exception_constructor);
   except_cls->set_vtable(8, ExceptionMethods, STATIC);
   except_cls->set_class_vtable(15, ExceptionCMethods, STATIC);
-  except_cls->set_bytecode(24, ExceptionBytecode, STATIC);
+  except_cls->bytecode(24, ExceptionBytecode, STATIC);
   Class::record(except_cls, "Exception");
 
   /* Create the Context class. */
@@ -2200,7 +2200,7 @@ void meat::initialize(int argc, const char *argv[],
   context_cls->set_constructor(Context_constructor);
   context_cls->set_vtable(20, ContextMethods, STATIC);
   context_cls->set_class_vtable(11, ContextCMethods, STATIC);
-  context_cls->set_bytecode(131, ContextBytecode, STATIC);
+  context_cls->bytecode(131, ContextBytecode, STATIC);
   Class::record(context_cls, "Context");
 
   /* Create the BlockContext class. */
@@ -2213,7 +2213,7 @@ void meat::initialize(int argc, const char *argv[],
   Class *numeric_cls = new Class("Object");
   numeric_cls->set_vtable(19, NumericMethods, STATIC);
   numeric_cls->set_class_vtable(23, NumericCMethods, STATIC);
-  numeric_cls->set_bytecode(569, NumericBytecode, STATIC);
+  numeric_cls->bytecode(569, NumericBytecode, STATIC);
   Class::record(numeric_cls, "Numeric");
 
 	/* Create the Integer class. */
@@ -2234,14 +2234,14 @@ void meat::initialize(int argc, const char *argv[],
 	text_cls->set_constructor(Text_constructor);
   text_cls->set_vtable(22, TextMethods, STATIC);
 	text_cls->set_class_vtable(11, TextCMethods, STATIC);
-	text_cls->set_bytecode(9, TextBytecode, meat::STATIC);
+	text_cls->bytecode(9, TextBytecode, meat::STATIC);
   Class::record(text_cls, "Text");
 
   /* Create the Boolean class and objects. */
   Class *bool_cls = new meat::Class("Object", 2, 0);
   bool_cls->set_vtable(18, BooleanMethods, meat::STATIC);
   bool_cls->set_class_vtable(11, BooleanCMethods, meat::STATIC);
-  bool_cls->set_bytecode(145, BooleanBytecode, meat::STATIC);
+  bool_cls->bytecode(145, BooleanBytecode, meat::STATIC);
   Class::record(bool_cls, "Boolean");
   bool_cls->property(0) = new Value(true);
   bool_cls->property(1) = new Value(false);
@@ -2251,7 +2251,7 @@ void meat::initialize(int argc, const char *argv[],
   list_cls->set_constructor(list_constructor);
   list_cls->set_vtable(22, ListMethods, STATIC);
   list_cls->set_class_vtable(12, ListCMethods, STATIC);
-	list_cls->set_bytecode(16, ListBytecode, meat::STATIC);
+	list_cls->bytecode(16, ListBytecode, meat::STATIC);
   Class::record(list_cls, "List");
 
   /* Create the Index class. */
@@ -2265,7 +2265,7 @@ void meat::initialize(int argc, const char *argv[],
   Class *app_cls = new Class("Object");
   app_cls->set_vtable(7, ApplicationMethods, STATIC);
   app_cls->set_class_vtable(13, ApplicationCMethods, STATIC);
-  app_cls->set_bytecode(61, ApplicationBytecode, STATIC);
+  app_cls->bytecode(61, ApplicationBytecode, STATIC);
   Class::record(app_cls, "Application");
 
 	class_compiler() = compiler;

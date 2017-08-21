@@ -57,12 +57,12 @@ namespace meat {
      */
     class DECLSPEC Library {
     public:
-      static Library *create(const char *name);
-      static Library *import(const char *name);
+      static Library *create(const std::string &name);
+      static Library *import(const std::string &name);
 
       /** If the library has an application
        */
-      static Reference execute(const char *name);
+      static Reference execute(const std::string &name);
       static void include(const std::string &includes);
       static const std::string &include();
 
@@ -71,15 +71,28 @@ namespace meat {
 
       virtual ~Library() throw();
 
-      static void add_path(const char *path);
+			/** Adds a directory path to the list of library paths.
+			 */
+      static void add_path(const std::string &path);
 
+			/** Manually trigger all the initialize class methods for all the
+			 * classes in the library.
+			 *
+			 * @see create
+			 */
 			void init_classes();
 
       void add_import(const std::string &name);
 			Reference get_imports() const;
 			void remove_import(const std::string &name);
 
+			/**
+			 */
       void add(Class *cls, const std::string &id);
+
+			/** Clears the library of all it's classes and symbols.
+			 */
+			void clear();
 
       void set_application(const std::string &name);
 
@@ -122,10 +135,11 @@ namespace meat {
       nativelib_t dlhandle;
       Reference application;
 
-      Library(const char *name);
+      Library(const std::string &name);
 
-      void import_from_archive(const char *name);
-      void import_from_native(const char *filename, const char *name);
+      void import_from_archive(const std::string &name);
+      void import_from_native(const std::string &filename,
+															const std::string &name);
     };
 
     /** The meat object store.

@@ -33,12 +33,12 @@ typedef union {
 } conv_t;
 
 static inline uint32_t swap32(uint32_t value) {
-  return (value << 24) | ((value & 0xff00) << 8) |
-    ((value & 0xff0000) >> 8) | (value >> 24);
+  return ((value >> 24) & 0x000000ff) | ((value >> 8) & 0x0000ff00) |
+    ((value << 24) & 0xff000000) | ((value << 8) & 0x00ff0000);
 }
 
 static inline uint16_t swap16(uint16_t value) {
-  return ((value & 0xff) << 8) | ((value & 0xff00) >> 8);
+  return ((value & 0x00ff) << 8) | ((value & 0xff00) >> 8);
 }
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__

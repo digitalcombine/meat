@@ -133,7 +133,7 @@ static meat::compiler_import_fn &compiler_import() {
  * meat::data::Library::Library *
  ********************************/
 
-meat::data::Library::Library(const char *name)
+meat::data::Library::Library(const std::string &name)
 	: imports(new meat::List()), syms_free(false), syms_size(0), symbols(NULL),
 		dlhandle(0) {
   this->name = name;
@@ -169,9 +169,11 @@ meat::data::Library::~Library() throw() {
  * meat::data::Library::create *
  *******************************/
 
-meat::data::Library *meat::data::Library::create(const char *name) {
+meat::data::Library *meat::data::Library::create(const std::string &name) {
   Library *new_lib = new Library(name);
   new_lib->name = name;
+
+	// The __builtin__ library is special ;)
 	if (new_lib->name == "__builtin__")
 		new_lib->is_new = false;
 	else
@@ -186,16 +188,17 @@ meat::data::Library *meat::data::Library::create(const char *name) {
  * meat::data::Library::import *
  *******************************/
 
-meat::data::Library *meat::data::Library::import(const char *name) {
-  /* Check to see if we have already imported the library.
-   */
+meat::data::Library *meat::data::Library::import(const std::string &name) {
+  // Check to see if we have already imported the library.
   std::map<std::string, Library *>::iterator lib = get_libraries().find(name);
   if (lib != get_libraries().end())
     return lib->second;
 
+	// Load the library.
   Library *imported_lib = new Library(name);
   imported_lib->import();
 
+	// Register the library.
   get_libraries()[name] = imported_lib;
 
   return imported_lib;
@@ -205,19 +208,17 @@ meat::data::Library *meat::data::Library::import(const char *name) {
  * meat::data::Library::execute *
  ********************************/
 
-meat::Reference meat::data::Library::execute(const char *name) {
+meat::Reference meat::data::Library::execute(const std::string &name) {
 	Library *imported_lib = new Library(name);
   imported_lib->import_from_archive(name);
 
-	if (!imported_lib->application.is_null()) {
+	if (not imported_lib->application.is_null()) {
 		get_libraries()[name] = imported_lib;
 
-		/* Message the application and get things rolling. */
+		// Message the application and get things rolling.
 		meat::Reference context = meat::message(imported_lib->application,
 																						"entry", meat::Null());
-		meat::Reference result = meat::execute(context);
-
-		return result;
+		return meat::execute(context);
 	}
 	throw meat::Exception(std::string("Library ") + name +
 												" is not executable.");
@@ -329,7 +330,7 @@ void meat::data::Library::init_classes() {
  * meat::data::Library::add_path *
  *********************************/
 
-void meat::data::Library::add_path(const char *name) {
+void meat::data::Library::add_path(const std::string &name) {
   get_path().push_front(name);
 }
 
@@ -386,6 +387,25 @@ void meat::data::Library::add(Class *cls, const std::string &id) {
 	if (name != "__builtin__")
 		Class::record(newcls, id.c_str());
 	cls->library = this;
+}
+
+/******************************
+ * meat::data::Library::clear *
+ ******************************/
+
+void meat::data::Library::clear() {
+	/*  Cleanup all the classes in the libray. Note if any object is still using
+   * any of these classes the references will keep the class until no one is
+   * using them any more.
+   */
+	if (name != "__builtin__") {
+		std::deque<Reference>::iterator it;
+		for (it = classes.begin(); it != classes.end(); it++)
+			Class::unrecord(*it);
+	}
+	classes.clear();
+
+	clear_symbols();
 }
 
 /****************************************
@@ -464,6 +484,10 @@ void meat::data::Library::clear_symbols() {
 	syms_table.clear();
 }
 
+/*******************************
+ * meat::data::Library::lookup *
+ *******************************/
+
 std::string meat::data::Library::lookup(meat::uint32_t hash_id) const {
 	std::map<meat::uint32_t, const char *>::const_iterator it =
 		syms_table.find(hash_id);
@@ -518,7 +542,7 @@ void meat::data::Library::write() {
 		// Add the application class hash ID if the library is executable.
 		uint32_t app_hash_id = 0;
 		if (!application.is_null()) {
-			app_hash_id = endian::write_be(CLASS(application).get_hash_id());
+			app_hash_id = endian::write_be(CLASS(application).hash_id());
 		}
 		lib_file.write((const char *)&app_hash_id, 4);
 
@@ -561,10 +585,10 @@ void meat::data::Library::write() {
  * meat::data::Library::import_from_archive *
  ********************************************/
 
-void meat::data::Library::import_from_archive(const char *name) {
+void meat::data::Library::import_from_archive(const std::string &name) {
   sgelib_header_t header;
 
-  std::ifstream lib_file(name, std::ios::in | std::ios::binary);
+  std::ifstream lib_file(name.c_str(), std::ios::in | std::ios::binary);
 
   if (not lib_file.is_open())
     throw meat::Exception(std::string("Unable to open file ") + name);
@@ -618,7 +642,7 @@ void meat::data::Library::import_from_archive(const char *name) {
     classes.push_back(cls);
     Class::record(cls);
 		CLASS(cls).library = this;
-		if (app_id && CLASS(cls).get_hash_id() == app_id)
+		if (app_id && CLASS(cls).hash_id() == app_id)
 			application = cls;
   }
 
@@ -645,8 +669,8 @@ void meat::data::Library::import_from_archive(const char *name) {
  * meat::data::Library::import_from_native *
  *******************************************/
 
-void meat::data::Library::import_from_native(const char *filename,
-																						 const char *name) {
+void meat::data::Library::import_from_native(const std::string &filename,
+																						 const std::string &name) {
   typedef void *(*init_proc_t)(Library &library);
 
 #ifdef DEBUG
@@ -655,7 +679,7 @@ void meat::data::Library::import_from_native(const char *filename,
 #endif
 
   is_native = true;
-  dlhandle = dl_open(filename);
+  dlhandle = dl_open(filename.c_str());
 
   init_proc_t init_proc =
     (init_proc_t)dl_symbol(dlhandle, (std::string("init_") + name).c_str());
@@ -870,7 +894,7 @@ void meat::data::Archive::set_object(Reference &object) {
 
     Index new_index;
     new_index.object = object;
-    new_index.cls_id = CLASS(object->get_type()).get_hash_id();
+    new_index.cls_id = CLASS(object->type()).hash_id();
 
     index.clear();
     index.push_back(new_index);
@@ -909,7 +933,7 @@ meat::uint32_t meat::data::Archive::add_property(Reference property) {
       /* Add the object to the index and return the index offset. */
       Index new_index;
       new_index.object = property.weak();
-      new_index.cls_id = CLASS(property->get_type()).get_hash_id();
+      new_index.cls_id = CLASS(property->type()).hash_id();
       index.push_back(new_index);
       return index.size() - 1;
     }
@@ -1017,7 +1041,7 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
   Reference obj = CLASS(obj_class).new_object();
 
   // Read in all the index offsets for the object's properties.
-  meat::uint8_t num_of_props = CLASS(obj_class).get_obj_properties();
+  meat::uint8_t num_of_props = CLASS(obj_class).obj_properties();
   struct _props_index_s {
     meat::uint32_t offset;
     meat::uint8_t flags;
@@ -1093,16 +1117,16 @@ void meat::data::Archive::sync() {
 
       // Now serialize any object data to the file
       if (!(index[c].object.is_null())) {
-        uint8_t props = index[c].object->get_num_of_props();
+        uint8_t props = index[c].object->properties();
 
 #ifdef TESTING
         meat::test::test("Serializing number of properties", false);
-        if (props != CLASS(index[c].object->get_type()).get_obj_properties()) {
+        if (props != CLASS(index[c].object->type()).obj_properties()) {
           meat::test::failed("Serializing number of properties", false);
 #ifdef DEBUG
           std::cout << "      " << std::dec << (unsigned int)props << " != "
-                    << (unsigned int)CLASS(index[c].object->get_type()).get_obj_properties()
-                    << " for type " << CLASS(index[c].object->get_type())
+                    << (unsigned int)CLASS(index[c].object->type()).obj_properties()
+                    << " for type " << CLASS(index[c].object->type())
                     << std::endl;
 #endif
         }

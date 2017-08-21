@@ -220,6 +220,18 @@ void grinder::Library::add_class(Reference klass) {
 	dynamic_cast<meat::grinder::Class &>(*klass).library = this;
 }
 
+void grinder::Library::compile() {
+	library->clear();
+
+	List &classes = LIST(this->property(1));
+	List::const_iterator cit = classes.begin();
+	for (; cit != classes.end(); cit++) {
+		dynamic_cast<const Class &>(*(*cit)).create_class();
+	}
+
+	write();
+}
+
 /*********************************
  * meat::grinder::Library::write *
  *********************************/
@@ -632,7 +644,7 @@ void grinder::Class::create_class() const {
     new meat::Class(super,
 										(uint8_t)cls_properties.size(),
 										(uint8_t)properties.size() +
-										CONST_CLASS(super).get_obj_properties());
+										CONST_CLASS(super).obj_properties());
 
   std::vector<uint8_t> bytecode;
 
@@ -699,7 +711,7 @@ void grinder::Class::create_class() const {
   vtable.clear();
 
   // Add the bytecode to the class.
-  cls->set_bytecode(bytecode.size(), (uint8_t *)&bytecode[0], COPY);
+  cls->bytecode(bytecode.size(), (uint8_t *)&bytecode[0], COPY);
 
   // Register the new class and add it to the library.
   library->library->add(cls, CONST_TEXT(className).c_str());
@@ -973,12 +985,12 @@ std::string meat::grinder::Class::cpp_new_class() const {
 
   hex << std::hex << std::showbase << std::setw(8)
       << std::setfill('0');
-  hex << CONST_CLASS(super).get_hash_id();
+  hex << CONST_CLASS(super).hash_id();
 
   cppcode += "\n  cls = new meat::Class(meat::Class::resolve(" + hex.str() +
     "), " + ::to_string(CONST_LIST(classProperties).size()) + ", " +
     ::to_string(CONST_LIST(objectProperties).size() +
-								CONST_CLASS(super).get_obj_properties()) + ");\n";
+								CONST_CLASS(super).obj_properties()) + ");\n";
 
   if (!(constr == meat::Null())) {
       cppcode += "  cls->set_constructor(" + cooked_name + "_constructor);\n";
@@ -993,7 +1005,7 @@ std::string meat::grinder::Class::cpp_new_class() const {
       ", " + cooked_name + "CMethods, meat::STATIC);\n";
 
   if (cpp_bytecode > 0)
-    cppcode += "  cls->set_bytecode(" + ::to_string(cpp_bytecode) +
+    cppcode += "  cls->bytecode(" + ::to_string(cpp_bytecode) +
       ", " + cooked_name + "Bytecode, meat::STATIC);\n";
 
   cppcode += std::string("  library.add(cls, \"") + class_name + "\");\n";
@@ -1226,7 +1238,7 @@ void meat::grinder::Method::compile() {
     List &cls_properties = LIST(cb->property(3));
 
     meat::grinder::ast::Method method(properties,
-																			CLASS(super).get_obj_properties(),
+																			CLASS(super).obj_properties(),
 																			cls_properties, 0);
     astree = (void *)&method;
 

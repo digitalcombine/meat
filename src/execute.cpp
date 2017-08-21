@@ -70,12 +70,12 @@ meat::Reference meat::execute(Reference context) {
 	} else {
 		/* The bytecode interpreter starts here */
 		meat::uint16_t ip = CONTEXT(context).ip;
-		const uint8_t *code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+		const uint8_t *code = CLASS(CONTEXT(context).get_class()).bytecode();
 		CONTEXT(context).set_local(2, context.weak()); // context
 
 #ifdef DEBUG
 		// Adds the class hash id and ip to debugging messages.
-#define BCLOC "(" << (CLASS(CONTEXT(context).get_class()).get_name()) \
+#define BCLOC "(" << (CLASS(CONTEXT(context).get_class()).name()) \
                   << "," << itohex(ip, 4) << ")"
 #endif
 
@@ -142,7 +142,7 @@ meat::Reference meat::execute(Reference context) {
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
-					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+					code = CLASS(CONTEXT(context).get_class()).bytecode();
 					CONTEXT(context).set_local(2, context.weak()); // context
 				}
 
@@ -204,7 +204,7 @@ meat::Reference meat::execute(Reference context) {
 				} else {
 					context = new_ctx;
 					ip = CONTEXT(context).ip;
-					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+					code = CLASS(CONTEXT(context).get_class()).bytecode();
 					CONTEXT(context).set_local(2, context.weak()); // context
 				}
 
@@ -364,7 +364,7 @@ meat::Reference meat::execute(Reference context) {
 				errmsg << "Unknown bytecode " << std::showbase << std::hex
 							 << (unsigned int)code[ip] << " @ " << (unsigned int)ip
 							 << " in class id "
-							 << (unsigned int)CLASS(CONTEXT(context).get_class()).get_hash_id();
+							 << (unsigned int)CLASS(CONTEXT(context).get_class()).hash_id();
 				throw Exception(errmsg.str());
 			}
 			}
@@ -378,7 +378,6 @@ meat::Reference meat::execute(Reference context) {
 				 * context. This ensures when a block context is kept that only
 				 * necessary contexts are kept.
 				 */
-				//Reference result = CONTEXT(context).get_result();
 				Reference old_ctx = context;
 				context = CONTEXT(context).get_messenger();
 				CONTEXT(old_ctx).set_messenger(meat::Null());
@@ -397,7 +396,7 @@ meat::Reference meat::execute(Reference context) {
 
 				if (not CONTEXT(context).is_done()) {
 					ip = CONTEXT(context).ip;
-					code = CLASS(CONTEXT(context).get_class()).get_bytecode();
+					code = CLASS(CONTEXT(context).get_class()).bytecode();
 					CONTEXT(context).set_local(2, context.weak()); // context
 				}
 			}

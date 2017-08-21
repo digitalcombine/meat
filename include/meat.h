@@ -136,7 +136,7 @@ namespace meat {
 
 		/** Returns a reference to the class type for the Object.
 		 */
-		Reference get_type() const { return o_type; };
+		Reference type() const { return _type; };
 
 		/** Tests Object if it is of type class.
 		 */
@@ -166,7 +166,7 @@ namespace meat {
 		/** Returns the number of properties the Object contains.
 		 * @return Return the number of properties.
 		 */
-		uint8_t get_num_of_props() const { return num_of_props; }
+		uint8_t properties() const { return _properties; }
     virtual Reference &property(uint8_t index);
     virtual const Reference &property(uint8_t index) const;
 
@@ -175,10 +175,9 @@ namespace meat {
 													 class_compiler_fn compiler);
 
 	private:
-		meat::Reference o_type;
-
-		uint8_t num_of_props;
-		meat::Reference *properties;
+		meat::Reference _type;
+		uint8_t _properties;
+		meat::Reference *_property;
 	};
 
 	/****************************************************************************
@@ -236,9 +235,9 @@ namespace meat {
 		/** Get the meat super class for this class.
      * @return A Reference to the class's super class.
      */
-		Reference get_super() const;
+		Reference super() const { return _super; }
 
-		virtual uint8_t get_obj_properties() const;
+		virtual uint8_t obj_properties() const;
 
 		virtual bool is_class() const { return true; };
 		virtual bool is_object() const { return false; };
@@ -253,8 +252,8 @@ namespace meat {
 
     /** Gets the internal 32bit hash id for the class.
      */
-		uint32_t get_hash_id() const { return hash_id; };
-		std::string get_name() const { return lookup(hash_id); }
+		uint32_t hash_id() const { return _hash_id; };
+		std::string name() const { return lookup(_hash_id); }
 
     /** Set the constructor function. The constructor is used by the method
      * new_Object() to create the actual internal Object. If a constructor
@@ -270,11 +269,12 @@ namespace meat {
 										alloc_t table_alloc);
 		void set_class_vtable(uint8_t entries, vtable_entry_t table[],
 													alloc_t table_alloc);
-		void set_bytecode(uint16_t size, uint8_t *code, alloc_t code_alloc);
+
+		void bytecode(uint16_t size, uint8_t *code, alloc_t code_alloc);
+		const uint8_t *bytecode() const;
 
 		const vtable_entry_t *get_vtable(uint8_t &count) const;
 		const vtable_entry_t *get_class_vtable(uint8_t &count) const;
-		const uint8_t *get_bytecode() const;
 
 		virtual void serialize(data::Archive &store,
 													 std::ostream &data_stream) const;
@@ -392,38 +392,19 @@ namespace meat {
 			constructor_t constructor;
 		};
 
-		class ByteCode {
-		public:
-			ByteCode();
-			virtual ~ByteCode() throw();
-
-			void write(std::ostream &lib_file) const;
-
-			void read(std::istream &lib_file);
-
-			void set(unsigned int size, uint8_t *code, alloc_t code_alloc);
-
-			const uint8_t *get() const;
-
-		private:
-			uint16_t size;
-			uint8_t *code;
-			bool is_static;
-		};
-
 		const vtable_entry_t *find(uint32_t hash_id) const;
 		const vtable_entry_t *class_find(uint32_t hash_id) const;
 
-		uint32_t hash_id;
+		uint32_t _hash_id;
+		Reference _super;
+		uint8_t _obj_properties;
 		data::Library *library;
-#ifdef DEBUG
-		std::string name;
-#endif /* DEBUG */
-		Reference super;
-		uint8_t obj_properties;
 
 		VTable vtable;
-		ByteCode bytecode;
+
+		uint16_t _bytecode_size;
+		uint8_t *_bytecode;
+		bool _bytecode_static;
 	};
 
 	/****************************************************************************
@@ -461,7 +442,7 @@ namespace meat {
 		virtual Reference get_class() const { return locals[1]; }
 		virtual Reference get_context() const { return locals[2]; }
 		virtual Reference get_super() const {
-      return CLASS(get_class()).get_super();
+      return CLASS(get_class()).super();
     };
 
 		/** Get the calling context.
@@ -559,7 +540,7 @@ namespace meat {
 			return CONST_CONTEXT(origin).get_context();
 		}
 		virtual Reference get_super() const {
-			return CONST_CLASS(get_class()).get_super();
+			return CONST_CLASS(get_class()).super();
 		}
 
 		virtual Reference get_param(uint8_t index) const {

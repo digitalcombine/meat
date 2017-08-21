@@ -38,7 +38,7 @@
  * meat::Object::Object *
  ************************/
 
-meat::Object::Object(Reference type) {
+meat::Object::Object(Reference type) : _type(type), _property(0) {
 #ifdef TESTING
 	meat::test::test("Object type setting", false);
 	if (!type.is_null()) {
@@ -48,18 +48,17 @@ meat::Object::Object(Reference type) {
 		meat::test::failed("Object type setting", false);
 	}
 #endif
-	o_type = type;
-	num_of_props = CLASS(type).get_obj_properties();
-	if (num_of_props > 0) {
+	_properties = CLASS(type).obj_properties();
+	if (_properties > 0) {
 		// Initialize the properties and set them all to Null.
-		properties = new Reference[num_of_props];
-		for (unsigned int c = 0; c < num_of_props; c++)
-			this->properties[c] = Null();
-	} else
-		properties = 0;
+		_property = new Reference[_properties];
+		for (unsigned int c = 0; c < _properties; c++)
+			_property[c] = Null();
+	}
 }
 
-meat::Object::Object(Reference type, meat::uint8_t properties) {
+meat::Object::Object(Reference type, meat::uint8_t properties)
+	: _type(type), _properties(properties), _property(0) {
 #ifdef TESTING
 	static bool first_fail = true;
 
@@ -73,15 +72,12 @@ meat::Object::Object(Reference type, meat::uint8_t properties) {
 		first_fail = false;
 	}
 #endif
-	o_type = type;
-	num_of_props = properties;
-	if (properties > 0) {
+	if (_properties > 0) {
 		// Initialize the properties and set them all to Null.
-		this->properties = new Reference[num_of_props];
-		for (unsigned int c = 0; c < num_of_props; c++)
-			this->properties[c] = Null();
-	} else
-		this->properties = 0;
+		_property = new Reference[_properties];
+		for (unsigned int c = 0; c < _properties; c++)
+			_property[c] = Null();
+	}
 }
 
 /*************************
@@ -90,8 +86,8 @@ meat::Object::Object(Reference type, meat::uint8_t properties) {
 
 meat::Object::~Object() throw () {
 	// Clean up all the properties
-	if (properties)
-		delete [] properties;
+	if (_property)
+		delete [] _property;
 }
 
 /*************************
@@ -99,7 +95,7 @@ meat::Object::~Object() throw () {
  *************************/
 
 bool meat::Object::is_type(Reference cls) const {
-	Reference my_type = o_type;
+	Reference my_type = _type;
 
 #ifdef TESTING
 	meat::test::test("Type testing against a class", false);
@@ -110,7 +106,7 @@ bool meat::Object::is_type(Reference cls) const {
 	while (!my_type.is_null()) {
 		if (my_type == cls)
 			return true;
-		my_type = CLASS(my_type).get_super();
+		my_type = CLASS(my_type).super();
 	}
 
 	return false;
@@ -141,21 +137,21 @@ void meat::Object::unserialize(data::Archive &store,
  **************************/
 
 meat::Reference &meat::Object::property(meat::uint8_t index) {
-	if (index < num_of_props)
-		return properties[index];
+	if (index < _properties)
+		return _property[index];
 	std::stringstream msg;
 	msg << "Invalid property index " << (unsigned int)index
-			<< " ( >= " << (unsigned int)num_of_props << ")"
+			<< " ( >= " << (unsigned int)_properties << ")"
 			<< std::endl;
 	throw Exception(msg.str());
 }
 
 const meat::Reference &meat::Object::property(meat::uint8_t index) const {
-	if (index < num_of_props)
-		return properties[index];
+	if (index < _properties)
+		return _property[index];
 	std::stringstream msg;
 	msg << "Invalid property index " << (unsigned int)index
-			<< " ( >= " << (unsigned int)num_of_props << ")"
+			<< " ( >= " << (unsigned int)_properties << ")"
 			<< std::endl;
 	throw Exception(msg.str());
 }
@@ -183,37 +179,32 @@ static class_registry_t &class_registry() {
  **********************/
 
 meat::Class::Class(const char *parent, uint8_t obj_props)
-	: Object(meat::ClassClass(), 0), library(NULL) {
+	: Object(meat::ClassClass(), 0), _hash_id(0), _obj_properties(obj_props),
+		library(NULL), _bytecode_size(0), _bytecode(0), _bytecode_static(true) {
 
-	this->hash_id = 0;
-	this->super = resolve(parent);
-	this->obj_properties = obj_props;
+	_super = resolve(parent);
 }
 
 meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
-	: Object(meat::ClassClass(), cls_props), library(NULL) {
+	: Object(meat::ClassClass(), cls_props), _hash_id(0),
+		_obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
+		_bytecode_static(true) {
 
-	this->hash_id = 0;
-	this->super = resolve(parent);
-	this->obj_properties = obj_props;
+	_super = resolve(parent);
 }
 
 meat::Class::Class(meat::Reference parent, uint8_t obj_props)
-	: Object(meat::ClassClass(true), 0), library(NULL) {
-
-	this->hash_id = 0;
-	this->super = parent;
-	this->obj_properties = obj_props;
+	: Object(meat::ClassClass(true), 0), _hash_id(0), _super(parent),
+		_obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
+		_bytecode_static(true) {
 }
 
 meat::Class::Class(meat::Reference parent,
 									 uint8_t cls_props,
 									 uint8_t obj_props)
-	: Object(meat::ClassClass(), cls_props), library(NULL) {
-
-	this->hash_id = 0;
-	this->super = parent;
-	this->obj_properties = obj_props;
+	: Object(meat::ClassClass(), cls_props), _hash_id(0), _super(parent),
+		_obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
+		_bytecode_static(true) {
 }
 
 /***********************
@@ -221,24 +212,17 @@ meat::Class::Class(meat::Reference parent,
  ***********************/
 
 meat::Class::~Class () throw () {
+	if (!_bytecode_static && _bytecode != NULL) delete[] _bytecode;
 }
 
-/**************************
- * meat::Class::get_super *
- **************************/
+/*******************************
+ * meat::Class::obj_properties *
+ *******************************/
 
-meat::Reference meat::Class::get_super() const {
-	return super;
-}
-
-/***********************************
- * meat::Class::get_obj_properties *
- ***********************************/
-
-meat::uint8_t meat::Class::get_obj_properties() const {
-	meat::uint8_t total = obj_properties;
-	if (!super.is_null())
-		total += CONST_CLASS(super).get_obj_properties();
+meat::uint8_t meat::Class::obj_properties() const {
+	meat::uint8_t total = _obj_properties;
+	if (!_super.is_null())
+		total += CONST_CLASS(_super).obj_properties();
 	return total;
 }
 
@@ -250,23 +234,22 @@ meat::Reference meat::Class::new_object() {
 	Reference result;
 
 	if (vtable.constructor)
-		return vtable.constructor((Reference &)(*this), get_obj_properties());
+		return vtable.constructor((Reference &)(*this), obj_properties());
 	else {
 		/*  If we don't have a native constructor then lets see if our super
 		 * does.
 		 */
-		Reference csuper = this->super;
+		Reference csuper = _super;
 		while (not csuper.is_null()) {
 			if (CLASS(csuper).vtable.constructor) {
         return CLASS(csuper).vtable.constructor((Reference &)(*this),
-                                                get_obj_properties());
+                                                obj_properties());
 			}
-			csuper = CLASS(csuper).super;
+			csuper = CLASS(csuper)._super;
 		}
 	}
 
-	throw Exception(std::string("Unable to create new object for ") +
-									get_name());
+	throw Exception(std::string("Unable to create new object for ") + name());
 }
 
 /********************************
@@ -295,13 +278,34 @@ void meat::Class::set_class_vtable(uint8_t entries, vtable_entry_t table[],
 	vtable.set_class_vtable(entries, table, table_alloc);
 }
 
-/*****************************
- * meat::Class::set_bytecode *
- *****************************/
+/*************************
+ * meat::Class::bytecode *
+ *************************/
 
-void meat::Class::set_bytecode(uint16_t size, uint8_t *code,
-															 alloc_t code_alloc) {
-	bytecode.set(size, code, code_alloc);
+void meat::Class::bytecode(uint16_t size, uint8_t *code, alloc_t code_alloc) {
+	//_bytecode.set(size, code, code_alloc);
+	if (size) {
+		_bytecode_size = size;
+    switch (code_alloc) {
+		case STATIC:
+			_bytecode = code;
+			_bytecode_static = true;
+			break;
+		case DYNAMIC:
+			_bytecode = code;
+			_bytecode_static = false;
+			break;
+		case COPY:
+			_bytecode = new uint8_t[_bytecode_size];
+			std::memcpy(_bytecode, code, _bytecode_size);
+			_bytecode_static = false;
+			break;
+    }
+	}
+}
+
+const meat::uint8_t *meat::Class::bytecode() const {
+	return _bytecode;
 }
 
 /***************************
@@ -323,14 +327,6 @@ meat::Class::get_class_vtable(uint8_t &count) const {
 	return vtable.centries;
 }
 
-/*****************************
- * meat::Class::get_bytecode *
- *****************************/
-
-const meat::uint8_t *meat::Class::get_bytecode() const {
-	return bytecode.get();
-}
-
 /**************************
  * meat::Class::serialize *
  **************************/
@@ -346,31 +342,36 @@ void meat::Class::serialize(data::Archive &store,
 
 void meat::Class::write(std::ostream &lib_file) const {
 
-	if (super.is_null()) {
+	if (_super.is_null()) {
 		throw Exception("Attempting to write an incomplete class with no super.");
 	}
 
 	// Write my own hash id.
-	meat::uint32_t cooked_id = endian::write_be(hash_id);
+	meat::uint32_t cooked_id = endian::write_be(_hash_id);
 	lib_file.write((const char *)&cooked_id, 4);
 
 	// Write our super's hash_id.
-	cooked_id = endian::write_be(((Class &)(*super)).hash_id);
+	cooked_id = endian::write_be(CONST_CLASS(_super)._hash_id);
 	lib_file.write((const char *)&cooked_id, 4);
 
 	/*  We only record the number of class properties there are. When the class
 	 * is unserialized all the class properties are initialize to Null.
 	 */
-	lib_file.put((char)get_num_of_props());
+	lib_file.put((char)properties());
 
 	// Record the number of properties for the objects.
-	lib_file.put((char)get_obj_properties());
+	lib_file.put((char)obj_properties());
 
 	// Write the virtual method table.
 	vtable.write(lib_file);
 
 	// Write the bytecode
-	bytecode.write(lib_file);
+	// Write the size of the bytecode.
+	meat::uint16_t size_be = endian::write_be(_bytecode_size);
+	lib_file.write((const char *)&size_be, 2);
+
+	// Write the bytecode to the file.
+	lib_file.write((const char *)_bytecode, _bytecode_size);
 }
 
 /***********************
@@ -395,11 +396,19 @@ meat::Class *meat::Class::import(std::istream &lib_file) {
 	meat::uint8_t obj_props = lib_file.get();
 
 	Class *cls = new Class(super, class_props, obj_props);
-	cls->hash_id = class_id;
+	cls->_hash_id = class_id;
 
 	cls->vtable.read(lib_file);
 
-	cls->bytecode.read(lib_file);
+	// Read in the size of the bytecode.
+	lib_file.read((char *)&cls->_bytecode_size, 2);
+	cls->_bytecode_size = endian::read_be(cls->_bytecode_size);
+
+	// Allocate space for the bytecode and read it in.
+	cls->_bytecode = new uint8_t[cls->_bytecode_size];
+	lib_file.read((char *)cls->_bytecode, cls->_bytecode_size);
+
+	cls->_bytecode_static = false;
 
 	class_registry_t &classes = class_registry();
 	if (classes.find(class_id) != classes.end()) {
@@ -423,7 +432,7 @@ std::string meat::Class::lookup(uint32_t hash_id) const {
  ***********************/
 
 void meat::Class::record(Reference &cls, bool replace) {
-	meat::uint32_t hash_id = CLASS(cls).hash_id;
+	meat::uint32_t hash_id = CLASS(cls)._hash_id;
 
 #ifdef DEBUG
 	std::cout << "CLASS: Recording class as " << std::hex
@@ -437,8 +446,8 @@ void meat::Class::record(Reference &cls, bool replace) {
 	}
 
 	classes[hash_id] = cls;
-	if (!CLASS(cls).super.is_null())
-		CLASS(cls).vtable.link(CLASS(CLASS(cls).super));
+	if (!CLASS(cls)._super.is_null())
+		CLASS(cls).vtable.link(CLASS(CLASS(cls)._super));
 
 #ifdef TESTING
 	if (!CLASS(cls).vtable.constructor) {
@@ -466,12 +475,9 @@ void meat::Class::record(Class *cls, const char *id, bool replace) {
 	}
 
 	classes[hash_id] = cls;
-	CLASS(cls).hash_id = hash_id;
-#ifdef DEBUG
-	CLASS(cls).name = id;
-#endif /* DEBUG */
-	if (!CLASS(cls).super.is_null())
-		CLASS(cls).vtable.link(CLASS(CLASS(cls).super));
+	CLASS(cls)._hash_id = hash_id;
+	if (!CLASS(cls)._super.is_null())
+		CLASS(cls).vtable.link(CLASS(CLASS(cls)._super));
 
 #ifdef TESTING
 	if (!CLASS(cls).vtable.constructor) {
@@ -499,12 +505,9 @@ void meat::Class::record(Reference &cls, const char *id, bool replace) {
 	}
 
 	classes[hash_id] = cls;
-	CLASS(cls).hash_id = hash_id;
-#ifdef DEBUG
-	CLASS(cls).name = id;
-#endif /* DEBUG */
-	if (!CLASS(cls).super.is_null())
-		CLASS(cls).vtable.link(CLASS(CLASS(cls).super));
+	CLASS(cls)._hash_id = hash_id;
+	if (!CLASS(cls)._super.is_null())
+		CLASS(cls).vtable.link(CLASS(CLASS(cls)._super));
 
 #ifdef TESTING
 	if (!CLASS(cls).vtable.constructor) {
@@ -524,19 +527,21 @@ void meat::Class::record(Reference &cls, const char *id, bool replace) {
 void meat::Class::unrecord(Reference &cls) {
 
 #ifdef DEBUG
-	std::cout << "CLASS: Unrecording class as " << std::hex
-						<< std::showbase << CLASS(cls).hash_id << std::endl;
+	std::cout << "CLASS: Unrecording class " << CLASS(cls).name() << std::endl;
 #endif
-	class_registry().erase(CLASS(cls).hash_id);
+	class_registry().erase(CLASS(cls)._hash_id);
 }
+
+/***********************
+ * meat::Class::relink *
+ ***********************/
 
 void meat::Class::relink() {
 #ifdef DEBUG
-	std::cout << "CLASS: Relinking class " << std::hex
-						<< std::showbase << hash_id << std::endl;
+	std::cout << "CLASS: Relinking class " << name() << std::endl;
 #endif
-	if (!super.is_null())
-		vtable.link(CLASS(super));
+	if (!_super.is_null())
+		vtable.link(CLASS(_super));
 }
 
 /************************
@@ -597,7 +602,7 @@ meat::Class::class_find(meat::uint32_t hash_id) const {
  *********************************************/
 
 meat::Class::operator meat::Reference &() const {
-	return resolve(hash_id);
+	return resolve(_hash_id);
 }
 
 /******************************************************************************
@@ -948,85 +953,6 @@ void meat::Class::VTable::read(std::istream &lib_file) {
 }
 
 /******************************************************************************
- * meat::Class::ByteCode Class
- */
-
-/***********************************
- * meat::Class::ByteCode::ByteCode *
- ***********************************/
-
-meat::Class::ByteCode::ByteCode() : size(0), code(NULL), is_static(true) {
-}
-
-meat::Class::ByteCode::~ByteCode() throw() {
-	// Deallocate the bytecode.
-	if (!is_static && code != NULL) delete[] code;
-}
-
-/********************************
- * meat::Class::ByteCode::write *
- ********************************/
-
-void meat::Class::ByteCode::write(std::ostream &lib_file) const {
-	// Write the size of the bytecode.
-	meat::uint16_t size_be = endian::write_be((meat::uint16_t)size);
-	lib_file.write((const char *)&size_be, 2);
-
-	// Write the bytecode to the file.
-	lib_file.write((const char *)code, size);
-}
-
-/*******************************
- * meat::Class::ByteCode::read *
- *******************************/
-
-void meat::Class::ByteCode::read(std::istream &lib_file) {
-	// Read in the size of the bytecode.
-	lib_file.read((char *)&size, 2);
-	size = endian::read_be(size);
-
-	// Allocate space for the bytecode and read it in.
-	code = new uint8_t[size];
-	lib_file.read((char *)code, size);
-
-	is_static = false;
-}
-
-/******************************
- * meat::Class::ByteCode::set *
- ******************************/
-
-void meat::Class::ByteCode::set(unsigned int size, uint8_t *code,
-																alloc_t code_alloc) {
-	if (size) {
-		this->size = size;
-    switch (code_alloc) {
-		case STATIC:
-			this->code = code;
-			is_static = true;
-			break;
-		case DYNAMIC:
-			this->code = code;
-			is_static = false;
-			break;
-		case COPY:
-			this->code = new uint8_t[this->size];
-			std::memcpy(this->code, code, this->size);
-			is_static = false;
-			break;
-    }
-	}
-}
-
-/******************************
- * meat::Class::ByteCode::get *
- ******************************/
-
-const meat::uint8_t *meat::Class::ByteCode::get() const {
-	return code;
-}
-
-/******************************************************************************
  * meat::Context Class
  */
 
@@ -1157,9 +1083,8 @@ void meat::Context::set_result_index(uint8_t local_parent_index) {
 
 void meat::Context::set_result(Reference value) {
 	result = value;
-	if (result_index) {
+	if (result_index)
 		CONTEXT(messenger).set_local(result_index, result);
-	}
 }
 
 /*****************************
@@ -1666,18 +1591,18 @@ meat::Reference meat::message(meat::Reference object,
 		 */
 		while (m_entry == 0 and !cls.is_null()) {
 			m_entry = ((Class &)(*cls)).class_find(hash_id);
-			if (m_entry == 0) cls = CLASS(cls).get_super();
+			if (m_entry == 0) cls = CLASS(cls).super();
 		}
 
 	} else {
-		obj_cls = cls = object->get_type();
+		obj_cls = cls = object->type();
 
 		/*  If the method is inherited then start looking through the parent
 		 * classes to find the actual method entry.
 		 */
 		while (m_entry == 0 and !cls.is_null()) {
 			m_entry = CLASS(cls).find(hash_id);
-			if (m_entry == 0) cls = CLASS(cls).get_super();
+			if (m_entry == 0) cls = CLASS(cls).super();
 		}
 	}
 
@@ -1735,7 +1660,7 @@ meat::Reference meat::message_super(meat::Reference object,
 		 */
 		while (m_entry == 0 and !cls.is_null()) {
 			m_entry = CLASS(cls).class_find(hash_id);
-			if (m_entry == 0) cls = CLASS(cls).get_super();
+			if (m_entry == 0) cls = CLASS(cls).super();
 		}
 
 	} else {
@@ -1746,7 +1671,7 @@ meat::Reference meat::message_super(meat::Reference object,
 		 */
 		while (m_entry == 0 and !cls.is_null()) {
 			m_entry = CLASS(cls).find(hash_id);
-			if (m_entry == 0) cls = CLASS(cls).get_super();
+			if (m_entry == 0) cls = CLASS(cls).super();
 		}
 	}
 
@@ -1779,7 +1704,7 @@ meat::Reference meat::message_super(meat::Reference object,
 
 #ifdef DEBUG
 std::ostream &meat::operator <<(std::ostream &out, Class &cls) {
-	return (out << "CLASS<" << cls.name << ">");
+	return (out << "CLASS<" << cls.name() << ">");
 }
 #endif
 

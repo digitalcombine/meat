@@ -166,16 +166,29 @@ static void build_library_app() {
 		std::cout << "DEBUG: Compiling " << *it << std::endl;
 #endif /* DEBUG */
 
-		std::ifstream meat_file;
+		int ftype = meat::data::fl_type(*it);
+		if (ftype == meat::data::FL_ARCHIVE) {
+			meat::data::Archive arch(*it);
+			meat::Reference obj = arch.get_object();
 
-		meat_file.open(*it, std::ios::in);
+			if (obj->is_type("Grinder.Library")) {
+				library = obj;
+				break;
+			} else {
+			}
 
-		if (meat_file.is_open()) {
-			exec_library(library, meat_file);
-			meat_file.close();
 		} else {
-			std::cerr << "ERROR: Unable to open " << *it << std::endl;
-			return;
+			std::ifstream meat_file;
+
+			meat_file.open(*it, std::ios::in);
+
+			if (meat_file.is_open()) {
+				exec_library(library, meat_file);
+				meat_file.close();
+			} else {
+				std::cerr << "ERROR: Unable to open " << *it << std::endl;
+				return;
+			}
 		}
 	}
 
