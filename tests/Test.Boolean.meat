@@ -23,142 +23,162 @@
 
 Library import: UnitTest
 
-#==============================================================================
+#============================================================================
 #
-Test subClass: Test.BooleanTrueFalse body: {
+Test.Suite subClass: Test.Boolean body: {
 
-  method initialize {
-    super initialize
-    self setTitle: "Creating Boolean True/False objects"
-  }
-
-  method execute {
-    #self test: {
-      result = [Boolean true]
-      [result isType: Boolean] isFalse: {
-        self fail: "Boolean true didn't return a boolean value"
-      }
-      result isFalse: {
-        self fail: "Boolean true didn't return a true value"
-      }
-    #}
-
-    #self test: {
-      result = [Boolean false]
-      [result isType: Boolean] isFalse: {
-        self fail: "Boolean false didn't return a boolean value"
-      }
-      result isTrue: {
-        self fail: "Boolean false didn't return a false value"
-      }
-    #}
-  }
-}
-
-#==============================================================================
-#
-Test subClass: Test.BooleanFlow body: {
-
-  method initialize {
-    super initialize
-    self setTitle: "Boolean decision flow control"
-  }
-
-  method execute {
-    true = [Boolean true]
-    false = [Boolean false]
-
-    self test: {
-      Exception try: {
-        true isTrue: {
-        }
-      } catch: {
-        self fail: "Boolean message isTrue: is unresolved"
-      }
-    }
-
-    self test: {    
-      true isTrue: {
-      } else: {
-        self fail: "True ifTrue:else: ran else block"
-      }
-    }
-
-    self test: {
-      Exception try: {
-        true isFalse: {
-          self fail: "True ifFalse: ran the block"
-        }
-      } catch: {
-        self fail: "Boolean message isFalse: is unresolved"
-      }
-    }
-
-    true isFalse: {
-      self fail: "True ifFalse:else ran the false block"
-    } else: {
-    }
-
-    false isTrue: {
-      self fail: "False ifTrue: ran block"
-    }
-    
-    false isTrue: {
-      self fail: "False ifTrue:else: ran block"
-    } else: {
-    }
-
-    false isFalse: {
-    }
-
-    false isFalse: {
-    } else: {
-      self fail: "False ifFalse:else ran the else block"
-    }
-  }
-}
-
-#==============================================================================
-#
-
-Test subClass: Test.BooleanOperators body: {
-
-  method initialize {
-    super initialize
-    self setTitle: "Boolean operators"
-  }
+  method setup {
+    self title: "3.7 The Boolean Class"
   
-  method execute {
     true = [Boolean true]
     false = [Boolean false]
-    
-    [true == [Boolean true]] isFalse: {
-      self fail: "Boolean equality test returned false"
+  
+    self title: "3.7.1 Class method true" test: {
+      [true isNull] isTrue: {
+        self failed: "The method true returned null"
+      }
+      
+      [true == false] isTrue: {
+        self failed: "The true and false objects appear to be the same"
+      }
+      
+      true isFalse: {
+        self failed: "The true object appears to be false"
+      }
+      self pass
     }
     
-    [true != [Boolean true]] isTrue: {
-      self fail: "Boolean inequality test returned true"
+    self title: "3.7.2 Class method false" test: {
+      [false isNull] isTrue: {
+        self failed: "The method false returned null"
+      }
+      
+      [false == true] isTrue: {
+        self failed: "The false and true objects appear to be the same"
+      }
+      
+      false isTrue: {
+        self failed: "The false object appears to be true"
+      }
+      self pass
     }
     
-    # Logical AND testing
-    [false and: false] isTrue:  { self fail: "Logical AND 0 and 0 returned 1" }
-    [true and: false]  isTrue:  { self fail: "Logical AND 1 and 0 returned 1" }
-    [false and: true]  isTrue:  { self fail: "Logical AND 0 and 1 returned 1" }
-    [true and: true]   isFalse: { self fail: "Logical AND 1 and 1 returned 0" }
+    self title: "3.7.3 Method isTrue:" test: {
+      false isTrue: {
+        self failed: "Method isTrue: executed block on false object"
+      }
     
-    # Logical OR testing
-    [false or: false] isTrue:  { self fail: "Logical OR 0 and 0 returned 1" }
-    [true or: false]  isFalse: { self fail: "Logical OR 1 and 0 returned 0" }
-    [false or: true]  isFalse: { self fail: "Logical OR 0 and 1 returned 0" }
-    [true or: true]   isFalse: { self fail: "Logical OR 1 and 1 returned 0" }
+      true isTrue: {
+        self pass
+      }
+      self failed: "Method isTrue: failed to execute block on true object"
+    }
     
-    # Logical XOR testing
-    [false xor: false] isTrue:  { self fail: "Logical XOR 0 and 0 returned 1" }
-    [true xor: false]  isFalse: { self fail: "Logical XOR 1 and 0 returned 0" }
-    [false xor: true]  isFalse: { self fail: "Logical XOR 0 and 1 returned 0" }
-    [true xor: true]   isTrue:  { self fail: "Logical XOR 1 and 1 returned 1" }
+    self title: "3.7.4 Method isTrue: else:" test: {
+      passed = [Boolean false]
+      true isTrue: {
+        passed = [Boolean true]
+      } else: {
+        self failed: "Method isTrue: else: executed false block on true object"
+      }
+      passed isFalse: {
+        self failed: "Method isTrue: else: failed to execute true block for true object"
+      }
+      
+      passed = [Boolean false]
+      false isTrue: {
+        self failed: "Method isTrue: else: executed true block on false object"
+      } else: {
+        passed = [Boolean true]
+      }
+      passed isFalse: {
+        self failed: "Method isTrue: else: failed to execute false block for false object"
+      }
+      
+      self pass
+    }
     
-    self pass
+    self title: "3.7.5 Method isFalse:" test: {
+      true isFalse: {
+        self failed: "Method isFalse: executed block on true object"
+      }
+    
+      false isFalse: {
+        self pass
+      }
+      self failed: "Method isFalse: failed to execute block on false object"
+    }
+    
+    self title: "3.7.6 Method isFalse: else:" test: {
+      passed = [Boolean false]
+      false isFalse: {
+        passed = [Boolean true]
+      } else: {
+        self failed: "Method isFalse: else: executed true block on false object"
+      }
+      passed isFalse: {
+        self failed: "Method isFalse: else: failed to execute false block for false object"
+      }
+      
+      passed = [Boolean false]
+      true isFalse: {
+        self failed: "Method isFalse: else: executed false block on true object"
+      } else: {
+        passed = [Boolean true]
+      }
+      passed isFalse: {
+        self failed: "Method isFalse: else: failed to execute true block for true object"
+      }
+      
+      self pass
+    }
+    
+    self title: "3.7.7 Method not" test: {
+      [true not] isTrue: {
+        self failed: "Method failed to invert the true object"
+      }
+      
+      [false not] isFalse: {
+        self failed: "Method failed to invert the false object"
+      }
+      self pass
+    }
+    
+    self title: "3.7.8 Method and:" test: {
+      [false and: false] isTrue:  { self fail: "false and: false returned true" }
+      [true and: false]  isTrue:  { self fail: "Logical AND 1 and 0 returned 1" }
+      [false and: true]  isTrue:  { self fail: "Logical AND 0 and 1 returned 1" }
+      [true and: true]   isFalse: { self fail: "Logical AND 1 and 1 returned 0" }
+      self pass
+    }
+    
+    self title: "3.7.9 Method or:" test: {
+      [false or: false] isTrue:  { self fail: "Logical OR 0 and 0 returned 1" }
+      [true or: false]  isFalse: { self fail: "Logical OR 1 and 0 returned 0" }
+      [false or: true]  isFalse: { self fail: "Logical OR 0 and 1 returned 0" }
+      [true or: true]   isFalse: { self fail: "Logical OR 1 and 1 returned 0" }
+      self pass
+    }
+    
+    self title: "3.7.10 Method xor:" test: {
+      [false xor: false] isTrue:  { self fail: "Logical XOR 0 and 0 returned 1" }
+      [true xor: false]  isFalse: { self fail: "Logical XOR 1 and 0 returned 0" }
+      [false xor: true]  isFalse: { self fail: "Logical XOR 0 and 1 returned 0" }
+      [true xor: true]   isTrue:  { self fail: "Logical XOR 1 and 1 returned 1" }
+      self pass
+    }
+    
+    self title: "3.7.11 Method asText" test: {
+      [[true asText] == "true"] isFalse: {
+        self failed: ["true asText returned an invalid value of " + \
+          [true asText]]
+      }
+      [[false asText] == "false"] isFalse: {
+        self failed: ["false asText returned an invalid value of " + \
+          [false asText]]
+      }
+      self pass
+    }
   }
-}
 
+}

@@ -1,0 +1,70 @@
+# Boolean Class and Object Tests
+#
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+#
+#  These tests are sort of useless in the sense that testing the results rely
+# on the Boolean functionallity itself. So this becomes a test of "if it works
+# it works", but it really does need to work for all the other testing.
+
+Library import: UnitTest
+
+#==============================================================================
+#
+Test.Suite subClass: Test.Null body: {
+
+  method setup {
+    self title: "3.5 The Null Class"
+    
+    self title: "3.5.1 Class method newObject" test: {
+      Exception try: {
+        Null newObject
+      } catch: {
+        self pass
+      }
+      self fail: "The newObject method failed to throw an exception"
+    }
+    
+    self title: "3.5.2 Class method subClass: body:" test: {
+      Exception try: {
+        Null subClass: Null2 body: { }
+      } catch: {
+        self pass
+      }
+      self fail: "The newObject method failed to throw an exception"
+    }
+    
+    self title: "3.5.3 Class method object" test: {
+      nullObject = [Null object]
+      
+      [null != nullObject] isTrue: {
+        self fail: "The class method failed to return the null object"
+      }
+      
+      self pass
+    }
+    
+    self title: "3.5.4 Method isNull" test: {
+      [null isNull] isFalse: {
+        self fail: "The isNull method failed to return true"
+      }
+      self pass
+    }
+    
+  }
+
+}

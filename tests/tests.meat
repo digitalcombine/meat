@@ -19,7 +19,6 @@
 
 archive import: "UnitTest"
 archive import: "Test.Application"
-archive import: "Test.Boolean"
 archive import: "Test.Exception"
 archive import: "Test.Numeric"
 archive import: "Test.Number"
@@ -34,9 +33,6 @@ suite = [TestSuite new]
 
 # Add all our tests to the test suite
 suite add: [Test.Application new]
-suite add: [Test.BooleanTrueFalse new]
-suite add: [Test.BooleanFlow new]
-suite add: [Test.BooleanOperators new]
 suite add: [Test.Exception new]
 suite add: [Test.Numeric new]
 suite add: [Test.Integer new]

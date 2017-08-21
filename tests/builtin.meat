@@ -360,6 +360,10 @@ Object subClass: Nullᶲ body: {
       for: [context messenger]
   }
 
+  method object {
+    context return: nullObject
+  }
+
   method isNull {
     context return: [Boolean true]
   }

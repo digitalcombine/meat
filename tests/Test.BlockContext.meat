@@ -26,6 +26,7 @@ Library import: UnitTest
 
 Object subClass: BlockTests body: {
 
+  # Simply executes a block context.
 	class method executeBlock: block {
 	  [block isType: BlockContext] isFalse: {
       self fail: "The context is not a BlockContext object."
@@ -33,6 +34,7 @@ Object subClass: BlockTests body: {
 	  block execute
 	}
 
+  # Returns a block context that executes a context break.
   class method breakBlock {
 	  context return: {
 		  context break
@@ -40,6 +42,7 @@ Object subClass: BlockTests body: {
 		}
 	}
 
+  # Returns a nested block context that executes a context break.
 	class method nestedBreakBlock {
     context return: {
       self executeBlock: {
@@ -50,6 +53,26 @@ Object subClass: BlockTests body: {
 		}
 	}
 
+  # Returns a block context that executes a context continue.
+  class method continueBlock {
+	  context return: {
+		  context continue
+			Exception throw: "BlockContext failed to continue"
+		}
+	}
+
+  # Returns a nested block context that executes a context continue.
+	class method nestedContinueBlock {
+    context return: {
+      self executeBlock: {
+        context continue
+        Exception throw: "Nested BlockContext failed to continue"
+      }
+			Exception throw: "Nested BlockContext failed to continue"
+		}
+	}
+
+  # Returns a block context that executes a context return.
   class method returnBlock {
     self executeBlock: {
       context return
@@ -58,7 +81,7 @@ Object subClass: BlockTests body: {
     Exception throw: "Failed to return from BlockContext"
   }
 
-  # Make sure we return as expected in nested block contexts.
+  # Returns a nested block context that executes a context return.
   class method returnBlockInBlock {
     self executeBlock: {
       self executeBlock: {
@@ -69,6 +92,7 @@ Object subClass: BlockTests body: {
     Exception throw: "Failed to return in nested BlockContexts"
   }
 
+  # Returns a block context that executes a context return result.
 	class method returnBlockResult {
     self executeBlock: {
       context return: 10
@@ -77,7 +101,7 @@ Object subClass: BlockTests body: {
     Exception throw: "Failed to return result from BlockContext"
   }
 
-  # Make sure we return as expected in nested block contexts.
+  # Returns a nested block context that executes a context return result.
   class method returnBlockInBlockResult {
     self executeBlock: {
       self executeBlock: {
@@ -96,16 +120,18 @@ Object subClass: BlockTests body: {
 Test.Suite subClass: Test.BlockContext body: {
 
   method setup {
+    self title: "3.4 The BlockContext Class"
+  
     other = ""
 
-    self title: "4.4.1 Method execute" test: {
+    self title: "3.4.1 Method execute" test: {
 		  BlockTests executeBlock: {
         self pass
 		  }
 			self fail: "Failed to execute the block"
     }
 
-    self title: "4.4.2 Method executeOnBreak:" test: {
+    self title: "3.4.2 Method executeOnBreak:" test: {
 			# Test that we can capture a break event from a block context.
 			failed = [Boolean true]
 			block = [BlockTests breakBlock]
@@ -129,7 +155,7 @@ Test.Suite subClass: Test.BlockContext body: {
 			self pass
     }
 
-		self title: "4.4.3 Method executeOnBreak:onContinue:" test: {
+		self title: "3.4.3 Method executeOnBreak:onContinue:" test: {
 			# Test that we can capture a break event from a block context.
 			failed = [Boolean true]
 			block = [BlockTests breakBlock]
@@ -147,13 +173,61 @@ Test.Suite subClass: Test.BlockContext body: {
 			  failed = [Boolean false]
 			}
 			failed isTrue: {
-        self fail: "executeOnBreak failed to capture break"
+        self fail: "executeOnBreak failed to capture nested break"
 		  }
 
 			self pass
     }
 
-		self title: "4.4.8 Method return" test: {
+    self title: "3.4.4 Method executeOnContinue:" test: {
+			# Test that we can capture a break event from a block context.
+			failed = [Boolean true]
+			block = [BlockTests continueBlock]
+			block executeOnContinue: {
+			  failed = [Boolean false]
+			}
+			failed isTrue: {
+        self fail: "executeOnContinue failed to capture continue"
+		  }
+
+			# Test that we can capture a break event from a nested block context.
+			failed = [Boolean true]
+			block = [BlockTests nestedContinueBlock]
+			block executeOnContinue: {
+			  failed = [Boolean false]
+			}
+			failed isTrue: {
+        self fail: "executeOnContinue failed to capture nested continue"
+		  }
+
+			self pass
+    }
+
+    self title: "3.4.5 Method localVariables" test: {
+      result = [context localVariables]
+      [result isType: Integer] isFalse: {
+        self fail: "Method localVariables failed to return an integer result"
+      }
+      [result >= 4] isFalse: {
+        self fail: "Method localVariables return a result smaller than 4"
+      }
+      self pass
+    }
+
+    self title: "3.4.6 Method getLocal:" test: {
+      [[context getLocal: 0] != self] isTrue: {
+        self fail: "Method getLocal failed to return self for index 0"
+      }
+      [[context getLocal: 1] != class] isTrue: {
+        self fail: "Method getLocal failed to return class for index 1"
+      }
+      [[context getLocal: 2] != context] isTrue: {
+        self fail: "Method getLocal failed to return context for index 2"
+      }
+      self pass
+    }
+
+		self title: "3.4.8 Method return" test: {
 
 			BlockTests returnBlock
 			BlockTests returnBlockInBlock
@@ -161,7 +235,7 @@ Test.Suite subClass: Test.BlockContext body: {
 		  self pass
 		}
 
-    self title: "4.4.9 Method return:" test: {
+    self title: "3.4.9 Method return:" test: {
 
 			[[BlockTests returnBlockResult] == 10] isFalse: {
 			  self fail: "BlockContext return: failed to return the expected result"
@@ -174,7 +248,7 @@ Test.Suite subClass: Test.BlockContext body: {
 		  self pass
 		}
 
-		self title: "4.4.10 Method continue" test: {
+		self title: "3.4.10 Method continue" test: {
 		  counter = 1
       context repeat: {
         [context isType: BlockContext] isFalse: {
@@ -194,7 +268,7 @@ Test.Suite subClass: Test.BlockContext body: {
 			self pass
 		}
 
-		self title: "4.4.11 Method break" test: {
+		self title: "3.4.11 Method break" test: {
 		  context repeat: {
         [context isType: BlockContext] isFalse: {
           self fail: "Context is not a BlockContext object."

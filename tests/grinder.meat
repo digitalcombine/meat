@@ -103,7 +103,8 @@ Object subClass: Grinder.Libraryᶲ body: {
         context return: .cls
       }
     }
-    Exception throw: [[["Class " + className] + " was not found in library "] + name]
+    Exception throw: [[["Class " + className] + \
+		                   " was not found in library "] + name]
   }
 
   method getClassList {
@@ -139,6 +140,7 @@ Object subClass: Grinder.Classᶲ body: {
   property objectMethods
   property classMethods
   property constr
+	property documentation
 
   constructor {
     return new meat::grinder::Class(klass, properties);
@@ -166,6 +168,14 @@ Object subClass: Grinder.Classᶲ body: {
 
   method getSuperName {
 	  context return: superClass
+	}
+
+	method setDocumentation: document {
+	  documentation = document
+	}
+
+	method getDocumentation {
+	  context return: documentation
 	}
 
   method addProperty: propertyName {

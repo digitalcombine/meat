@@ -22,9 +22,10 @@ Library import: UnitTest
 Test.Suite subClass: Test.Object body: {
 
   method setup {
+    self title: "3.1 The Object Class"
     other = ""
 
-    self title: "4.1.1 The == methods" test: {
+    self title: "3.1.1 The == methods" test: {
       [self == self] isFalse: {
         self fail: "self == self returned false."
       }
@@ -42,7 +43,7 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.2 The != methods" test: {
+    self title: "3.1.2 The != methods" test: {
       [self != self] isTrue: {
         self fail: "self != self returned true."
       }
@@ -60,7 +61,7 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.3 The is: methods" test: {
+    self title: "3.1.3 The is: methods" test: {
       [self is: self] isFalse: {
         self fail: "self is: self returned false."
       }
@@ -78,7 +79,7 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.4 The isNot: methods" test: {
+    self title: "3.1.4 The isNot: methods" test: {
       [self isNot: self] isTrue: {
         self fail: "self isNot: self returned true."
       }
@@ -96,7 +97,7 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.5 The isObject methods" test: {
+    self title: "3.1.5 The isObject methods" test: {
       [self isObject] isFalse: {
         self fail: "Object isObject didn't return true"
       }
@@ -107,7 +108,7 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.6 The isClass methods" test: {
+    self title: "3.1.6 The isClass methods" test: {
       [self isClass] isTrue: {
         self fail: "Object isClass didn't return false"
       }
@@ -118,7 +119,7 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.7 The isNull methods" test: {
+    self title: "3.1.7 The isNull methods" test: {
       [self isNull] isTrue: {
         self fail: "Object isNull method return true."
       }
@@ -129,15 +130,15 @@ Test.Suite subClass: Test.Object body: {
       self pass
     }
 
-    self title: "4.1.8 The type methods" test: {
+    self title: "3.1.8 The type methods" test: {
       self pass
     }
 
-    self title: "4.1.9 Method initialize" test: {
+    self title: "3.1.9 Method initialize" test: {
       self pass
     }
 
-    self title: "4.1.10 Method weak" test: {
+    self title: "3.1.10 Method weak" test: {
       self pass
     }
   }

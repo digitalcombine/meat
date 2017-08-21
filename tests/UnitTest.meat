@@ -24,82 +24,82 @@ Library import: Console
 
 Object subClass: Test body: {
 
-	# The title for the test.
-	property title
-	# Flag if the test passed or failed.
-	property passed
-	# If the test failed, the reason why.
-	property failExplanation
+  # The title for the test.
+  property title
+  # Flag if the test passed or failed.
+  property passed
+  # If the test failed, the reason why.
+  property failExplanation
 
-	# Create a new Test object.
-	class method new {
-		self newObject
-		context return: self
-	}
+  # Create a new Test object.
+  class method new {
+    self newObject
+    context return: self
+  }
 
-	# Initialize a the new Test object with default values.
-	method initialize {
-		super initialize
+  # Initialize a the new Test object with default values.
+  method initialize {
+    super initialize
 
-		passed = [Boolean true]
-		title = ""
-		failExplanation = [List new]
-	}
+    passed = [Boolean true]
+    title = ""
+    failExplanation = [List new]
+  }
 
-	#  Set the title of the test. This should be used by subclass in their
-	# initialize methods.
-	method setTitle: newTitle {
-		title = newTitle
-	}
+  #  Set the title of the test. This should be used by subclass in their
+  # initialize methods.
+  method setTitle: newTitle {
+    title = newTitle
+  }
 
-	method getTitle {
-		context return: title
-	}
+  method getTitle {
+    context return: title
+  }
 
-	# Execute
-	method execute {
-	}
+  # Execute
+  method execute {
+  }
 
-	method test: body {
-	  Exception try: {
-			body execute
-		} catch: .error do: {
-			failExplanation append: [.error message]
-		}
-	}
+  method test: body {
+    Exception try: {
+      body execute
+    } catch: .error do: {
+      failExplanation append: [.error message]
+    }
+  }
 
-	method pass {
-		passed = [Boolean true]
-		[context messenger] return
-	}
+  method pass {
+    passed = [Boolean true]
+    [context messenger] return
+  }
 
-	method fail: reason {
-		passed = [Boolean false]
-		failExplanation append: reason
-		[context messenger] return
-	}
+  method fail: reason {
+    passed = [Boolean false]
+    failExplanation append: reason
+    [context messenger] return
+  }
 
-	method hasPassed {
-		context return: passed
-	}
+  method hasPassed {
+    context return: passed
+  }
 
-	# Return the reason why the test failed
-	method whyFailed {
-		passed isFalse: {
-			context return: failExplanation
-		} else: {
-			res = [List new]
-			res append: "But it didn't fail"
-			context return: res
-		}
-	}
+  # Return the reason why the test failed
+  method whyFailed {
+    passed isFalse: {
+      context return: failExplanation
+    } else: {
+      res = [List new]
+      res append: "But it didn't fail"
+      context return: res
+    }
+  }
 
-	#  Set the reason why the test failed, but unlike the method fail: it does
-	# not kill the context where the failure occured.
-	method whyFailed: reason {
-		passed = [Boolean false]
-		failExplanation append: reason
-	}
+  #  Set the reason why the test failed, but unlike the method fail: it does
+  # not kill the context where the failure occured.
+  method whyFailed: reason {
+    passed = [Boolean false]
+    failExplanation append: reason
+  }
 }
 
 #==============================================================================
@@ -107,80 +107,80 @@ Object subClass: Test body: {
 
 Console subClass: TestSuite body: {
 
-	# A list for all the tests added to the TestSuite.
-	property testList
+  # A list for all the tests added to the TestSuite.
+  property testList
 
-	# Creates a new TestSuite object.
-	class method new {
-		self newObject
-		context return: self
-	}
+  # Creates a new TestSuite object.
+  class method new {
+    self newObject
+    context return: self
+  }
 
-	# Initialization a new TestSuite object with default values.
-	method initialize {
-		super initialize
+  # Initialization a new TestSuite object with default values.
+  method initialize {
+    super initialize
 
-		testList = [List new]
-	}
+    testList = [List new]
+  }
 
-	# Add a test to the test suite.
-	method add: test {
-		[test isType: Test] isTrue: {
-			testList append: test
-		} else: {
-			Exception throw: "Unable to add non-Test objects to test suite"
-		}
-	}
+  # Add a test to the test suite.
+  method add: test {
+    [test isType: Test] isTrue: {
+      testList append: test
+    } else: {
+      Exception throw: "Unable to add non-Test objects to test suite"
+    }
+  }
 
-	# Application entry point.
-	method entry {
-		passedCount = 0
-		failedTests = [List new]
+  # Application entry point.
+  method entry {
+    passedCount = 0
+    failedTests = [List new]
 
-		# Execute the tests.
-		Console writeLn: ["=" * 79]
-		testList forEach: .test do: {
-			Console write: [["TEST: " + [.test getTitle]] + "... "]
+    # Execute the tests.
+    Console writeLn: ["=" * 79]
+    testList forEach: .test do: {
+      Console write: [["TEST: " + [.test getTitle]] + "... "]
 
-			Exception try: {
-				.test execute
-			} catch: .error do: {
-				.test whyFailed: [.error message]
-			}
+      Exception try: {
+        .test execute
+      } catch: .error do: {
+        .test whyFailed: [.error message]
+      }
 
-			# Record the results of the test.
-			[.test hasPassed] isTrue: {
-				Console writeLn: "Passed"
-				passedCount = [passedCount + 1]
-			} else: {
-				Console writeLn: "Failed"
-				[.test whyFailed] forEach: .message do: {
-					Console writeLn: ["      - " + .message]
-				}
-				failedTests append: .test
-			}
-		}
+      # Record the results of the test.
+      [.test hasPassed] isTrue: {
+        Console writeLn: "Passed"
+        passedCount = [passedCount + 1]
+      } else: {
+        Console writeLn: "Failed"
+        [.test whyFailed] forEach: .message do: {
+          Console writeLn: ["      - " + .message]
+        }
+        failedTests append: .test
+      }
+    }
 
-		# Display a summary of the test results.
-		Console writeLn: ["=" * 79]
-		Console writeLn: [[[testList size] asText] + " tests completed"]
-		Console writeLn: [[passedCount asText] + " tests passed"]
+    # Display a summary of the test results.
+    Console writeLn: ["=" * 79]
+    Console writeLn: [[[testList size] asText] + " tests completed"]
+    Console writeLn: [[passedCount asText] + " tests passed"]
 
-		# Display all the failed tests. Lets hope this is useless code!!!
-		failedTests forEach: .test do: {
-			Console writeLn: [[.test getTitle] + " failed"]
-			[.test whyFailed] forEach: .message do: {
-				Console writeLn: ["  " + .message]
-			}
-		}
+    # Display all the failed tests. Lets hope this is useless code!!!
+    failedTests forEach: .test do: {
+      Console writeLn: [[.test getTitle] + " failed"]
+      [.test whyFailed] forEach: .message do: {
+        Console writeLn: ["  " + .message]
+      }
+    }
 
-		# Return success or failure according to the test results.
-		[failedTests isEmpty] isTrue: {
-			context return: 0
-		} else: {
-			context return: 1
-		}
-	}
+    # Return success or failure according to the test results.
+    [failedTests isEmpty] isTrue: {
+      context return: 0
+    } else: {
+      context return: 1
+    }
+  }
 }
 
 #==============================================================================
@@ -188,58 +188,58 @@ Console subClass: TestSuite body: {
 
 Object subClass: Test.Test body: {
 
-	property title
-	property test
-	property passed
-	property failedReason
+  property title
+  property test
+  property passed
+  property failedReason
 
-	class method new: testTitle test: body {
-		self newObject
-		title = testTitle
-		test = body
-		context return: self
-	}
+  class method new: testTitle test: body {
+    self newObject
+    title = testTitle
+    test = body
+    context return: self
+  }
 
-	method initialize {
-		passed = [Boolean false]
-		title = ""
-		failedReason = "Unknown reason"
-	}
+  method initialize {
+    passed = [Boolean false]
+    title = ""
+    failedReason = "Unknown reason"
+  }
 
-	# Run the test.
-	method run {
-		Exception try: {
-			Console write: [["TEST: " + title] + "... "]
-			test execute
-		} catch: .error do: {
-			failedReason = [.error message]
-			passed = [Boolean false]
-		}
+  # Run the test.
+  method run {
+    Exception try: {
+      Console write: [["TEST: " + title] + "... "]
+      test execute
+    } catch: .error do: {
+      failedReason = [.error message]
+      passed = [Boolean false]
+    }
 
-		passed isTrue: {
-			Console writeLn: "passed"
-		} else: {
-			Console writeLn: "failed"
-			Console writeLn: ["  " + failedReason]
-		}
-	}
+    passed isTrue: {
+      Console writeLn: "passed"
+    } else: {
+      Console writeLn: "failed"
+      Console writeLn: ["  " + failedReason]
+    }
+  }
 
-	method hasPassed {
-		context return: passed
-	}
+  method hasPassed {
+    context return: passed
+  }
 
-	# Pass and exit the test.
-	method pass {
-		passed = [Boolean true]
-		test return
-	}
+  # Pass and exit the test.
+  method pass {
+    passed = [Boolean true]
+    test return
+  }
 
-	# Fail and exit the test, setting the reason why.
-	method fail: reason {
-		passed = [Boolean false]
-		failReason = reason
-		test return
-	}
+  # Fail and exit the test, setting the reason why.
+  method fail: reason {
+    passed = [Boolean false]
+    failReason = reason
+    test return
+  }
 }
 
 #==============================================================================
@@ -247,72 +247,80 @@ Object subClass: Test.Test body: {
 
 Object subClass: Test.Suite body: {
 
-	property tests
-	property currentTest
+  property tests
+  property currentTest
+  property _title
 
   class method new {
     self newObject
     context return: self
   }
 
-	# Initialization a new TestSuite object with default values.
-	method initialize {
-		super initialize
-		tests = [List new]
+  # Initialization a new TestSuite object with default values.
+  method initialize {
+    super initialize
+    tests = [List new]
 
-		self setup
-	}
+    self setup
+  }
 
-	method title: title test: body {
-		tests append: [Test.Test new: title test: body]
-	}
+  method title: title test: body {
+    tests append: [Test.Test new: title test: body]
+  }
 
-	method setup {
-	}
+  method setup {
+  }
 
-	# Pass and exit the test.
-	method pass {
-		[currentTest isNull] isFalse: {
-			currentTest pass
-		}
-	}
+  method title: value {
+    _title = [value asText]
+  }
 
-	# Fail and exit the test, setting the reason why.
-	method fail: reason {
-		[currentTest isNull] isFalse: {
-			currentTest fail: reason
-		}
-	}
+  # Pass and exit the test.
+  method pass {
+    [currentTest isNull] isFalse: {
+      currentTest pass
+    }
+  }
 
-	# Application entry point.
-	method runTests {
-		# Execute the tests.
-		Console writeLn: ["=" * 79]
-		tests forEach: .test do: {
-			currentTest = .test
-			.test run
-			currentTest = null
-		}
-	}
+  # Fail and exit the test, setting the reason why.
+  method fail: reason {
+    [currentTest isNull] isFalse: {
+      currentTest fail: reason
+    }
+  }
 
-	# Generate and return an index of the test counts.
-	method summary {
-		passedCount = 0
+  # Application entry point.
+  method runTests {
+    # Execute the tests.
+    Console writeLn: ["=" * 79]
+    [_title isNull] isFalse: {
+      Console writeLn: ["TEST SUITE: " + _title]
+    }
+    tests forEach: .test do: {
+      currentTest = .test
+      .test run
+      currentTest = null
+    }
+  }
 
-		# Tally up all the passed tests.
-		tests forEach: .test do: {
-			[.test hasPassed] isTrue: {
-				passedCount = [passedCount + 1]
-			}
-		}
+  # Generate and return an index of the test counts.
+  method summary {
+    passedCount = 0
 
-		# Create a index of the test counts
-		result = [Index new]
-		result set: "tests preformed" to: [tests size]
-		result set: "tests passed" to: passedCount
-		result set: "tests failed" to: [[tests size] - passedCount]
-		context return: result
-	}
+    # Tally up all the passed tests.
+    tests forEach: .test do: {
+      [.test hasPassed] isTrue: {
+        passedCount = [passedCount + 1]
+      }
+    }
+
+    # Create a index of the test counts
+    result = [Index new]
+    result set: "tests preformed" to: [tests size]
+    result set: "tests passed" to: passedCount
+    result set: "tests failed" to: [[tests size] - passedCount]
+    context return: result
+  }
 }
 
 #==============================================================================
@@ -323,48 +331,48 @@ Object subClass: Test.Summary body: {
   property testSuites
 
   class method new {
-  	self newObject
-  	context return: self
+    self newObject
+    context return: self
   }
 
   method initialize {
-  	super initialize
-  	testSuites = [List new]
+    super initialize
+    testSuites = [List new]
   }
 
   method addSuite: suite {
-  	[suite isType: Test.Suite] isTrue: {
-	  	testSuites append: suite
-	  } else: {
-	  	Exception throw: "Only a Test.Suite can be added to a Test.Summary"
-	  }
+    [suite isType: Test.Suite] isTrue: {
+      testSuites append: suite
+    } else: {
+      Exception throw: "Only a Test.Suite can be added to a Test.Summary"
+    }
   }
 
   method runAndSummarize {
-  	testsPreformed = 0
-  	testsPassed = 0
-  	testsFailed = 0
+    testsPreformed = 0
+    testsPassed = 0
+    testsFailed = 0
 
-  	testSuites forEach: .suite do: {
-  		.suite runTests
+    testSuites forEach: .suite do: {
+      .suite runTests
 
-  		results = [.suite summary]
-  		testsPreformed = [testsPreformed + [results get: "tests preformed"]]
-  		testsPassed = [testsPassed + [results get: "tests passed"]]
-  		testsFailed = [testsFailed + [results get: "tests failed"]]
-  	}
+      results = [.suite summary]
+      testsPreformed = [testsPreformed + [results get: "tests preformed"]]
+      testsPassed = [testsPassed + [results get: "tests passed"]]
+      testsFailed = [testsFailed + [results get: "tests failed"]]
+    }
 
-  	Console writeLn: ["=" * 79]
-  	[testsFailed == 0] isTrue: {
-  		Console write: "All "
-  		Console write: [testsPreformed asText]
-  		Console writeLn: " tests passed."
-  		context return: 0
-  	} else: {
-  		Console writeLn: [[testsPreformed asText] + " tests completed"]
-			Console writeLn: [[testsPassed asText] + " tests passed"]
-			Console writeLn: [[testsFailed asText] + " tests failed"]
-			context return: 1
-  	}
+    Console writeLn: ["=" * 79]
+    [testsFailed == 0] isTrue: {
+      Console write: "All "
+      Console write: [testsPreformed asText]
+      Console writeLn: " tests passed."
+      context return: 0
+    } else: {
+      Console writeLn: [[testsPreformed asText] + " tests completed"]
+      Console writeLn: [[testsPassed asText] + " tests passed"]
+      Console writeLn: [[testsFailed asText] + " tests failed"]
+      context return: 1
+    }
   }
 }
