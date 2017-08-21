@@ -1,1 +1,26 @@
 \subsection {Null Class and Object}
+
+The Null object is to indicate that a reference doesn't actually reference
+any object. The Null class has only one object to define null and can not
+be subclassed.
+
+\begin{lstlisting}
+Object subClass: Null body: {
+  class method newObject
+  class method subClass: name body: definition
+  class method object
+  method isNull
+}
+\end{lstlisting}
+
+\subsubsection{Class method newObject}
+Always raises an Exception.
+
+\subsubsection{Class method subClass: body:}
+Always raises an Exception.
+
+\subsubsection{Class method object}
+The method returns the null object.
+
+\subsubsection{Method isNull}
+The method returns the true object.

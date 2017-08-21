@@ -46,7 +46,32 @@ The purpose of this document is not to be a learning guide to the language but
 to define the Meat language itself.
 
 \newpage
-\section {Lexical Elements and Parsing}
+\section {Core Language Components}
+
+All the components of the language described in this section are considered
+mandatory to the language.
+
+\input {Component-Reference}
+
+\newpage
+\section {Core Language Builtin Library}
+\input {Object-Reference}
+\input {Class-Reference}
+\input {Context-Reference}
+\input {BlockContext-Reference}
+\input {Null-Reference}
+\input {Exception-Reference}
+\input {Boolean-Reference}
+\input {Numeric-Reference}
+\input {Integer-Reference}
+\input {Number-Reference}
+\input {Text-Reference}
+\input {List-Reference}
+\input {Set-Reference}
+\input {Index-Reference}
+
+\newpage
+\section {Grinder Lexical Elements and Parsing}
 \subsection {Characters}
 The Unicode UTF-8 character set
 
@@ -59,7 +84,7 @@ multiple times together to form a single delimiter.
 
 A line termination or a \textit{newline} is definied by the character set
 described in the following table. Code parsers must accept all of these
-characters as a line termination.
+characters as a line terminator.
 
 \begin{center}
   \begin{tabular}{|l|l|l|}
@@ -168,31 +193,6 @@ translate into their binary equivalent.
     & \texttt{U+1E950}-\texttt{U+1E959} \\ \hline
   \end{tabular}
 \end{center}
-
-\newpage
-\section {Core Language Components}
-
-All the components of the language described in this section are considered
-mandatory to the language.
-
-\input {Component-Reference}
-
-\newpage
-\section {Core Language Builtin Library}
-\input {Object-Reference}
-\input {Class-Reference}
-\input {Context-Reference}
-\input {BlockContext-Reference}
-\input {Null-Reference}
-\input {Exception-Reference}
-\input {Boolean-Reference}
-\input {Numeric-Reference}
-\input {Integer-Reference}
-\input {Number-Reference}
-\input {Text-Reference}
-\input {List-Reference}
-\input {Set-Reference}
-\input {Index-Reference}
 
 \newpage
 \section {Appendix}

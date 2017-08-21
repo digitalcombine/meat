@@ -19,16 +19,15 @@
   \begin{tabular}{ | p{6cm} | c | p{8cm} | }
     \hline
     Operation & Code & Brief Description \\ \hline
-    No Operation & $00_{16}$ & Only increament the bytecode pointer by one.
-                              Nothing else is done. \\
+    No Operation & $00_{16}$ & This operation does nothing. \\
     Message Object & $01_{16}$ & Send a message to an object. \\
     Message Object with Result & $02_{16}$ & Send a message to the object
-                                            and assigning the result to a
-                                            local variable. \\
-    Message Object's Super Class & $03_{16}$ & Nothing is \\
-    Message Object's Super Class with Result & $04_{16}$ & Nothing is \\
-    Beginning of Block Context & $\mathrm{0A}_{16}$ & Nothing is \\
-    End of Context & $\mathrm{0B}_{16}$ & Nothing is \\
+    and assigning the result to the context object. \\
+    Message Object's Super Class & $03_{16}$ & Send a message to the super
+    class.\\
+    Message Object's Super Class with Result & $04_{16}$ & ... \\
+    Beginning of Block Context & $\mathrm{0A}_{16}$ & ... \\
+    End of Context & $\mathrm{0B}_{16}$ & ... \\
     Assign Local Variable & $10_{16}$ & ...\\
     Assign Object Property & $11_{16}$ & ...\\
     Assign Class Property & $12_{16}$ & ...\\
@@ -38,12 +37,70 @@
   \end{tabular}
 \end{center}
 
+\subsubsection{Code $00_{16}$ -- No Operation}
+The virtual machine only increased the byte code pointer for this byte code.
+It's potental use is to align or pad byte codes if required.
+
+The code pointer is increamented by one.
+
+\subsubsection{Code $01_{16}$ -- Message Object}
+
+\begin{center}
+  \begin{tabular}{|l|p{3cm}|p{3cm}|p{3cm}|p{3cm}|}
+    \hline
+    \textbf{byte} & \textbf{byte} & \textbf{integer} & \textbf{byte} &
+    \textbf{array of bytes} \\
+    \hline
+    $01_{16}$ & local id of object to message & message hash id &
+    number of parameters & an array of local ids for each parameter \\
+    \hline
+  \end{tabular}
+\end{center}
+The virtual machine takes the following steps when sending a message to the
+object:
+\begin{enumerate}
+\item A context is created from the local object found at the local id and the
+  message hash id.
+\item From the number of parameter and the local id parameter array, the
+  parameters are added to the context.
+\item The code pointer is increamented by 7 plus the number of parameters and
+  updated in the current context.
+\item Control is passed to the new context object.
+\end{enumerate}
+
+\subsubsection{Code $02_{16}$ -- Message Object with Result}
+
+\begin{center}
+  \begin{tabular}{|l|p{2.7cm}|p{2.7cm}|p{2.7cm}|p{2.7cm}|p{2.7cm}|}
+    \hline
+    \textbf{byte} & \textbf{byte} & \textbf{byte} & \textbf{integer} &
+    \textbf{byte} & \textbf{array of bytes} \\
+    \hline
+    $02_{16}$ & local id of object to message & local id destination for the
+    result value & message hash id & number of parameters & an array of local
+    ids for each parameter \\
+    \hline
+  \end{tabular}
+\end{center}
+The virtual machine takes the following steps when sending a message to the
+object:
+\begin{enumerate}
+\item A context is created from the local object found at the local id and the
+  message hash id.
+\item From the number of parameter and the local id parameter array, the
+  parameters are added to the context.
+\item Set the local id destination for the result value in the context.
+\item The code pointer is increamented by 8 plus the number of parameters and
+  updated in the current context.
+\item Control is passed to the new context object.
+\end{enumerate}
+
 \subsection{Library File Format}
 
 \begin{center}
   \begin{tabular}{ |l|p{4.5cm}|p{7.5cm}| }
     \hline
-    \multirow{5}{*}{Header} & \texttt{unsigned bytes [4]} = ''MLIB''
+    \multirow{5}{*}{Header} & \texttt{unsigned bytes [4]} = ``MLIB''
     = $\mathrm{4D4C4942}_{16}$ & The
     magic file identifier\\ \cline{2-3}
     & \texttt{unsigned byte} = 1 & Major Meat library format version\\
