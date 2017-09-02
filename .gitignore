@@ -33,6 +33,12 @@ Makefile.in
 /tests/*.mapp
 /tests/*.cpp
 /docs/*.pdf
+/docs/*.aux
+/docs/*.log
+/docs/*.out
+/docs/*.toc
+/docs/*.synctex.gz
+/docs/html
 
 # Compiled Dynamic libraries
 *.so

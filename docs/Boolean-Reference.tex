@@ -1,7 +1,6 @@
 \subsection {Boolean Class and Objects}
 
-Booleans are true and false values. There are only ever two boolean objects,
-the true object and the false object.
+Booleans are true and false values. There are only ever two boolean objects, the true object and the false object.
 
 \begin{lstlisting}
 Object subClass: Boolean body: {
@@ -26,60 +25,49 @@ Returns the \textit{true} object.
 Returns the \textit{false} object.
 
 \subsubsection{Method isTrue:}
-For the true object the method executes the \textit{block} parameter. For
-the false object the method just returns.
+For the true object the method executes the \textit{block} parameter. For the false object the method just returns.
 
 \subsubsection{Method isTrue: else:}
-For the true object the method executes the \textit{trueBlock} parameter.
-For the false object the method executes the \textit{falseBlock} parameter.
+For the true object the method executes the \textit{trueBlock} parameter. For the false object the method executes the \textit{falseBlock} parameter.
 
 \subsubsection{Method isFalse:}
-For the false object the method executes the \textit{block} parameter. For
-the true object the method just returns.
+For the false object the method executes the \textit{block} parameter. For the true object the method just returns.
 
 \subsubsection{Method isFalse: else:}
-For the false object the method executes the \textit{trueBlock} parameter.
-For the true object the method executes the \textit{falseBlock} parameter.
+For the false object the method executes the \textit{trueBlock} parameter. For the true object the method executes the \textit{falseBlock} parameter.
 
 \subsubsection{Method not}
-The method returns the inverse boolean object, for the true object the false
-object is returned and for the false object the true object is returned.
+The method returns the inverse boolean object, for the true object the false object is returned and for the false object the true object is returned.
 
 \subsubsection{Method and:}
-The method preforms the logical ``and'' operation between the \textit{self}
-object and the \textit{other} parameter. The following table describes the
-results for all the combinations.
+The method preforms the logical ``and'' operation between the \textit{self} object and the \textit{other} parameter. The following table describes the results for all the combinations.
 
 \begin{center}
   \begin{tabular}{ | c | c | c | }
-    \hline
-    \textbf{self} & \textbf{other} & \textbf{result} \\ \hline
-    true & true & true \\
-    true & false & false \\
-    false & true & false \\
-    false & false & false \\ \hline
+  	\hline
+  	\textbf{self} & \textbf{other} & \textbf{result} \\ \hline
+  	true          & true           & true            \\
+  	true          & false          & false           \\
+  	false         & true           & false           \\
+  	false         & false          & false           \\ \hline
   \end{tabular}
 \end{center}
 
 \subsubsection{Method or:}
-The method preforms the logical ``or'' operation between the \textit{self}
-object and the \textit{other} parameter. The following table describes the
-results for all the combinations.
+The method preforms the logical ``or'' operation between the \textit{self} object and the \textit{other} parameter. The following table describes the results for all the combinations.
 
 \begin{center}
   \begin{tabular}{ | c | c | c | }
-    \hline
-    \textbf{self} & \textbf{other} & \textbf{result} \\ \hline
-    true & true & true \\
-    true & false & true \\
-    false & true & true \\
-    false & false & false \\ \hline
+  	\hline
+  	\textbf{self} & \textbf{other} & \textbf{result} \\ \hline
+  	true          & true           & true            \\
+  	true          & false          & true            \\
+  	false         & true           & true            \\
+  	false         & false          & false           \\ \hline
   \end{tabular}
 \end{center}
 
 \subsubsection{Method xor:}
 
 \subsubsection{Method asText}
-For the true object as Text object is returned with the value ``\textit{true}''
-set. For the false object as Text object is returned with the value
-``\textit{false}'' set.
+For the true object as Text object is returned with the value ``\textit{true}'' set. For the false object as Text object is returned with the value ``\textit{false}'' set.

@@ -1,21 +1,18 @@
 \subsection {Context Class}
 
-When an object is messaged, a context object is created. A context object is
-the execution context for the method answering the message. Context objects
-contain all the temperary local variable required for the method and manages
-any values returned by the method.
+When an object is messaged, a context object is created. A context object is the execution context for the method answering the message. Context objects contain all the temperary local variable required for the method and manages any values returned by the method.
 
 The local variables are organized as follows:
 
 \begin{center}
   \begin{tabular}{ c | l }
-    Local Variable & Value\\ \hline
-    0 & self \\
-    1 & class \\
-    2 & context \textit{(weak reference)} \\
-    3 & null \\
-    4 \dots & message parameters \\
-    \dots last & local variables \\
+  	Local Variable & Value                             \\ \hline
+  	0              & self                              \\
+  	1              & class                             \\
+  	2              & context \textit{(weak reference)} \\
+  	3              & null                              \\
+  	4 \dots        & message parameters                \\
+  	\dots last     & local variables
   \end{tabular}
 \end{center}
 
@@ -36,49 +33,31 @@ Object subClass: Context body: {
 \end{lstlisting}
 
 \subsubsection {class method subClass: name body: definition}
-The Context class should never be sub-classed, therefore this method always
-raises an exception.
+The Context class should never be sub-classed, therefore this method always raises an exception.
 
 \subsubsection {class method newObject}
-Context classes are only created internally when an object is messaged,
-therefore this method always raises an exception.
+Context classes are only created internally when an object is messaged, therefore this method always raises an exception.
 
 \subsubsection {method messenger}
-This method returns the context object that the message was initiated. The
-null object can be returned if it was the very first context created to start
-execution.
+This method returns the context object that the message was initiated. The null object can be returned if it was the very first context created to start execution.
 
 \subsubsection {method localVariables}
-Returns the number of local variables allocated in the context, minus
-\textit{self}, \textit{class}, \textit{context} and \textit{null}. Note this
-also includes the message parameters.
+Returns the number of local variables allocated in the context, minus \textit{self}, \textit{class}, \textit{context} and \textit{null}. Note this also includes the message parameters.
 
 \subsubsection {method getLocal: index}
-Returns the object from the local variable at the given \textit{index}. The
-local variable index starts at zero \textit{(self)}. If the \textit{index} is
-less than zero or is greater than the number of local variables in the
-context, an Exception is thrown.
+Returns the object from the local variable at the given \textit{index}. The local variable index starts at zero \textit{(self)}. If the \textit{index} is less than zero or is greater than the number of local variables in the context, an Exception is thrown.
 
 \subsubsection {method setLocal: index to: value}
-Set a local variable at the given \textit{index} to the object \textit{value}.
-The local variable index starts at zero \textit{(self)}. If the \textit{index}
-is less than zero or is greater than the number of local variables in the
-context, an Exception is thrown.
+Set a local variable at the given \textit{index} to the object \textit{value}. The local variable index starts at zero \textit{(self)}. If the \textit{index} is less than zero or is greater than the number of local variables in the context, an Exception is thrown.
 
 \subsubsection {method repeat: block}
-Repeat the execution of \textit{block} infinitely. \textit{block} must be
-a BlockContext object. Any other object type will raise an Exception.
+Repeat the execution of \textit{block} infinitely. \textit{block} must be a BlockContext object. Any other object type will raise an Exception.
 
 \subsubsection {method return}
-Flags the execution of the context as done, indicating the to virtual
-machine to return execution to the messenger context.
+Flags the execution of the context as done, indicating the to virtual machine to return execution to the messenger context.
 
 \subsubsection {method return: result}
-Sets the a local variable in the messengers context to the object
-\textit{result}. The index of the local variable to set is indicated by the
-bytecode and is managed internally. Then the execution of the context is
-flagged as done, indicating the to virtual machine to return execution to the
-messenger context.
+Sets the a local variable in the messengers context to the object \textit{result}. The index of the local variable to set is indicated by the bytecode and is managed internally. Then the execution of the context is flagged as done, indicating the to virtual machine to return execution to the messenger context.
 
 \subsubsection{method break}
 This method is a place holder for the BlockContext class and must do nothing.

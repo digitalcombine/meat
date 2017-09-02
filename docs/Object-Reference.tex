@@ -1,7 +1,6 @@
 \subsection {Object Class}
 
-The Object class is the base class for all objects and classes in the
-Meat virtual machine.
+The Object class is the base class for all objects and classes in the Meat virtual machine.
 
 \begin{lstlisting}
 Object subClass: Object body: {
@@ -33,10 +32,7 @@ Object subClass: Object body: {
   method == other
 \end{lstlisting}
 
-Tests if the \textit{other} object or class is the same object as self. For
-the Object class, it does not test the equality of values, but sub-classes
-should override this method to test for value equality. The result is to be
-either the True or False Boolean objects.
+Tests if the \textit{other} object or class is the same object as self. For the Object class, it does not test the equality of values, but sub-classes should override this method to test for value equality. The result is to be either the True or False Boolean objects.
 
 \hfill
 \subsubsection {The != methods}
@@ -45,10 +41,7 @@ either the True or False Boolean objects.
   method != other
 \end{lstlisting}
 
-Tests if the \textit{other} object or class is not the same object as self.
-For this class, it does not test the inequality of values, but sub-classes
-should override this method to test for value inequality. The result is to be
-either the True or False Boolean objects.
+Tests if the \textit{other} object or class is not the same object as self. For this class, it does not test the inequality of values, but sub-classes should override this method to test for value inequality. The result is to be either the True or False Boolean objects.
 
 \hfill
 \subsubsection {The is: methods}
@@ -57,9 +50,7 @@ either the True or False Boolean objects.
   method is: other
 \end{lstlisting}
 
-Tests if the \textit{other} object or class is the same object as self. This
-method should not be overridden by subclasses. The result is to be either the
-True or False Boolean objects.
+Tests if the \textit{other} object or class is the same object as self. This method should not be overridden by subclasses. The result is to be either the True or False Boolean objects.
 
 \hfill
 \subsubsection {The isNot: methods}
@@ -68,9 +59,7 @@ True or False Boolean objects.
   method isNot: other
 \end{lstlisting}
 
-Tests if the \textit{other} object or class is not the same object as self.
-This method should not be overridden by subclasses. The result is to be either
-the True or False Boolean objects.
+Tests if the \textit{other} object or class is not the same object as self. This method should not be overridden by subclasses. The result is to be either the True or False Boolean objects.
 
 \hfill
 \subsubsection {The isObject methods}
@@ -79,11 +68,9 @@ the True or False Boolean objects.
   method isObject
 \end{lstlisting}
 
-Tests if the object is an object. The result is to be either the True or False
-Boolean objects.
+Tests if the object is an object. The result is to be either the True or False Boolean objects.
 
-The class method always returns the False object and the object method always
-returns the True object.
+The class method always returns the False object and the object method always returns the True object.
 
 \hfill
 \subsubsection {The isClass methods}
@@ -92,11 +79,9 @@ returns the True object.
   method isClass
 \end{lstlisting}
 
-Tests if the object is a class. The result is to be either the True or False
-Boolean objects.
+Tests if the object is a class. The result is to be either the True or False Boolean objects.
 
-The class method always returns the True object and the object method always
-returns the False object.
+The class method always returns the True object and the object method always returns the False object.
 
 \hfill
 \subsubsection {The isNull methods}
@@ -105,8 +90,7 @@ returns the False object.
   method isNull
 \end{lstlisting}
 
-Tests if the object or class is the Null object. These methods always return
-the False object and should only be overridden by the Null class.
+Tests if the object or class is the Null object. These methods always return the False object and should only be overridden by the Null class.
 
 \hfill
 \subsubsection {The type methods}
@@ -115,18 +99,12 @@ the False object and should only be overridden by the Null class.
   method type
 \end{lstlisting}
 
-Returns the class for the object. The class method always returns the class
-Class.
+Returns the class for the object. The class method always returns the class Class.
 
 \hfill
 \subsubsection {method initialize}
 When a class creates a new object
-(\hyperref[sec:class_method_newobject]{see newObject method}) this method is
-messaged to populate the objects properties with default values. By
-default, the properties of a new object are all initially set to the Null
-object. This method can be overridden by sub-classes to set it's properties
-to something other than null and must always message the super class
-initialize method.
+(\hyperref[sec:class_method_newobject]{see newObject method}) this method is messaged to populate the objects properties with default values. By default, the properties of a new object are all initially set to the Null object. This method can be overridden by sub-classes to set it's properties to something other than null and must always message the super class initialize method.
 
 \begin{lstlisting}
   method initialize {
@@ -137,5 +115,4 @@ initialize method.
 
 \subsubsection {method weak}
 
-Returns a weak reference to the object that does not affect the normal memory
-management reference counting.
+Returns a weak reference to the object that does not affect the normal memory management reference counting.

@@ -5,7 +5,7 @@ The class Class is the base type for all Class objects.
 
 \begin{lstlisting}
 Object subClass: Class body: {
-  class method subClass: name body: definition
+  class method subClass: name as: definition
   class method newObject
   class method superClass
   class method initialize
@@ -13,15 +13,12 @@ Object subClass: Class body: {
 }
 \end{lstlisting}
 
-\subsubsection{class method subClass: name body: definition}
-This method should raise an Exception. The functionality for this method
-is to be provided by a compiler library. How a compiler library hooks in the
-functionaliy is up to the underlying implementation and is not defined here.
+\subsubsection{class method subClass: name as: definition}
+This method should raise an Exception. The functionality for this method is to be provided by a compiler library. How a compiler library hooks in the functionality is up to the underlying implementation and is not defined here.
 
 \subsubsection{class method newObject}
 \label{sec:class_method_newobject}
-Method used for creating constructor class methods. This method creates a new
-object and sets the self object to it then messages \textit{self initialize}.
+Method used for creating constructor class methods. This method creates a new object and sets the self object to it then messages \textit{self initialize}.
 
 All constructor methods should follow the following template:
 
@@ -37,11 +34,7 @@ class method new {
 Returns the super class for the Class.
 
 \subsubsection{class method initialize}
-When a library is loaded and the class is unserialized, this method is
-messaged to populate any class properties with default values. Any class
-properties that are not set by this method will default to the Null object.
-This method can be overridden by sub-classes and must always message the
-super class initialize method.
+When a library is loaded and the class is unserialized, this method is messaged to populate any class properties with default values. Any class properties that are not set by this method will default to the Null object. This method can be overridden by sub-classes and must always message the super class initialize method.
 
 \begin{lstlisting}
   method initialize {
