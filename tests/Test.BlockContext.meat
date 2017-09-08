@@ -24,7 +24,7 @@ Library import: UnitTest
 #
 #  This class contains various block scenarios to be tested.
 
-Object subClass: BlockTests body: {
+Object subClass: BlockTests as: {
 
   # Simply executes a block context.
 	class method executeBlock: block {
@@ -117,11 +117,11 @@ Object subClass: BlockTests body: {
 #==============================================================================
 # Class Test.BlockContext
 
-Test.Suite subClass: Test.BlockContext body: {
+Test.Suite subClass: Test.BlockContext as: {
 
   method setup {
     self title: "3.4 The BlockContext Class"
-  
+
     other = ""
 
     self title: "3.4.1 Method execute" test: {

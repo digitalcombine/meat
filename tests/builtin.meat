@@ -41,7 +41,7 @@ Library include: {
 #==============================================================================
 # Object Class
 
-Object subClass: Objectᶲ body: {
+Object subClass: Objectᶲ as: {
 
   constructor {
     return new meat::Object(klass, properties);
@@ -126,7 +126,7 @@ Object subClass: Objectᶲ body: {
 #==============================================================================
 # Class Class
 
-Object subClass: Classᶲ body: {
+Object subClass: Classᶲ as: {
 
   class function newObject {
     meat::Reference uplevel = CONTEXT(context).get_uplevel();
@@ -142,7 +142,7 @@ Object subClass: Classᶲ body: {
     return null;
   }
 
-  class function subClass: name body: block {
+  class function subClass: name as: block {
     if (class_compiler != 0) {
       class_compiler(self, name->to_string(), block->to_string());
     }
@@ -164,13 +164,13 @@ Object subClass: Classᶲ body: {
 #==============================================================================
 # Context Class
 
-Object subClass: Contextᶲ body: {
+Object subClass: Contextᶲ as: {
 
   constructor {
     return new meat::Context(properties);
   }
 
-  class method subClass: name body: def {
+  class method subClass: name as: def {
     Exception throw: "Cannot subclass an internal Context class"
   }
 
@@ -235,7 +235,7 @@ Object subClass: Contextᶲ body: {
 #==============================================================================
 # BlockContext Class
 
-Object subClass: BlockContextᶲ body: {
+Object subClass: BlockContextᶲ as: {
 
   function execute {
     BLOCK(self).set_messenger(context);
@@ -346,7 +346,7 @@ Object subClass: BlockContextᶲ body: {
 #
 #  This class has only a single object to define null.
 
-Object subClass: Nullᶲ body: {
+Object subClass: Nullᶲ as: {
 
   class property nullObject
 
@@ -355,7 +355,7 @@ Object subClass: Nullᶲ body: {
       for: [context messenger]
   }
 
-  class method subClass: name body: block {
+  class method subClass: name as: block {
     Exception throw: "Cannot subclass an internal Null class" \
       for: [context messenger]
   }
@@ -372,7 +372,7 @@ Object subClass: Nullᶲ body: {
 #==============================================================================
 # Exception Class
 
-Object subClass: Exceptionᶲ body: {
+Object subClass: Exceptionᶲ as: {
 
   property mesg
   property cntxt
@@ -445,7 +445,7 @@ Object subClass: Exceptionᶲ body: {
 #==============================================================================
 # Numeric
 
-Object subClass: Numericᶲ body: {
+Object subClass: Numericᶲ as: {
 
   class function cos: value {
     return
@@ -594,7 +594,7 @@ Object subClass: Numericᶲ body: {
 #==============================================================================
 # Integer
 
-Numeric subClass: Integerᶲ body: {
+Numeric subClass: Integerᶲ as: {
 
   function + other {
     return new meat::Object(self->to_int() + other->to_int());
@@ -732,7 +732,7 @@ Numeric subClass: Integerᶲ body: {
 #==============================================================================
 # Number Class
 
-Numeric subClass: Numberᶲ body: {
+Numeric subClass: Numberᶲ as: {
 
   function + other {
     return new meat::Object(self->to_float() +
@@ -830,7 +830,7 @@ Numeric subClass: Numberᶲ body: {
 #==============================================================================
 # Boolean Class
 
-Object subClass: Booleanᶲ body: {
+Object subClass: Booleanᶲ as: {
 
   class property trueObject
   class property falseObject
@@ -912,7 +912,7 @@ Object subClass: Booleanᶲ body: {
 #==============================================================================
 # Text Class
 
-Object subClass: Textᶲ body: {
+Object subClass: Textᶲ as: {
 
   constructor {
     new meat::Text(klass, properties);
@@ -1002,7 +1002,7 @@ Object subClass: Textᶲ body: {
 #==============================================================================
 # List Class
 
-Object subClass: Listᶲ body: {
+Object subClass: Listᶲ as: {
 
   constructor {
     return new meat::List(klass, properties);
@@ -1139,7 +1139,7 @@ Object subClass: Listᶲ body: {
 #==============================================================================
 # Set Class
 
-Object subClass: Setᶲ body: {
+Object subClass: Setᶲ as: {
 
   constructor {
     return new meat::Set(cls, properties);
@@ -1220,7 +1220,7 @@ Object subClass: Setᶲ body: {
 #==============================================================================
 # Index Class
 
-Object subClass: Indexᶲ body: {
+Object subClass: Indexᶲ as: {
 
   constructor {
     return new meat::Index(cls, properties);
@@ -1274,7 +1274,7 @@ Object subClass: Indexᶲ body: {
 #==============================================================================
 # Application Class
 
-Object subClass: Applicationᶲ body: {
+Object subClass: Applicationᶲ as: {
 
   class function parameters {
     return new meat::Object((meat::int32_t)arg_count());
@@ -1316,7 +1316,7 @@ Object subClass: Applicationᶲ body: {
 #==============================================================================
 # Library Class
 
-Object subClass: Libraryᶲ body: {
+Object subClass: Libraryᶲ as: {
 
   class property newLibrary
 

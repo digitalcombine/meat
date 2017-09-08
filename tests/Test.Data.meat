@@ -21,7 +21,7 @@
 
 Library import: UnitTest
 
-Object subClass: TestObject body: {
+Object subClass: TestObject as: {
 	property list
 	property uninitialized
 	property pfoo
@@ -37,7 +37,7 @@ Object subClass: TestObject body: {
 	}
 }
 
-Test subClass: Test.Data body: {
+Test subClass: Test.Data as: {
 
 	method initialize {
 		super initialize

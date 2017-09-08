@@ -21,7 +21,7 @@ Library import: UnitTest
 
 #==============================================================================
 #
-Test subClass: Test.Exception body: {
+Test subClass: Test.Exception as: {
 
 	# Initialize the new test object
 	method initialize {
@@ -56,4 +56,3 @@ Test subClass: Test.Exception body: {
 		self pass
 	}
 }
-

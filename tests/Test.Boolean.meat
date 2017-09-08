@@ -25,55 +25,55 @@ Library import: UnitTest
 
 #============================================================================
 #
-Test.Suite subClass: Test.Boolean body: {
+Test.Suite subClass: Test.Boolean as: {
 
   method setup {
     self title: "3.7 The Boolean Class"
-  
+
     true = [Boolean true]
     false = [Boolean false]
-  
+
     self title: "3.7.1 Class method true" test: {
       [true isNull] isTrue: {
         self failed: "The method true returned null"
       }
-      
+
       [true == false] isTrue: {
         self failed: "The true and false objects appear to be the same"
       }
-      
+
       true isFalse: {
         self failed: "The true object appears to be false"
       }
       self pass
     }
-    
+
     self title: "3.7.2 Class method false" test: {
       [false isNull] isTrue: {
         self failed: "The method false returned null"
       }
-      
+
       [false == true] isTrue: {
         self failed: "The false and true objects appear to be the same"
       }
-      
+
       false isTrue: {
         self failed: "The false object appears to be true"
       }
       self pass
     }
-    
+
     self title: "3.7.3 Method isTrue:" test: {
       false isTrue: {
         self failed: "Method isTrue: executed block on false object"
       }
-    
+
       true isTrue: {
         self pass
       }
       self failed: "Method isTrue: failed to execute block on true object"
     }
-    
+
     self title: "3.7.4 Method isTrue: else:" test: {
       passed = [Boolean false]
       true isTrue: {
@@ -84,7 +84,7 @@ Test.Suite subClass: Test.Boolean body: {
       passed isFalse: {
         self failed: "Method isTrue: else: failed to execute true block for true object"
       }
-      
+
       passed = [Boolean false]
       false isTrue: {
         self failed: "Method isTrue: else: executed true block on false object"
@@ -94,21 +94,21 @@ Test.Suite subClass: Test.Boolean body: {
       passed isFalse: {
         self failed: "Method isTrue: else: failed to execute false block for false object"
       }
-      
+
       self pass
     }
-    
+
     self title: "3.7.5 Method isFalse:" test: {
       true isFalse: {
         self failed: "Method isFalse: executed block on true object"
       }
-    
+
       false isFalse: {
         self pass
       }
       self failed: "Method isFalse: failed to execute block on false object"
     }
-    
+
     self title: "3.7.6 Method isFalse: else:" test: {
       passed = [Boolean false]
       false isFalse: {
@@ -119,7 +119,7 @@ Test.Suite subClass: Test.Boolean body: {
       passed isFalse: {
         self failed: "Method isFalse: else: failed to execute false block for false object"
       }
-      
+
       passed = [Boolean false]
       true isFalse: {
         self failed: "Method isFalse: else: executed false block on true object"
@@ -129,21 +129,21 @@ Test.Suite subClass: Test.Boolean body: {
       passed isFalse: {
         self failed: "Method isFalse: else: failed to execute true block for true object"
       }
-      
+
       self pass
     }
-    
+
     self title: "3.7.7 Method not" test: {
       [true not] isTrue: {
         self failed: "Method failed to invert the true object"
       }
-      
+
       [false not] isFalse: {
         self failed: "Method failed to invert the false object"
       }
       self pass
     }
-    
+
     self title: "3.7.8 Method and:" test: {
       [false and: false] isTrue:  { self fail: "false and: false returned true" }
       [true and: false]  isTrue:  { self fail: "Logical AND 1 and 0 returned 1" }
@@ -151,7 +151,7 @@ Test.Suite subClass: Test.Boolean body: {
       [true and: true]   isFalse: { self fail: "Logical AND 1 and 1 returned 0" }
       self pass
     }
-    
+
     self title: "3.7.9 Method or:" test: {
       [false or: false] isTrue:  { self fail: "Logical OR 0 and 0 returned 1" }
       [true or: false]  isFalse: { self fail: "Logical OR 1 and 0 returned 0" }
@@ -159,7 +159,7 @@ Test.Suite subClass: Test.Boolean body: {
       [true or: true]   isFalse: { self fail: "Logical OR 1 and 1 returned 0" }
       self pass
     }
-    
+
     self title: "3.7.10 Method xor:" test: {
       [false xor: false] isTrue:  { self fail: "Logical XOR 0 and 0 returned 1" }
       [true xor: false]  isFalse: { self fail: "Logical XOR 1 and 0 returned 0" }
@@ -167,7 +167,7 @@ Test.Suite subClass: Test.Boolean body: {
       [true xor: true]   isTrue:  { self fail: "Logical XOR 1 and 1 returned 1" }
       self pass
     }
-    
+
     self title: "3.7.11 Method asText" test: {
       [[true asText] == "true"] isFalse: {
         self failed: ["true asText returned an invalid value of " + \

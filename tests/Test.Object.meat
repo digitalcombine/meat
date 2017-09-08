@@ -19,7 +19,7 @@
 
 Library import: UnitTest
 
-Test.Suite subClass: Test.Object body: {
+Test.Suite subClass: Test.Object as: {
 
   method setup {
     self title: "3.1 The Object Class"

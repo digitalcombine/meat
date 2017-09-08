@@ -19,7 +19,7 @@
 
 Library import: UnitTest
 
-Numeric subClass: BadNumeric body: {
+Numeric subClass: BadNumeric as: {
 
 	class method new {
 		self newObject
@@ -28,7 +28,7 @@ Numeric subClass: BadNumeric body: {
 
 }
 
-Test subClass: Test.Numeric body: {
+Test subClass: Test.Numeric as: {
 
 	method initialize {
 		super initialize
@@ -118,4 +118,3 @@ Test subClass: Test.Numeric body: {
 		self pass
 	}
 }
-

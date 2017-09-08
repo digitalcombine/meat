@@ -23,7 +23,7 @@ Library include: {
 #==============================================================================
 # Library
 
-Object subClass: Libraryᶲ body: {
+Object subClass: Libraryᶲ as: {
 
 	class function import: filename {
 #ifdef DEBUG
@@ -57,7 +57,7 @@ Object subClass: Libraryᶲ body: {
 #==============================================================================
 #
 
-Object subClass: Archiveᶲ body: {
+Object subClass: Archiveᶲ as: {
 
 	class function open: filename {
 		return new meat::data::Archive(filename->to_string());

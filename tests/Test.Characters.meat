@@ -19,7 +19,7 @@
 
 Library import: UnitTest
 
-Test.Suite subClass: Test.Characters body: {
+Test.Suite subClass: Test.Characters as: {
 
   method setup {
     digits = 0123456789
@@ -44,15 +44,15 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ০১২৩৪৫৬৭৮৯] isFalse: {
         self fail: "Bengali integer failed"
       }
-      
+
       [digits == ੦੧੨੩੪੫੬੭੮੯] isFalse: {
         self fail: "Gurmukhi integer failed"
       }
-      
+
       [digits == ૦૧૨૩૪૫૬૭૮૯] isFalse: {
         self fail: "Gujarati integer failed"
       }
-      
+
       [digits == ୦୧୨୩୪୫୬୭୮୯] isFalse: {
         self fail: "Oriya integer failed"
       }
@@ -60,15 +60,15 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ௦௧௨௩௪௫௬௭௮௯] isFalse: {
         self fail: "Tamil integer failed"
       }
-      
+
       [digits == ౦౧౨౩౪౫౬౭౮౯] isFalse: {
         self fail: "Telugu integer failed"
       }
-      
+
       [digits == ೦೧೨೩೪೫೬೭೮೯] isFalse: {
         self fail: "Kannada integer failed"
       }
-      
+
       [digits == ൦൧൨൩൪൫൬൭൮൯] isFalse: {
         self fail: "Malayalam integer failed"
       }
@@ -76,15 +76,15 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ෦෧෨෩෪෫෬෭෮෯] isFalse: {
         self fail: "Sinhala integer failed"
       }
-      
+
       [digits == ๐๑๒๓๔๕๖๗๘๙] isFalse: {
         self fail: "Thai integer failed"
       }
-      
+
       [digits == ໐໑໒໓໔໕໖໗໘໙] isFalse: {
         self fail: "Lao integer failed"
       }
-      
+
       [digits == ༠༡༢༣༤༥༦༧༨༩] isFalse: {
         self fail: "Tibetan integer failed"
       }
@@ -120,7 +120,7 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙] isFalse: {
         self fail: "Tai Tham Tham integer failed"
       }
-      
+
       [digits == ᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙] isFalse: {
         self fail: "Balinese integer failed"
       }
@@ -128,7 +128,7 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹] isFalse: {
         self fail: "Sundanese integer failed"
       }
-      
+
       [digits == ᱀᱁᱂᱃᱄᱅᱆᱇᱈᱉] isFalse: {
         self fail: "Lepcha integer failed"
       }
@@ -136,7 +136,7 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙] isFalse: {
         self fail: "Ol Chiki integer failed"
       }
-      
+
       [digits == ꘠꘡꘢꘣꘤꘥꘦꘧꘨꘩] isFalse: {
         self fail: "Vai integer failed"
       }
@@ -152,7 +152,7 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ꧐꧑꧒꧓꧔꧕꧖꧗꧘꧙] isFalse: {
         self fail: "Javanese integer failed"
       }
-      
+
       [digits == ꧰꧱꧲꧳꧴꧵꧶꧷꧸꧹] isFalse: {
         self fail: "Myanmar Tai Laing integer failed"
       }
@@ -164,7 +164,7 @@ Test.Suite subClass: Test.Characters body: {
       [digits == ꯰꯱꯲꯳꯴꯵꯶꯷꯸꯹] isFalse: {
         self fail: "Meetei Mayek integer failed"
       }
-      
+
       [digits == ０１２３４５６７８９] isFalse: {
         self fail: "Fullwidth integer failed"
       }
@@ -172,15 +172,15 @@ Test.Suite subClass: Test.Characters body: {
       [digits == 𐒠𐒡𐒢𐒣𐒤𐒥𐒦𐒧𐒨𐒩] isFalse: {
         self fail: "Osmanya integer failed"
       }
-      
+
       [digits == 𑁦𑁧𑁨𑁩𑁪𑁫𑁬𑁭𑁮𑁯] isFalse: {
         self fail: "Brahmi integer failed"
       }
-      
+
       [digits == 𑃰𑃱𑃲𑃳𑃴𑃵𑃶𑃷𑃸𑃹] isFalse: {
         self fail: "Sora Sompeng integer failed"
       }
-      
+
       [digits == 𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿] isFalse: {
         self fail: "Chakma integer failed"
       }
@@ -188,31 +188,31 @@ Test.Suite subClass: Test.Characters body: {
       [digits == 𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙] isFalse: {
         self fail: "Sharada integer failed"
       }
-      
+
       [digits == 𑋰𑋱𑋲𑋳𑋴𑋵𑋶𑋷𑋸𑋹] isFalse: {
         self fail: "Khudawadi integer failed"
       }
-      
+
       [digits == 𑓐𑓑𑓒𑓓𑓔𑓕𑓖𑓗𑓘𑓙] isFalse: {
         self fail: "Tirhuta integer failed"
       }
-      
+
       [digits == 𑙐𑙑𑙒𑙓𑙔𑙕𑙖𑙗𑙘𑙙] isFalse: {
         self fail: "Modi integer failed"
       }
-      
+
       [digits == 𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉] isFalse: {
         self fail: "Takri integer failed"
       }
-      
+
       [digits == 𑜰𑜱𑜲𑜳𑜴𑜵𑜶𑜷𑜸𑜹] isFalse: {
         self fail: "Ahom integer failed"
       }
-      
+
       [digits == 𑣠𑣡𑣢𑣣𑣤𑣥𑣦𑣧𑣨𑣩] isFalse: {
         self fail: "Warang Citi integer failed"
       }
-      
+
       [digits == 𖩠𖩡𖩢𖩣𖩤𖩥𖩦𖩧𖩨𖩩] isFalse: {
         self fail: "Mro integer failed"
       }
@@ -224,19 +224,19 @@ Test.Suite subClass: Test.Characters body: {
       [digits == 𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗] isFalse: {
         self fail: "Mathematical Bold integer failed"
       }
-      
+
       [digits == 𝟘𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡] isFalse: {
         self fail: "Mathematical Double-Struck integer failed"
       }
-      
+
       [digits == 𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫] isFalse: {
         self fail: "Mathematical Sans-Serif integer failed"
       }
-      
+
       [digits == 𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵] isFalse: {
         self fail: "Mathematical Sans-Serif Bold integer failed"
       }
-      
+
       [digits == 𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿] isFalse: {
         self fail: "Mathematical Monospace integer failed"
       }

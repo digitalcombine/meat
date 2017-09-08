@@ -25,11 +25,11 @@ Library import: UnitTest
 
 #==============================================================================
 #
-Test.Suite subClass: Test.Null body: {
+Test.Suite subClass: Test.Null as: {
 
   method setup {
     self title: "3.5 The Null Class"
-    
+
     self title: "3.5.1 Class method newObject" test: {
       Exception try: {
         Null newObject
@@ -38,33 +38,33 @@ Test.Suite subClass: Test.Null body: {
       }
       self fail: "The newObject method failed to throw an exception"
     }
-    
-    self title: "3.5.2 Class method subClass: body:" test: {
+
+    self title: "3.5.2 Class method subClass: as:" test: {
       Exception try: {
-        Null subClass: Null2 body: { }
+        Null subClass: Null2 as: { }
       } catch: {
         self pass
       }
       self fail: "The newObject method failed to throw an exception"
     }
-    
-    self title: "3.5.3 Class method object" test: {
-      nullObject = [Null object]
-      
-      [null != nullObject] isTrue: {
-        self fail: "The class method failed to return the null object"
-      }
-      
-      self pass
-    }
-    
+
+    #self title: "3.5.3 Class method object" test: {
+    #  nullObject = [Null object]
+    #
+    #  [null != nullObject] isTrue: {
+    #    self fail: "The class method failed to return the null object"
+    #  }
+    #
+    #  self pass
+    #}
+
     self title: "3.5.4 Method isNull" test: {
       [null isNull] isFalse: {
         self fail: "The isNull method failed to return true"
       }
       self pass
     }
-    
+
   }
 
 }

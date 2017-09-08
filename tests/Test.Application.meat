@@ -19,7 +19,7 @@
 
 Library import: UnitTest
 
-Test subClass: Test.Application body: {
+Test subClass: Test.Application as: {
 
 	method initialize {
 		super initialize
@@ -33,11 +33,11 @@ Test subClass: Test.Application body: {
 
 		Application parameter: 1
 		Application parameter: 2
-		
+
 		[[Application getEnviron: "PATH"] == ""] isTrue: {
 			self fail: "Unable to read the path from the system environment"
 		}
-		
+
 		self pass
 	}
 }

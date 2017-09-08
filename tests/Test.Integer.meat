@@ -19,8 +19,8 @@
 
 Library import: UnitTest
 
-Test subClass: Test.Integer body: {
-	
+Test subClass: Test.Integer as: {
+
 	method initialize {
 		super initialize
 		self setTitle: "Integer functionallity"
@@ -34,64 +34,64 @@ Test subClass: Test.Integer body: {
 		[-34 isType: Integer] isFalse: {
 			self fail: "Negative integer constant not implemented properly"
 		}
-	
+
 		# Test basic operators
 		[[10 + 5] == 15] isFalse: {
 			self fail: "Adding returned incorrect result"
 		}
-		
+
 		[[10 - 5] == 5] isFalse: {
 			self fail: "Subtracting returned incorrect result"
 		}
-		
+
 		[[12 * 6] == 72] isFalse: {
 			self fail: "Multiplying returned incorrect result"
 		}
-		
+
 		[[10 / 3] == 3] isFalse: {
 			self fail: "Dividing returned incorrect result"
 		}
-		
+
 		[[-10 neg] == 10] isFalse: {
 			self fail: "Method neg returned incorrect result"
 		}
-		
+
 		[[-3452 abs] == 3452] isFalse: {
 			self fail: "Method abs returned incorrect result"
 		}
 
 		# Test comparison operators
 		# TODO
-		
-		# Test bitwise methods		
+
+		# Test bitwise methods
 		[[170 or: 85] == 255] isFalse: {
 			self fail: "Bitwise or returned incorrect result"
 		}
-		
+
 		[[255 and: 4] == 4] isFalse: {
 			self fail: "Bitwise and returned incorrect result"
 		}
-		
+
 		[[170 xor: 85] == 255] isFalse: {
 			self fail: "Bitwise xor returned incorrect result"
 		}
-		
+
 		[[8 rshift] == 4] isFalse: {
 			self fail: "Bitwise right shift returned incorrect result"
 		}
-		
+
 		[[8 rshift: 2] == 2] isFalse: {
 			self fail: "Bitwise right shift of 2 returned incorrect result"
 		}
-		
+
 		[[2 lshift] == 4] isFalse: {
 			self fail: "Bitwise left shift returned incorrect result"
 		}
-		
+
 		[[2 lshift: 2] == 8] isFalse: {
 			self fail: "Bitwise left shift of 2 returned incorrect result"
 		}
-		
+
 		self pass
 	}
 }

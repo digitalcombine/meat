@@ -26,7 +26,7 @@
 
 Library import: "Console"
 
-Application subClass: Hello body: {
+Application subClass: Hello as: {
 
   class method Hello {
     Console writeLn: "Hello"
@@ -43,15 +43,15 @@ Application subClass: Hello body: {
   class method Вiтаю {
     Console writeLn: "Вiтаю"
   }
-  
+
   class method 你好 {
     Console writeLn: "你好"
   }
-  
+
   class method 早上好 {
     Console writeLn: "早上好"
   }
-  
+
   class method entry {
     self Hello
     self Tungjatjeta
@@ -59,7 +59,7 @@ Application subClass: Hello body: {
     self Вiтаю
     self 你好
     self 早上好
-    
+
     context return: 0
   }
 }

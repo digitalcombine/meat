@@ -19,7 +19,7 @@
 
 Library import: UnitTest
 
-Test.Suite subClass: Test.List body: {
+Test.Suite subClass: Test.List as: {
 
   method setup {
 	  alist = [List new]

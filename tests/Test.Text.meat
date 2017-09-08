@@ -19,7 +19,7 @@
 
 Library import: UnitTest
 
-Test subClass: Test.Text body: {
+Test subClass: Test.Text as: {
 
 	method initialize {
 		super initialize

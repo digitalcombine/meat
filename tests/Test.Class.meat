@@ -19,14 +19,14 @@
 
 Library import: UnitTest
 
-Test.Suite subClass: Test.Class body: {
+Test.Suite subClass: Test.Class as: {
 
 	method setup {
 	  self title: "3.2 The Class Object"
 
-		self title: "3.2.1 method subClass:body:" test: {
+		self title: "3.2.1 method subClass:as:" test: {
       Exception try: {
-				Object subClass: "TestClass" body: ""
+				Object subClass: "TestClass" as: ""
 			} catch: {
 				self pass
 			}

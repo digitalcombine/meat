@@ -20,7 +20,7 @@
 Library import: UnitTest
 Library import: Console
 
-Test subClass: Test.NumberBadness body: {
+Test subClass: Test.NumberBadness as: {
 
 	method initialize {
 		super initialize
@@ -31,13 +31,13 @@ Test subClass: Test.NumberBadness body: {
 		[[1.0 type] == Number] isFalse: {
 			self fail: "Constant not converted to a Number type"
 		}
-	
+
 		# First things first, divide by zero
 		Exception try: {
 			answer = [1.0 / 0.0]
 			self fail: "Dividing by zero didn't throw an error"
 		}
-		
+
 		#  Here we don't test for correctness but rather just than the methods are
 		# implemented.
 		answer = [1.0 + 1.0]
@@ -46,11 +46,10 @@ Test subClass: Test.NumberBadness body: {
 		answer = [1.0 / 1.0]
 		answer = [1.0 % 1.0]
 		answer = [1.0 ^ 1.0]
-		
+
     num = 3.4
     answer = [num + 2.3]
 
 		self pass
 	}
 }
-

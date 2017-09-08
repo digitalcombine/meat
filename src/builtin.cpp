@@ -201,7 +201,7 @@ static meat::Reference Class_cm_newObject(meat::Reference context) {
 }
 
 // class method subClass:body:
-static meat::Reference Class_cm_subClass_body_(meat::Reference context) {
+static meat::Reference Class_cm_subClass_as_(meat::Reference context) {
   meat::Reference self = CONTEXT(context).get_self();
   meat::Reference name = CONTEXT(context).get_param(0);
   meat::Reference block = CONTEXT(context).get_param(1);
@@ -229,10 +229,10 @@ static meat::vtable_entry_t ClassCMethods[] = {
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
   {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
   {0x181f14c4, 0x03e2b958, VTM_NATIVE  , 0, Class_cm_superClass},
-  {0x2c296348, 0x03e2b958, VTM_NATIVE  , 2, Class_cm_subClass_body_},
   {0x34003578, 0x03e2b958, VTM_BYTECODE, 4, {.offset = 0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x50188993, 0x03e2b958, VTM_NATIVE  , 2, Class_cm_subClass_as_},
   {0x54aa30e6, 0x03e2b958, VTM_NATIVE  , 0, Class_cm_newObject},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},

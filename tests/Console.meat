@@ -19,7 +19,7 @@ Library include: {
 #include <iostream>
 }
 
-Application subClass: Console body: {
+Application subClass: Console as: {
 
 	class function write: message {
 		std::cout << TEXT(message);

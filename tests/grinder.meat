@@ -31,7 +31,7 @@ Library include: {
 #==============================================================================
 # Grinder.Library Class
 
-Object subClass: Grinder.Libraryᶲ body: {
+Object subClass: Grinder.Libraryᶲ as: {
 
   property name
   property classes
@@ -131,7 +131,7 @@ Object subClass: Grinder.Libraryᶲ body: {
 #==============================================================================
 # Grinder.Class Class
 
-Object subClass: Grinder.Classᶲ body: {
+Object subClass: Grinder.Classᶲ as: {
 
   property className
   property superClass
@@ -232,7 +232,7 @@ Object subClass: Grinder.Classᶲ body: {
 #==============================================================================
 # Grinder.Method Class
 
-Object subClass: Grinder.Methodᶲ body: {
+Object subClass: Grinder.Methodᶲ as: {
 
   property methodName
   property parameters

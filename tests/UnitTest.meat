@@ -22,7 +22,7 @@ Library import: Console
 #==============================================================================
 # Test Class
 
-Object subClass: Test body: {
+Object subClass: Test as: {
 
   # The title for the test.
   property title
@@ -105,7 +105,7 @@ Object subClass: Test body: {
 #==============================================================================
 # TestSuite Class
 
-Console subClass: TestSuite body: {
+Console subClass: TestSuite as: {
 
   # A list for all the tests added to the TestSuite.
   property testList
@@ -186,14 +186,14 @@ Console subClass: TestSuite body: {
 #==============================================================================
 # Test.Test Class
 
-Object subClass: Test.Test body: {
+Object subClass: Test.Test as: {
 
   property title
   property test
   property passed
   property failedReason
 
-  class method new: testTitle test: body {
+  class method title: testTitle test: body {
     self newObject
     title = testTitle
     test = body
@@ -201,6 +201,8 @@ Object subClass: Test.Test body: {
   }
 
   method initialize {
+    super initialize
+
     passed = [Boolean false]
     title = ""
     failedReason = "Unknown reason"
@@ -245,7 +247,7 @@ Object subClass: Test.Test body: {
 #==============================================================================
 # Test.Suite Class
 
-Object subClass: Test.Suite body: {
+Object subClass: Test.Suite as: {
 
   property tests
   property currentTest
@@ -259,13 +261,14 @@ Object subClass: Test.Suite body: {
   # Initialization a new TestSuite object with default values.
   method initialize {
     super initialize
+
     tests = [List new]
 
     self setup
   }
 
   method title: title test: body {
-    tests append: [Test.Test new: title test: body]
+    tests append: [Test.Test title: title test: body]
   }
 
   method setup {
@@ -326,7 +329,7 @@ Object subClass: Test.Suite body: {
 #==============================================================================
 # Test.Summary Class
 
-Object subClass: Test.Summary body: {
+Object subClass: Test.Summary as: {
 
   property testSuites
 
