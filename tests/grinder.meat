@@ -36,6 +36,8 @@ Object subClass: Grinder.Libraryᶲ as: {
   property name
   property classes
   property documentation
+  property requiredLibraries
+  property cppInclude
 
   constructor {
     return new meat::grinder::Library(klass, properties);
@@ -45,6 +47,8 @@ Object subClass: Grinder.Libraryᶲ as: {
     super initialize
 
     classes = [List new]
+    requiredLibraries = [Set new]
+		#requiredLibraries = [List new]
   }
 
 	# Create a new Library Object with the given name.
@@ -58,10 +62,8 @@ Object subClass: Grinder.Libraryᶲ as: {
     return new_object;
   }
 
-  function import: libraryName {
-    dynamic_cast<meat::grinder::Library &>
-      (*self).add_import(TEXT(libraryName));
-    return null;
+  method import: libraryName {
+    requiredLibraries append: libraryName
   }
 
 	function removeImport: libraryName {
@@ -70,8 +72,8 @@ Object subClass: Grinder.Libraryᶲ as: {
 		return null;
 	}
 
-	function getImportList {
-		return dynamic_cast<meat::grinder::Library &>(*self).get_imports();
+	method getImportList {
+		context return: [requiredLibraries copy]
 	}
 
 	# Return the name of the Library.
@@ -201,6 +203,7 @@ Object subClass: Grinder.Classᶲ as: {
 			throw Exception("Attempting to add a non Grinder.Method to a "
 			                "Grinder.Class");
 		}
+		return null;
   }
 
 	method getMethodList {
@@ -218,6 +221,7 @@ Object subClass: Grinder.Classᶲ as: {
 			throw Exception("Attempting to add a non Grinder.Method to a "
 			                "Grinder.Class");
 		}
+		return null;
   }
 
   method getClassMethodList {

@@ -21,100 +21,131 @@ Library import: UnitTest
 
 Numeric subClass: BadNumeric as: {
 
-	class method new {
-		self newObject
-		context return: self
-	}
+  class method new {
+    self newObject
+    context return: self
+  }
 
 }
 
-Test subClass: Test.Numeric as: {
+Test.Suite subClass: Test.Numeric as: {
 
-	method initialize {
-		super initialize
-		self setTitle: "Numerical base testing"
-	}
+  method setup {
+    self title: "3.8 The Numeric Class"
+    badno = [BadNumeric new]
+    answer = 0
 
-	method execute {
-		badno = [BadNumeric new]
-		answer = 0
+    self title: "3.8.1 The minValue method" test: {
+      Exception try: {
+        answer = [Numeric minValue]
+        self fail: "method minValue should throw an Exception"
+      }
+			self pass
+    }
 
-		#  Since the Numeric class is just an abstract base class make sure all
-		# the base operators just throw exceptions.
-		Exception try: {
-			answer = [badno + 1]
-			self fail: "method + should throw an Exception"
+    self title: "3.8.2 The maxValue method" test: {
+      Exception try: {
+        answer = [Numeric maxValue]
+        self fail: "method minValue should throw an Exception"
+      }
+			self pass
+    }
+
+    self title: "3.8.3 The + method" test: {
+      Exception try: {
+        answer = [badno + 1]
+        self fail: "method + should throw an Exception"
+      }
+			self pass
+    }
+
+		self title: "3.8.4 The - method" test: {
+      Exception try: {
+        answer = [badno - 1]
+        self fail: "method - should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno - 1]
-			self fail: "method - should throw an Exception"
+    self title: "3.8.5 The * method" test: {
+      Exception try: {
+        answer = [badno * 1]
+        self fail: "method * should throw an Exception"
+      }
+			self pass
+	  }
+
+    self title: "3.8.6 The / method" test: {
+      Exception try: {
+        answer = [badno / 1]
+        self fail: "method / should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno * 1]
-			self fail: "method * should throw an Exception"
+		self title: "3.8.7 The % method" test: {
+      Exception try: {
+        answer = [badno % 1]
+        self fail: "method % should throw an Exception"
+      }
+			self pass
+	  }
+
+    self title: "3.8.8 The ^ method" test: {
+      Exception try: {
+        answer = [badno ^ 1]
+        self fail: "method ^ should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno / 1]
-			self fail: "method / should throw an Exception"
+		self title: "3.8.9 The == method" test: {
+      Exception try: {
+        answer = [badno == 1]
+        self fail: "method == should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno % 1]
-			self fail: "method % should throw an Exception"
+		self title: "3.8.10 The <> method" test: {
+      Exception try: {
+        answer = [badno <> 1]
+        self fail: "method != should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno ^ 1]
-			self fail: "method ^ should throw an Exception"
+		self title: "3.8.11 The < method" test: {
+      Exception try: {
+        answer = [badno < 1]
+        self fail: "method < should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno == 1]
-			self fail: "method == should throw an Exception"
+		self title: "3.8.12 The <= method" test: {
+      Exception try: {
+        answer = [badno <= 1]
+        self fail: "method <= should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno != 1]
-			self fail: "method != should throw an Exception"
+		self title: "3.8.13 The > method" test: {
+      Exception try: {
+        answer = [badno > 1]
+        self fail: "method > should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno < 1]
-			self fail: "method < should throw an Exception"
+		self title: "3.8.14 The >= method" test: {
+      Exception try: {
+        answer = [badno >= 1]
+        self fail: "method >= should throw an Exception"
+      }
+			self pass
 		}
 
-		Exception try: {
-			answer = [badno <= 1]
-			self fail: "method <= should throw an Exception"
-		}
-
-		Exception try: {
-			answer = [badno > 1]
-			self fail: "method > should throw an Exception"
-		}
-
-		Exception try: {
-			answer = [badno >= 1]
-			self fail: "method >= should throw an Exception"
-		}
-
-		answer = [Numeric cos: 30.0]
-		answer = [Numeric sin: 30.0]
-		answer = [Numeric tan: 30.0]
-
-		Exception try: {
-			Numeric log: 0.0
-			self fail: "log failed to raise an out of range error"
-		}
-
-		Exception try: {
-			Numeric log10: 0.0
-			self fail: "log10 failed to raise an out of range error"
-		}
-
-		self pass
-	}
+  }
 }

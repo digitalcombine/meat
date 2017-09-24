@@ -25,7 +25,12 @@ Library include: {
 
 Object subClass: Libraryᶲ as: {
 
-	class function import: filename {
+  class function import: libraryName {
+    meat::data::Library::import(filename->to_string());
+		return null;
+  }
+
+	class function requires: filename {
 #ifdef DEBUG
 		std::cout << "DEBUG: Importing library " << filename->to_string()
   	          << std::endl;
@@ -33,9 +38,8 @@ Object subClass: Libraryᶲ as: {
 
 		if (meat::data::compiler_import != 0)
 			meat::data::compiler_import(filename->to_string());
-		else {
-			meat::data::Library::import(filename->to_string());
-		}
+		else 
+		  throw Exception("Method Library requires: is only with the compiler");
 
 		return null;
 	}
@@ -44,7 +48,7 @@ Object subClass: Libraryᶲ as: {
 		if (meat::data::compiler_import != 0)
 		  meat::data::Library::include(cpp_includes->to_string());
 		else
-		  throw Exception("Method Library include is only with the compiler");
+		  throw Exception("Method Library include: is only with the compiler");
 
 		return null;
 	}
@@ -67,6 +71,7 @@ Object subClass: Archiveᶲ as: {
 		return new meat::data::Archive(filename->to_string(), true);
 	}
 
+  # Change to requires: libraryName
 	function import: filename {
 		meat::data::Archive &archive_obj = (meat::Data::Archive &)(*self);
 

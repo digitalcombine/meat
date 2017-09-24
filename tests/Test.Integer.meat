@@ -19,79 +19,106 @@
 
 Library import: UnitTest
 
-Test subClass: Test.Integer as: {
+Test.Suite subClass: Test.Integer as: {
 
-	method initialize {
-		super initialize
-		self setTitle: "Integer functionallity"
-	}
-
-	method execute {
+	method setup {
+	  self title: "3.9 Integer Class"
+	  
 		# Test integer constants
-		[34 isType: Integer] isFalse: {
-			self fail: "Integer constant not implemented properly"
-		}
-		[-34 isType: Integer] isFalse: {
-			self fail: "Negative integer constant not implemented properly"
-		}
+		self title: "3.9 Integer constants" test: {
+  		[34 isType: Integer] isFalse: {
+        self fail: "Integer constant not implemented properly"
+      }
+      [-34 isType: Integer] isFalse: {
+        self fail: "Negative integer constant not implemented properly"
+      }
+      self pass
+    }
 
-		# Test basic operators
-		[[10 + 5] == 15] isFalse: {
-			self fail: "Adding returned incorrect result"
-		}
-
-		[[10 - 5] == 5] isFalse: {
-			self fail: "Subtracting returned incorrect result"
-		}
-
-		[[12 * 6] == 72] isFalse: {
-			self fail: "Multiplying returned incorrect result"
+    self title: "3.9.? Method +" test: {
+	  	[[10 + 5] == 15] isFalse: {
+		  	self fail: "Adding returned incorrect result"
+		  }
+		  self pass
 		}
 
-		[[10 / 3] == 3] isFalse: {
-			self fail: "Dividing returned incorrect result"
+    self title: "3.9.? Method -" test: {
+  		[[10 - 5] == 5] isFalse: {
+  			self fail: "Subtracting returned incorrect result"
+  		}
+  		self pass
 		}
 
-		[[-10 neg] == 10] isFalse: {
-			self fail: "Method neg returned incorrect result"
+    self title: "3.9.? Method *" test: {
+  		[[12 * 6] == 72] isFalse: {
+  			self fail: "Multiplying returned incorrect result"
+  		}
+  		self pass
 		}
 
-		[[-3452 abs] == 3452] isFalse: {
-			self fail: "Method abs returned incorrect result"
-		}
+    self title: "3.9.? Method /" test: {
+  		[[10 / 3] == 3] isFalse: {
+  			self fail: "Dividing returned incorrect result"
+  		}
+  		self pass
+    }
 
-		# Test comparison operators
-		# TODO
+    self title: "3.9.? Method negative" test: {
+  		[[-10 negative] == 10] isFalse: {
+  			self fail: "Method neg returned incorrect result"
+  		}
+  		self pass
+  	}
 
-		# Test bitwise methods
-		[[170 or: 85] == 255] isFalse: {
-			self fail: "Bitwise or returned incorrect result"
-		}
+    self title: "3.9.? Method absolute" test: {
+  		[[-3452 absolute] == 3452] isFalse: {
+  			self fail: "Method abs returned incorrect result"
+  		}
+  		self pass
+  	}
 
-		[[255 and: 4] == 4] isFalse: {
-			self fail: "Bitwise and returned incorrect result"
-		}
+    self title: "3.9.? Method or:" test: {
+  		# Test bitwise methods
+  		[[170 or: 85] == 255] isFalse: {
+  			self fail: "Bitwise or returned incorrect result"
+  		}
+  		self pass
+  	}
 
-		[[170 xor: 85] == 255] isFalse: {
-			self fail: "Bitwise xor returned incorrect result"
-		}
+    self title: "3.9.? Method and:" test: {
+  		[[255 and: 4] == 4] isFalse: {
+  			self fail: "Bitwise and returned incorrect result"
+  		}
+  		self pass
+  	}
 
-		[[8 rshift] == 4] isFalse: {
-			self fail: "Bitwise right shift returned incorrect result"
-		}
+    self title: "3.9.? Method xor:" test: {
+  		[[170 xor: 85] == 255] isFalse: {
+  			self fail: "Bitwise xor returned incorrect result"
+  		}
+  		self pass
+  	}
 
-		[[8 rshift: 2] == 2] isFalse: {
-			self fail: "Bitwise right shift of 2 returned incorrect result"
-		}
+    self title: "3.9.? The rshift methods" test: {
+  		[[8 rshift] == 4] isFalse: {
+  			self fail: "Bitwise right shift returned incorrect result"
+  		}
 
-		[[2 lshift] == 4] isFalse: {
-			self fail: "Bitwise left shift returned incorrect result"
-		}
+  		[[8 rshift: 2] == 2] isFalse: {
+  			self fail: "Bitwise right shift of 2 returned incorrect result"
+  		}
+  		self pass
+  	}
+		
+    self title: "3.9.? The lshift methods" test: {
+  		[[2 lshift] == 4] isFalse: {
+  			self fail: "Bitwise left shift returned incorrect result"
+  		}
 
-		[[2 lshift: 2] == 8] isFalse: {
-			self fail: "Bitwise left shift of 2 returned incorrect result"
-		}
-
-		self pass
-	}
+  		[[2 lshift: 2] == 8] isFalse: {
+  			self fail: "Bitwise left shift of 2 returned incorrect result"
+  		}
+  		self pass
+  	}
+  }
 }

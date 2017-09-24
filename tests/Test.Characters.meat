@@ -22,9 +22,10 @@ Library import: UnitTest
 Test.Suite subClass: Test.Characters as: {
 
   method setup {
+	  self title: "4.1 Grinder Characters"
     digits = 0123456789
 
-    self title: "2.1.1 Numeric Characters (Integers)" test: {
+    self title: "4.1.1 Numeric Characters (Integers)" test: {
       [digits == ٠١٢٣٤٥٦٧٨٩] isFalse: {
         self fail: "Arabic-Indic integer failed"
       }

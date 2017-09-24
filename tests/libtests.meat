@@ -23,7 +23,10 @@ Library import: "Test.Object"
 Library import: "Test.Class"
 Library import: "Test.BlockContext"
 Library import: "Test.Null"
+Library import: "Test.Exception"
 Library import: "Test.Boolean"
+Library import: "Test.Numeric"
+Library import: "Test.Integer"
 Library import: "Test.List"
 
 Application subClass: Tests as: {
@@ -31,13 +34,16 @@ Application subClass: Tests as: {
 	class method entry {
 		summary = [Test.Summary new]
 
-    summary addSuite: [Test.Characters new]
 		summary addSuite: [Test.Object new]
 		summary addSuite: [Test.Class new]
 		summary addSuite: [Test.BlockContext new]
 		summary addSuite: [Test.Null new]
+		summary addSuite: [Test.Exception new]
 		summary addSuite: [Test.Boolean new]
+		summary addSuite: [Test.Numeric new]
+		summary addSuite: [Test.Integer new]
 		summary addSuite: [Test.List new]
+		summary addSuite: [Test.Characters new]
 
 		context return: [summary runAndSummarize]
 	}

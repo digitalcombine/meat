@@ -43,20 +43,20 @@ Test.Suite subClass: Test.Object as: {
       self pass
     }
 
-    self title: "3.1.2 The != methods" test: {
-      [self != self] isTrue: {
-        self fail: "self != self returned true."
+    self title: "3.1.2 The <> methods" test: {
+      [self <> self] isTrue: {
+        self fail: "self <> self returned true."
       }
-      [self != other] isFalse: {
-        self fail: "self != other returned false."
+      [self <> other] isFalse: {
+        self fail: "self <> other returned false."
       }
 
       # Test the class methods.
-      [[10 type] != Integer] isTrue: {
-        self fail: "10 != Integer returned true."
+      [[10 type] <> Integer] isTrue: {
+        self fail: "10 <> Integer returned true."
       }
-      [[self type] != Exception] isFalse: {
-        self fail: "self type != Exception return false."
+      [[self type] <> Exception] isFalse: {
+        self fail: "self type <> Exception return false."
       }
       self pass
     }

@@ -21,38 +21,44 @@ Library import: UnitTest
 
 #==============================================================================
 #
-Test subClass: Test.Exception as: {
+Test.Suite subClass: Test.Exception as: {
 
-	# Initialize the new test object
-	method initialize {
-		super initialize
-		self setTitle: "Exception throwing and catching"
-	}
+  # Where all the tests happen.
+  method setup {
+    self title: "3.6 Exception Class"
+  
+    self title: "3.6.1 Method try:" test: {
+      # This should catch the exception an not let it get to the test suite.
+      Exception try: {
+        Exception throw: "Exception was not caught by the try clause"
+        self fail: "Exception thrown but not caught"
+      }
+      self pass
+    }
 
-	# Where all the tests happen.
-	method execute {
-		# This should catch the exception an not let it get to the test suite.
-		Exception try: {
-			Exception throw: "Exception was not caught by the try clause"
-			self fail: "Exception thrown but not caught"
-		}
+    self title: "3.6.2 Method try: catch:" test: {
+      # Same as above just with a different method.
+      Exception try: {
+        Exception throw: "Exception was not caught by the try clause"
+        self fail: "Exception thrown but not caught"
+      } catch: {
+        self pass
+      }
+      self fail: "Failed to catch exception"
+    }
 
-		# Same as above just with a different method.
-		Exception try: {
-			Exception throw: "Exception was not caught by the try clause"
-			self fail: "Exception thrown but not caught"
-		} catch: {
-		}
-
-		# Here we actually catch the exception and tests it's value.
-		Exception try: {
-			Exception throw: "Exception was not caught by the try clause"
-			self fail: "Exception thrown but not caught"
-		} catch: .error do: {
-			[[.error message] != "Exception was not caught by the try clause"] isTrue: {
-				self fail: "Didn't receive the correct error message"
-			}
-		}
-		self pass
-	}
+    self title: "3.6.3 Method try: catch: do:" test: {
+      # Here we actually catch the exception and tests it's value.
+      Exception try: {
+        Exception throw: "Exception was not caught by the try clause"
+        self fail: "Exception thrown but not caught"
+      } catch: .error do: {
+        [[.error message] != "Exception was not caught by the try clause"] isTrue: {
+          self fail: "Didn't receive the correct error message"
+        }
+        self pass
+      }
+      self fail: "Failed to catch exception"
+    }
+  }
 }
