@@ -5,7 +5,7 @@ The Object class is the base class for all objects and classes in the Meat virtu
 \begin{lstlisting}
 Object subClass: Object body: {
   class method == other
-  class method != other
+  class method <> other
   class method is: other
   class method isNot: other
   class method isObject
@@ -35,10 +35,10 @@ Object subClass: Object body: {
 Tests if the \textit{other} object or class is the same object as self. For the Object class, it does not test the equality of values, but sub-classes should override this method to test for value equality. The result is to be either the True or False Boolean objects.
 
 \hfill
-\subsubsection {The != methods}
+\subsubsection {The $<>$ methods}
 \begin{lstlisting}
-  class method != other
-  method != other
+  class method <> other
+  method <> other
 \end{lstlisting}
 
 Tests if the \textit{other} object or class is not the same object as self. For this class, it does not test the inequality of values, but sub-classes should override this method to test for value inequality. The result is to be either the True or False Boolean objects.

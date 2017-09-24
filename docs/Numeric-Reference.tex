@@ -13,14 +13,50 @@ Object subClass: Numeric body: {
   method % other
   method ^ other
   method == other
-  method != other
+  method <> other
   method < other
   method <= other
   method > other
   method >= other
   method negative
   method absolute
-  method compliment
+  method sign
   method asText
 }
 \end{lstlisting}
+
+\subsubsection{class method minValue}
+This method is meant to be overridden by sub-classes to return a object of the smallest value possible for the numeric type. For this class this method just raises an Exception.
+
+\subsubsection{class method maxValue}
+This method is meant to be overridden by sub-classes to return a object of the largest value possible for the numeric type. For this class this method just raises an Exception.
+
+\subsubsection{method + other}
+
+\subsubsection{method - other}
+
+\subsubsection{method * other}
+
+\subsubsection{method / other}
+
+\subsubsection{method \% other}
+	
+\subsubsection{method \textasciicircum other}
+
+\subsubsection{method $==$ other}
+
+\subsubsection{method $<>$ other}
+
+\subsubsection{method $<$ other}
+
+\subsubsection{method $<=$ other}
+
+\subsubsection{method $>$ other}
+
+\subsubsection{method $>=$ other}
+
+\subsubsection{negative}
+
+\subsubsection{absolute}
+
+\subsubsection{sign}

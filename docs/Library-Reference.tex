@@ -1,0 +1,21 @@
+\subsection{Library Class}
+
+\begin{lstlisting}
+Object subClass: Library body: {
+  class method exists: libraryName
+  class method import: libraryName
+  class method requires: libraryName
+  class method include: nativeCode
+  class method setApplication: class
+  class method unload: libraryName
+  class method listSearchPaths
+}
+\end{lstlisting}
+
+\subsubsection{class method exists:}
+Checks every search path directory for the library given by \textit{libraryName} and return the true Boolean object if the library was found otherwise it returns the false Boolean object.
+
+\subsubsection{class method import:}
+
+\subsubsection{class method requires:}
+By default this method always throws an Exception. This method should be hooked when a compiler is loaded.

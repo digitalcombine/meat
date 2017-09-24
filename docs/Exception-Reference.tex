@@ -1,1 +1,17 @@
 \subsection {Exception Class}
+
+\begin{lstlisting}
+Object subClass: Exception body: {
+  class method try: block
+  class method try: block catch: catchBlock
+  class method try: block catch: .error do: catchBlock
+  class method throw
+  class method throw: message
+  class method throwFor: context
+  class method throw: message for: context
+  method message
+  method context
+}
+\end{lstlisting}
+
+\subsubsection{Class method try:}
