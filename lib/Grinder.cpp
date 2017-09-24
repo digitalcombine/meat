@@ -35,101 +35,101 @@ static meat::Reference Grinder_Library_constructor(meat::Reference &klass,
 #define _name (self->property(0))
 #define classes (self->property(1))
 #define documentation (self->property(2))
-#define imports (self->property(3))
+#define requiredLibraries (self->property(3))
 
 // method addClass:
 static meat::Reference Grinder_Library_om_addClass_(meat::Reference context) {
-	meat::Reference self = CONTEXT(context).get_self();
-	//meat::Reference klass = CONTEXT(context).get_class();
-	meat::Reference theClass = CONTEXT(context).get_param(0);
+	meat::Reference self = meat::cast<meat::Context>(context).self();
+	//meat::Reference klass = meat::cast<meat::Context>(context).klass();
+	meat::Reference theClass = meat::cast<meat::Context>(context).parameter(0);
 
 	if (theClass->is_type("Grinder.Class"))
-		dynamic_cast<meat::grinder::Library &>(*self).add_class(theClass);
+		meat::cast<meat::grinder::Library>(self).add_class(theClass);
 	else
 		throw meat::Exception(std::string("Can not add ") +
-													CLASS(theClass->type()).name() +
+													meat::cast<meat::Class>(theClass->type()).name() +
 													" to a Grinder.Library");
 	return null;
 }
 
 // method compile
 static meat::Reference Grinder_Library_om_compile(meat::Reference context) {
-	meat::Reference self = CONTEXT(context).get_self();
-	meat::Reference klass = CONTEXT(context).get_class();
+	meat::Reference self = meat::cast<meat::Context>(context).self();
+	meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	dynamic_cast<meat::grinder::Library &>(*self).compile();
+	meat::cast<meat::grinder::Library>(self).compile();
 	return null;
 }
 
 // method getImportList
 static meat::Reference
 Grinder_Library_om_getImportList(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  //meat::Reference klass = CONTEXT(context).get_class();
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  //meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	return dynamic_cast<meat::grinder::Library &>(*self).get_imports();
+	return meat::cast<meat::grinder::Library>(self).get_imports();
 }
 
 // method import:
 static meat::Reference Grinder_Library_om_import_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  //meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference libraryName = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  //meat::Reference klass = meat::cast<meat::Context>(context).klass();
+  meat::Reference libraryName = meat::cast<meat::Context>(context).parameter(0);
 
 	dynamic_cast<meat::grinder::Library &>
-		(*self).add_import(TEXT(libraryName));
+		(*self).add_import(meat::cast<meat::Text>(libraryName));
 	return null;
 }
 
 // method removeImport:
 static meat::Reference
 Grinder_Library_om_removeImport_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  //meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference libraryName = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  //meat::Reference klass = meat::cast<meat::Context>(context).klass();
+  meat::Reference libraryName = meat::cast<meat::Context>(context).parameter(0);
 
 	dynamic_cast<meat::grinder::Library &>
-		(*self).remove_import(TEXT(libraryName));
+		(*self).remove_import(meat::cast<meat::Text>(libraryName));
 	return null;
 }
 
 // method setApplicationClass:
 static meat::Reference
 Grinder_Library_om_setApplicationClass_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference className = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference klass = meat::cast<meat::Context>(context).klass();
+  meat::Reference className = meat::cast<meat::Context>(context).parameter(0);
 
 	dynamic_cast<meat::grinder::Library &>
-		(*self).set_application(TEXT(className).c_str());
+		(*self).set_application(meat::cast<meat::Text>(className).c_str());
 	return null;
 }
 
 static meat::vtable_entry_t Grinder_LibraryMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x02a060ae, 0x335f47b6, VTM_NATIVE  , 0, Grinder_Library_om_getImportList},
-  {0x0422afcc, 0x335f47b6, VTM_BYTECODE, 7, {.offset = 215}},
-  {0x14274dc2, 0x335f47b6, VTM_BYTECODE, 12, {.offset = 0}},
-  {0x34003578, 0x335f47b6, VTM_BYTECODE, 6, {.offset = 190}},
-  {0x3751e4ef, 0x335f47b6, VTM_BYTECODE, 6, {.offset = 302}},
+  {0x0422afcc, 0x335f47b6, VTM_BYTECODE, 7, {(meat::method_ptr_t)215}},
+  {0x14274dc2, 0x335f47b6, VTM_BYTECODE, 12, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x335f47b6, VTM_BYTECODE, 6, {(meat::method_ptr_t)190}},
+  {0x3751e4ef, 0x335f47b6, VTM_BYTECODE, 6, {(meat::method_ptr_t)302}},
   {0x38a75a5d, 0x335f47b6, VTM_NATIVE  , 0, Grinder_Library_om_compile},
-  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x401f185a, 0x335f47b6, VTM_NATIVE  , 1, Grinder_Library_om_removeImport_},
-  {0x49db9c88, 0x335f47b6, VTM_BYTECODE, 6, {.offset = 146}},
+  {0x49db9c88, 0x335f47b6, VTM_BYTECODE, 6, {(meat::method_ptr_t)146}},
   {0x6447c96a, 0x335f47b6, VTM_NATIVE  , 1, Grinder_Library_om_addClass_},
   {0x645271d8, 0x335f47b6, VTM_NATIVE  , 1, Grinder_Library_om_setApplicationClass_},
-  {0x66e5dca8, 0x335f47b6, VTM_BYTECODE, 5, {.offset = 166}},
-  {0x68f39719, 0x335f47b6, VTM_BYTECODE, 7, {.offset = 236}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+  {0x66e5dca8, 0x335f47b6, VTM_BYTECODE, 5, {(meat::method_ptr_t)166}},
+  {0x68f39719, 0x335f47b6, VTM_BYTECODE, 7, {(meat::method_ptr_t)236}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x72cd0161, 0x335f47b6, VTM_NATIVE  , 1, Grinder_Library_om_import_},
-  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x7b82e32c, 0x335f47b6, VTM_BYTECODE, 5, {.offset = 178}},
-  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b82e32c, 0x335f47b6, VTM_BYTECODE, 5, {(meat::method_ptr_t)178}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 #undef name
@@ -138,31 +138,31 @@ static meat::vtable_entry_t Grinder_LibraryMethods[] = {
 
 // class method new:
 static meat::Reference Grinder_Library_cm_new_(meat::Reference context) {
-	meat::Reference self = CONTEXT(context).get_self();
-	meat::Reference klass = CONTEXT(context).get_class();
-	meat::Reference className = CONTEXT(context).get_param(0);
+	meat::Reference self = meat::cast<meat::Context>(context).self();
+	meat::Reference klass = meat::cast<meat::Context>(context).klass();
+	meat::Reference className = meat::cast<meat::Context>(context).parameter(0);
 
-	meat::Reference new_object = CLASS(self).new_object();
+	meat::Reference new_object = meat::cast<meat::Class>(self).new_object();
 	new_object->property(0) = className;
-	dynamic_cast<meat::grinder::Library &>
-		(*new_object).register_as(TEXT(className).c_str());
+	meat::cast<meat::grinder::Library>
+		(new_object).register_as(meat::cast<meat::Text>(className).c_str());
 
 	return new_object;
 }
 
 static meat::vtable_entry_t Grinder_LibraryCMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
 	{0x00338a9a, 0x335f47b6, VTM_NATIVE  , 1, Grinder_Library_cm_new_},
-	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x2c296348, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
+	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 static meat::uint8_t Grinder_LibraryBytecode[] = {
@@ -214,9 +214,9 @@ static meat::Reference Grinder_Class_constructor(meat::Reference &klass,
 // method addClassMethod:
 static meat::Reference
 Grinder_Class_om_addClassMethod_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  //meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference theMethod = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  //meat::Reference klass = meat::cast<meat::Context>(context).klass();
+  meat::Reference theMethod = meat::cast<meat::Context>(context).parameter(0);
 
 	if (theMethod->is_type("Grinder.Method")) {
 		dynamic_cast<meat::grinder::Class &>
@@ -225,13 +225,15 @@ Grinder_Class_om_addClassMethod_(meat::Reference context) {
 		throw meat::Exception("Attempting to add a non Grinder.Method to a "
 													"Grinder.Class");
 	}
+
+	return null;
 }
 
 // method addMethod:
 static meat::Reference Grinder_Class_om_addMethod_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference theMethod = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference klass = meat::cast<meat::Context>(context).klass();
+  meat::Reference theMethod = meat::cast<meat::Context>(context).parameter(0);
 
 	if (theMethod->is_type("Grinder.Method")) {
 		dynamic_cast<meat::grinder::Class &>
@@ -240,34 +242,36 @@ static meat::Reference Grinder_Class_om_addMethod_(meat::Reference context) {
 		throw meat::Exception("Attempting to add a non Grinder.Method to a "
 													"Grinder.Class");
 	}
+
+	return null;
 }
 
 static meat::vtable_entry_t Grinder_ClassMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x064662a0, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 244}},
-  {0x13778806, 0x475aee3c, VTM_BYTECODE, 7, {.offset = 20}},
-  {0x13e67172, 0x475aee3c, VTM_BYTECODE, 7, {.offset = 0}},
+  {0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x064662a0, 0x475aee3c, VTM_BYTECODE, 6, {(meat::method_ptr_t)244}},
+  {0x13778806, 0x475aee3c, VTM_BYTECODE, 7, {(meat::method_ptr_t)20}},
+  {0x13e67172, 0x475aee3c, VTM_BYTECODE, 7, {(meat::method_ptr_t)0}},
   {0x2ac47ced, 0x475aee3c, VTM_NATIVE  , 1, Grinder_Class_om_addMethod_},
-  {0x34003578, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 156}},
-  {0x36998c44, 0x475aee3c, VTM_BYTECODE, 5, {.offset = 144}},
-  {0x3751e4ef, 0x475aee3c, VTM_BYTECODE, 5, {.offset = 256}},
-  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x3ab368f5, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 60}},
+  {0x34003578, 0x475aee3c, VTM_BYTECODE, 6, {(meat::method_ptr_t)156}},
+  {0x36998c44, 0x475aee3c, VTM_BYTECODE, 5, {(meat::method_ptr_t)144}},
+  {0x3751e4ef, 0x475aee3c, VTM_BYTECODE, 5, {(meat::method_ptr_t)256}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x3ab368f5, 0x475aee3c, VTM_BYTECODE, 6, {(meat::method_ptr_t)60}},
   {0x4856517b, 0x475aee3c, VTM_NATIVE  , 1, Grinder_Class_om_addClassMethod_},
-  {0x58dc7410, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 92}},
-  {0x66e5dca8, 0x475aee3c, VTM_BYTECODE, 5, {.offset = 80}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x6c1e06d0, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 232}},
-  {0x6f8450c1, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 124}},
-  {0x72e85a72, 0x475aee3c, VTM_BYTECODE, 6, {.offset = 40}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x7b82e32c, 0x475aee3c, VTM_BYTECODE, 5, {.offset = 112}},
-  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
+  {0x58dc7410, 0x475aee3c, VTM_BYTECODE, 6, {(meat::method_ptr_t)92}},
+  {0x66e5dca8, 0x475aee3c, VTM_BYTECODE, 5, {(meat::method_ptr_t)80}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6c1e06d0, 0x475aee3c, VTM_BYTECODE, 6, {(meat::method_ptr_t)232}},
+  {0x6f8450c1, 0x475aee3c, VTM_BYTECODE, 6, {(meat::method_ptr_t)124}},
+  {0x72e85a72, 0x475aee3c, VTM_BYTECODE, 6, {(meat::method_ptr_t)40}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b82e32c, 0x475aee3c, VTM_BYTECODE, 5, {(meat::method_ptr_t)112}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 #undef className
@@ -280,18 +284,18 @@ static meat::vtable_entry_t Grinder_ClassMethods[] = {
 #undef documentation
 
 static meat::vtable_entry_t Grinder_ClassCMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x2c296348, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x50188993, 0x475aee3c, VTM_BYTECODE, 7, {.offset = 260}},
-  {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
+	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x50188993, 0x475aee3c, VTM_BYTECODE, 7, {(meat::method_ptr_t)260}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 static meat::uint8_t Grinder_ClassBytecode[] = {
@@ -336,8 +340,8 @@ static meat::Reference Grinder_Method_constructor(meat::Reference &klass,
 
 // method isNative
 static meat::Reference Grinder_Method_om_isNative(meat::Reference context) {
-	meat::Reference self = CONTEXT(context).get_self();
-	meat::Reference klass = CONTEXT(context).get_class();
+	meat::Reference self = meat::cast<meat::Context>(context).self();
+	meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
 	if (dynamic_cast<meat::grinder::Method &>(*self).is_cpp())
 		return meat::BTrue();
@@ -346,9 +350,9 @@ static meat::Reference Grinder_Method_om_isNative(meat::Reference context) {
 
 // method isNative:
 static meat::Reference Grinder_Method_om_isNative_(meat::Reference context) {
-	meat::Reference self = CONTEXT(context).get_self();
-	meat::Reference klass = CONTEXT(context).get_class();
-	meat::Reference value = CONTEXT(context).get_param(0);
+	meat::Reference self = meat::cast<meat::Context>(context).self();
+	meat::Reference klass = meat::cast<meat::Context>(context).klass();
+	meat::Reference value = meat::cast<meat::Context>(context).parameter(0);
 
 	if (value == meat::BTrue())
 		dynamic_cast<meat::grinder::Method &>(*self).is_cpp(true);
@@ -361,25 +365,25 @@ static meat::Reference Grinder_Method_om_isNative_(meat::Reference context) {
 }
 
 static meat::vtable_entry_t Grinder_MethodMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x00379f78, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x2e035c85, 0x34b9249a, VTM_BYTECODE, 7, {.offset = 0}},
-	{0x34003578, 0x34b9249a, VTM_BYTECODE, 6, {.offset = 64}},
-	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
+	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x2e035c85, 0x34b9249a, VTM_BYTECODE, 7, {(meat::method_ptr_t)0}},
+	{0x34003578, 0x34b9249a, VTM_BYTECODE, 6, {(meat::method_ptr_t)64}},
+	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
 	{0x4479a341, 0x34b9249a, VTM_NATIVE  , 1, Grinder_Method_om_isNative_},
-	{0x52c4c182, 0x34b9249a, VTM_BYTECODE, 6, {.offset = 109}},
+	{0x52c4c182, 0x34b9249a, VTM_BYTECODE, 6, {(meat::method_ptr_t)109}},
 	{0x696f4752, 0x34b9249a, VTM_NATIVE  , 0, Grinder_Method_om_isNative},
-	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x6e7311fa, 0x34b9249a, VTM_BYTECODE, 6, {.offset = 44}},
-	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x7b7da243, 0x34b9249a, VTM_BYTECODE, 5, {.offset = 20}},
-	{0x7b82e32c, 0x34b9249a, VTM_BYTECODE, 5, {.offset = 32}},
-	{0x7b840562, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x7f4c8f54, 0x34b9249a, VTM_BYTECODE, 7, {.offset = 89}}
+	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x6e7311fa, 0x34b9249a, VTM_BYTECODE, 6, {(meat::method_ptr_t)44}},
+	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x7b7da243, 0x34b9249a, VTM_BYTECODE, 5, {(meat::method_ptr_t)20}},
+	{0x7b82e32c, 0x34b9249a, VTM_BYTECODE, 5, {(meat::method_ptr_t)32}},
+	{0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x7f4c8f54, 0x34b9249a, VTM_BYTECODE, 7, {(meat::method_ptr_t)89}}
 };
 
 #undef methodName
@@ -388,18 +392,18 @@ static meat::vtable_entry_t Grinder_MethodMethods[] = {
 #undef documentation
 
 static meat::vtable_entry_t Grinder_MethodCMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x00019850, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x00338a9a, 0x34b9249a, VTM_BYTECODE, 6, {.offset = 121}},
-	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x2c296348, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}},
-	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {.offset = 0}}
+	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x00338a9a, 0x34b9249a, VTM_BYTECODE, 6, {(meat::method_ptr_t)121}},
+	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 static meat::uint8_t Grinder_MethodBytecode[] = {

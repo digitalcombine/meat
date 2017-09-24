@@ -28,6 +28,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include "getopt.h"
 
 #ifdef TESTING
 #include <testing.h>
@@ -48,7 +49,7 @@ static void help() {
   std::cout << "  -i path      Include path to the library search\n";
   std::cout << "  -l libname   Compile a library\n";
   std::cout << "  -c appclass  Compile a library\n";
-  std::cout << "  -a archname  Compile an archive\n";
+  std::cout << "  -s script    Compile an archive\n";
   std::cout << "  -# text      Return a hash value for the text\n";
   std::cout << "  -h           Displays this help" << std::endl;
 }
@@ -71,12 +72,12 @@ static void classbuilder_int(meat::Reference super,
 		meat::message(meat::Class::resolve("Grinder.Class"),
 									"subClass:as:",
 									context);
-	CONTEXT(ctx).set_param(0, super);
-	CONTEXT(ctx).set_param(1, new meat::Text(cls_name));
+	meat::cast<meat::Context>(ctx).parameter(0, super);
+	meat::cast<meat::Context>(ctx).parameter(1, new meat::Text(cls_name));
 	meat::Reference cb = meat::execute(ctx);
 
 	ctx = meat::message(library, "addClass:", context);
-	CONTEXT(ctx).set_param(0, cb);
+	meat::cast<meat::Context>(ctx).parameter(0, cb);
 	execute(ctx);
 
   std::string body(cls_body);
@@ -90,7 +91,7 @@ static void classbuilder_int(meat::Reference super,
 static void compiler_import(const std::string &name,
 														meat::Reference context) {
 	meat::Reference new_ctx = message(library, "import:", context);
-	CONTEXT(new_ctx).set_param(0, new meat::Text(name));
+	meat::cast<meat::Context>(new_ctx).parameter(0, new meat::Text(name));
 	execute(new_ctx);
 }
 
@@ -154,7 +155,7 @@ static void build_library_app() {
 	meat::Reference context =
 		meat::message(meat::Class::resolve("Grinder.Library"),
 									"new:", meat::Null());
-	CONTEXT(context).set_param(0, new meat::Text(out_file));
+	meat::cast<meat::Context>(context).parameter(0, new meat::Text(out_file));
 	library = meat::execute(context);
 
 	// Go through each file and compile them
@@ -194,7 +195,7 @@ static void build_library_app() {
 
 	if (not app_class.empty()) {
 		context = message(library, "setApplicationClass:", meat::Null());
-		CONTEXT(context).set_param(0, new meat::Text(app_class));
+		meat::cast<meat::Context>(context).parameter(0, new meat::Text(app_class));
 		meat::execute(context);
 	}
 
@@ -231,75 +232,52 @@ int main(int argc, const char *argv[]) {
   /*********************************
    * Parse the command line options.
    */
-  for (int c = 1; c < argc; c++) {
-
-    if (argv[c][0] == '-') {
-      switch (argv[c][1]) {
-
-      case 'i': // Include library path
-        meat::data::Library::add_path(argv[c + 1]);
-        c++;
-        break;
-
-      case 'l': // Build library option
-        if (state != UNSET) {
-          std::cerr << "FATAL: options -l/-a cannot be used at the same time."
-                    << std::endl;
-          return 1;
-        }
-
-#ifdef DEBUG
-        std::cout << "DEBUG: Compiling library file " << argv[c + 1] << ".lib"
-                  << std::endl;
-#endif /* DEBUG */
-        out_file = argv[c + 1];
-        state = BUILD_LIBRARY;
-        c++;
-        break;
-
-      case 'c':
-        app_class = argv[c + 1];
-        c++;
-        break;
-
-      case 'a': // Build archive option
-        if (state != UNSET) {
-          std::cerr << "FATAL: option -l/-a cannot be used at the same time."
-                    << std::endl;
-          return 1;
-        }
-
-#ifdef DEBUG
-        std::cout << "DEBUG: Compiling archive " << argv[c + 1]
-                  << std::endl;
-#endif /* DEBUG */
-				out_file = argv[c + 1];
-        state = BUILD_ARCHIVE;
-        c++;
-        break;
-
-      case '#': // Display a hash value used in the vtables.
-        std::cout << "Hash value for \"" << argv[c + 1] << "\":\n  ";
-        std::cout << itohex(hash(argv[c + 1])) << std::endl;
-        return 0;
-
-      case '?':
-      case 'h': // Help option
-        help();
+	int opt;
+	while ((opt = getopt(argc, argv, "i:l:a:c:#:h?")) != -1) {
+		switch (opt) {
+		case '#': // Display a hash value used in the vtables.
+			std::cout << itohex(hash(optarg)) << std::endl;
+			return 0;
+		case 'a': // Build archive option
+			if (state != UNSET) {
+				std::cerr << "FATAL: option -l/-a cannot be used at the same time."
+									<< std::endl;
+				return 1;
+			}
+			out_file = optarg;
+			state = BUILD_ARCHIVE;
+			break;
+		case 'c':
+			app_class = optarg;
+			break;
+		case 'i':
+			meat::data::Library::add_path(optarg);
+			break;
+		case 'l':
+			if (state != UNSET) {
+				std::cerr << "FATAL: options -l/-a cannot be used at the same time."
+									<< std::endl;
+				return 1;
+			}
+			out_file = optarg;
+			state = BUILD_LIBRARY;
+			break;
+		case '?':
+		case 'h': // Help option
+			help();
 #ifdef TESTING
-        meat::test::summary();
+			meat::test::summary();
 #endif
-        return 0;
+			return 0;
+		default: { // Unknown option
+			std::cerr << "FATAL: unknown option -" << opt << std::endl;
+			return 1;
+		}
+		}
+	}
 
-      default: // Unknown option
-        std::cerr << argv[0] << ": unknown option -" << argv[c][1]
-                  << std::endl;
-        return 1;
-      }
-    } else {
-      source_files.push_back(argv[c]);
-    }
-  }
+	for (int c = optind; c < argc; c++)
+		source_files.push_back(argv[c]);
 
 	/***************************
    * Compile the meat files.

@@ -59,18 +59,16 @@ namespace meat {
 	namespace data { // Found in datastore.h
 		class Library;
 		class Archive;
-	};
+	}
 
 	/** A reference counter pointer to Script Objects and classes.
 	 */
 	typedef memory::reference<Object> Reference;
 
-#define CLASS(ref) (dynamic_cast<meat::Class &>(*(ref)))
-#define CONST_CLASS(ref) (dynamic_cast<const meat::Class &>(*(ref)))
-#define CONTEXT(ref) (dynamic_cast<meat::Context &>(*(ref)))
-#define CONST_CONTEXT(ref) (dynamic_cast<const meat::Context &>(*(ref)))
-#define BLOCK(ref) (dynamic_cast<meat::BlockContext &>(*(ref)))
-#define CONST_BLOCK(ref) (dynamic_cast<const meat::BlockContext &>(*(ref)))
+	template <class Ty>
+	Ty &cast(Reference object) { return dynamic_cast<Ty &>(*(object)); }
+
+	//#define CLASS(ref) (dynamic_cast<meat::Class &>(*(ref)))
 
 	typedef void (*class_compiler_fn)(meat::Reference super,
 																		const std::string &cls_name,
@@ -436,27 +434,27 @@ namespace meat {
 		Context(Reference cls, Reference context, uint8_t locals);
 		virtual ~Context() throw();
 
-		virtual Reference get_self() const;
-		void reset_self(Reference new_self);
+		virtual Reference self() const;
+		void self(Reference new_self);
 
-		virtual Reference get_class() const { return locals[1]; }
-		virtual Reference get_context() const { return locals[2]; }
-		virtual Reference get_super() const {
-      return CLASS(get_class()).super();
+		virtual Reference klass() const { return _locals[1]; }
+		virtual Reference context() const { return _locals[2]; }
+		virtual Reference super() const {
+      return cast<Class>(klass()).super();
     };
 
 		/** Get the calling context.
 		 */
-		virtual Reference get_messenger() const;
-		virtual void set_messenger(Reference context);
+		virtual Reference messenger() const;
+		virtual void messenger(Reference context);
 
-		virtual Reference get_param(uint8_t index) const;
+		virtual Reference parameter(uint8_t index) const;
 
-		virtual void set_param(uint8_t index, Reference value);
+		virtual void parameter(uint8_t index, Reference value);
 
 		/**
 		 */
-		virtual void set_local(uint8_t index, Reference value);
+		virtual void local(uint8_t index, Reference value);
 
 		/** Get a local variable from the context. If the index is out of range
 		 * then an meat::Exception is raised.
@@ -464,20 +462,20 @@ namespace meat {
 		 * @return A reference to the local variable.
 		 * @see get_num_of_locals()
 		 */
-		virtual Reference get_local(uint8_t index) const;
+		virtual Reference local(uint8_t index) const;
 
 		/** Returns the number of local variables the context contains. This is
 		 * set when the context is created and cannot be changed.
 		 * @return The number of local variables.
 		 */
-		virtual uint8_t get_num_of_locals() const { return num_of_locals; };
+		virtual uint8_t locals() const { return num_of_locals; };
 
-		uint16_t get_ip() const { return ip; };
-		void set_ip(uint16_t offset) { ip = offset; };
+		uint16_t ip() const { return _ip; };
+		void ip(uint16_t offset) { _ip = offset; };
 
-		void set_result_index(uint8_t local_parent_index);
-		void set_result(Reference value);
-		Reference get_result() const;
+		void result_index(uint8_t local_parent_index);
+		void result(Reference value);
+		Reference result() const;
 
 		virtual bool is_done() const { return done; };
 		virtual void finish() { done = true; };
@@ -497,8 +495,8 @@ namespace meat {
 		/** The context that this context was created in. If this is Null then
 		 * the context is the top level context of the program.
 		 */
-		Reference messenger;
-		Reference result;
+		Reference _messenger;
+		Reference _result;
 
 		typedef enum {
 			NOMETHOD  = 0x00,
@@ -508,12 +506,12 @@ namespace meat {
 
 		method_t flags;
 		meat::method_ptr_t pointer;
-		uint16_t ip;
+		uint16_t _ip;
 
 	private:
 		uint8_t num_of_locals;
-		Reference *locals;
-		uint8_t result_index;
+		Reference *_locals;
+		uint8_t _result_index;
 
 		bool done;
 	};
@@ -529,26 +527,26 @@ namespace meat {
 		BlockContext(Reference context, uint8_t locals, uint16_t ip);
 		virtual ~BlockContext() throw();
 
-		virtual Reference get_self() const {
-			return CONST_CONTEXT(origin).get_self();
+		virtual Reference self() const {
+			return cast<const Context>(_origin).self();
 		}
 
-		virtual Reference get_class() const {
-			return CONST_CONTEXT(origin).get_class();
+		virtual Reference klass() const {
+			return cast<const Context>(_origin).klass();
 		}
-		virtual Reference get_context() const {
-			return CONST_CONTEXT(origin).get_context();
+		virtual Reference context() const {
+			return cast<const Context>(_origin).context();
 		}
-		virtual Reference get_super() const {
-			return CONST_CLASS(get_class()).super();
+		virtual Reference super() const {
+			return cast<const Class>(klass()).super();
 		}
 
-		virtual Reference get_param(uint8_t index) const {
-			return locals[index];
+		virtual Reference parameter(uint8_t index) const {
+			return _locals[index];
 		};
 
-		virtual void set_param(uint8_t index, Reference &value) {
-			locals[index] = value;
+		virtual void parameter(uint8_t index, Reference &value) {
+			_locals[index] = value;
 		};
 
 		/** Set a local variable with the given value. The index for the local
@@ -558,16 +556,16 @@ namespace meat {
 		 * @param value The value to set the local variable to.
 		 * @throw Exception If the index is out of range.
 		 */
-		virtual void set_local(uint8_t index, Reference value);
-		virtual Reference get_local(uint8_t index) const;
+		virtual void local(uint8_t index, Reference value);
+		virtual Reference local(uint8_t index) const;
 
 		/** Returns the number of locals in this context and in the containing
 		 * context.
 		 * @return uint8_t Total number of local variables.
 		 */
-		virtual uint8_t get_num_of_locals() const;
+		virtual uint8_t locals() const;
 
-		Reference get_origin() const { return origin; }
+		Reference origin() const { return _origin; }
 
 		void c_break();
 		void c_continue();
@@ -580,7 +578,7 @@ namespace meat {
 		void reset();
 
 	private:
-		Reference origin;
+		Reference _origin;
 		uint8_t bc_flags;
 		uint16_t start_ip;
 	};
@@ -623,7 +621,7 @@ namespace meat {
     typedef enum {
       BOOLEAN   = 0x00,
       INTEGER   = 0x01,
-      FLOAT     = 0x02,
+      FLOAT     = 0x02
     } data_type_t;
 
     data_type_t data_type;
@@ -653,9 +651,6 @@ namespace meat {
 													 std::ostream &data_stream) const;
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
 	};
-
-#define TEXT(ref) (dynamic_cast<meat::Text &>(*(ref)))
-#define CONST_TEXT(ref) (dynamic_cast<const meat::Text &>(*(ref)))
 
 	/****************************************************************************
 	 */
@@ -688,9 +683,6 @@ namespace meat {
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
 	};
 
-#define LIST(ref) (dynamic_cast<meat::List &>(*(ref)))
-#define CONST_LIST(ref) (dynamic_cast<const meat::List &>(*(ref)))
-
 	/****************************************************************************
 	 */
 
@@ -709,11 +701,11 @@ namespace meat {
 		using std::set<Reference, obj_less>::operator=;
 		using std::set<Reference, obj_less>::insert;
 		using std::set<Reference, obj_less>::erase;
-		using std::set<Reference, obj_less>::swap;
 		using std::set<Reference, obj_less>::size;
 		using std::set<Reference, obj_less>::empty;
 		using std::set<Reference, obj_less>::begin;
 		using std::set<Reference, obj_less>::end;
+		using std::set<Reference, obj_less>::find;
 
 		using std::set<Reference, obj_less>::iterator;
 		using std::set<Reference, obj_less>::const_iterator;
@@ -721,10 +713,11 @@ namespace meat {
 		virtual void serialize(data::Archive &store,
 													 std::ostream &data_stream) const;
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
-	};
 
-#define SET(ref) (dynamic_cast<meat::Set &>(*(ref)))
-#define CONST_SET(ref) (dynamic_cast<const meat::Set &>(*(ref)))
+		void swap(Set &other) {
+			std::set<Reference, obj_less>::swap(other);
+		}
+	};
 
 	/****************************************************************************
 	 */
@@ -754,9 +747,6 @@ namespace meat {
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
 	};
 
-#define INDEX(ref) (dynamic_cast<meat::Index &>(*(ref)))
-#define CONST_INDEX(ref) (dynamic_cast<const meat::Index &>(*(ref)))
-
 	/** A quick way of resolving a reference to the Class class Object.
 	 * @param initializing Used internally during initialization, not to be
 	 *                     used otherwise.
@@ -771,8 +761,10 @@ namespace meat {
 
 	Reference DECLSPEC BFalse();
 
+	Reference DECLSPEC Boolean(bool value);
+
 	Reference DECLSPEC Null();
 
-};
+}
 
 #endif /* _MEAT_H */

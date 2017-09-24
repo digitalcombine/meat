@@ -86,7 +86,7 @@ void meat::grinder::Interpreter::command(Tokenizer &tokens) {
 
       context = meat::message(obj, message.c_str(), context);
       result = meat::execute(context);
-      context = ((Context &)(*context)).get_messenger();
+      context = cast<Context>(context).messenger();
 
 #ifdef DEBUG
       if (not result.is_null())
@@ -111,13 +111,13 @@ void meat::grinder::Interpreter::command(Tokenizer &tokens) {
       uint8_t param;
       for (c = 2, param = 0; c < tokens.count(); c += 2, param++) {
         Reference value = resolve_object(tokens[c]);
-        CONTEXT(new_ctx).set_param(param, value);
+        cast<Context>(new_ctx).parameter(param, value);
       }
 
       context = new_ctx;
 
       result = meat::execute(context);
-      context = CONTEXT(context).get_messenger();
+      context = cast<Context>(context).messenger();
 
 #ifdef DEBUG
       if (not result.is_null())

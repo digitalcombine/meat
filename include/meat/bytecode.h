@@ -121,7 +121,7 @@ namespace meat {
 				set_property_t sp;
 			} o;
 		} bytecode_t;
-  };
-};
+  }
+}
 
 #endif /* _MEAT_BYTECODE_H */

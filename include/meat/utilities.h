@@ -71,7 +71,7 @@ namespace endian {
   DECLSPEC meat::float_t write_le(meat::float_t value);
 #endif
 
-};
+}
 
 /** Creates an integer hash for any give string.
  * @param word The string to hash.

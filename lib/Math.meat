@@ -1,0 +1,112 @@
+# Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+#
+# This file is part of Meat.
+#
+# Meat is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Meat is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Meat.  If not, see <http://www.gnu.org/licenses/>.
+
+Library include: {
+#include <cmath>
+
+#define PI 3.14159265
+}
+
+#============================================================================
+#
+Object subClass: Math as: {
+
+  class function cos: value {
+    return new meat::Value(std::cos(FLOAT(value)));
+  }
+
+  class function sin: value {
+    return new meat::Value(std::sin(FLOAT(value)));
+  }
+
+  class function tan: value {
+    return new meat::Value(std::tan(FLOAT(value)));
+  }
+
+  class function acos: value {
+    return new meat::Value(std::acos(FLOAT(value)));
+  }
+
+  class function asin: value {
+    return new meat::Value(std::asin(FLOAT(value)));
+  }
+
+  class function atan: value {
+    return new meat::Value(std::atan(FLOAT(value)));
+  }
+
+  class function atan2y: y x: x {
+    return new meat::Value(std::atan2(FLOAT(y), FLOAT(x)));
+  }
+
+  class function cosh: value {
+    return new meat::Value(std::cosh(FLOAT(value)));
+  }
+
+  class function sinh: value {
+    return new meat::Value(std::sinh(FLOAT(value)));
+  }
+
+  class function tanh: value {
+    return new meat::Value(std::tanh(FLOAT(value)));
+  }
+
+  class function exp: value {
+    meat::float_t answer = (meat::float_t)std::exp(FLOAT(value));
+
+    if (answer == HUGE_VAL) throw meat::Exception("exp range error");
+
+    return new meat::Value(answer);
+  }
+
+  class function log: value {
+    if (FLOAT(value) <= 0.0)
+      throw meat::Exception("Log parameter out of range");
+
+    return new meat::Value(std::log(FLOAT(value)));
+  }
+
+  class function log10: value {
+    if (FLOAT(value) <= 0.0)
+      throw meat::Exception("Log10 parameter out of range");
+
+    return new meat::Value(std::log10(FLOAT(value)));
+  }
+
+  class function sqrt: value {
+    if (FLOAT(value) < 0.0)
+      throw meat::Exception("Square root parameter out of range");
+
+    return new meat::Value(std::sqrt(FLOAT(value)));
+  }
+
+  class function round: value {
+    return new meat::Value((meat::float_t)round(FLOAT(value)));
+  }
+
+  class function ceiling: value {
+    return new meat::Value(std::ceil(FLOAT(value)));
+  }
+
+  class function floor: value {
+    return new meat::Value(std::floor(FLOAT(value)));
+  }
+
+  class function truncate: value {
+   return new meat::Value((meat::float_t)trunc(FLOAT(value)));
+  }
+}

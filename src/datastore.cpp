@@ -345,7 +345,7 @@ void meat::data::Library::add_import(const std::string &name) {
   /* Record that the library should always be imported when this library
    * is loaded.
    */
-  LIST(imports).push_back(new meat::Text(name));
+  meat::cast<meat::List>(imports).push_back(new meat::Text(name));
 }
 
 /************************************
@@ -361,10 +361,10 @@ meat::Reference meat::data::Library::get_imports() const {
  **************************************/
 
 void meat::data::Library::remove_import(const std::string &name) {
-	meat::List::iterator it = LIST(imports).begin();
-	for (; it != LIST(imports).end(); ++it) {
-		if (TEXT(*it) == name) {
-			LIST(imports).erase(it);
+	meat::List::iterator it = meat::cast<meat::List>(imports).begin();
+	for (; it != meat::cast<meat::List>(imports).end(); ++it) {
+		if (meat::cast<meat::Text>(*it) == name) {
+			meat::cast<meat::List>(imports).erase(it);
 			return;
 		}
 	}
@@ -497,90 +497,6 @@ std::string meat::data::Library::lookup(meat::uint32_t hash_id) const {
 	return itohex(hash_id);
 }
 
-/******************************
- * meat::data::Library::write *
- ******************************/
-
-void meat::data::Library::write() {
-  if (is_new == false or name.empty()) {
-#ifdef DEBUG
-    if (is_new == false)
-      std::cout << "DEBUG: Attempting to recreate an imported file"
-                << std::endl;
-    if (name.empty())
-      std::cout << "DEBUG: Attempting to write a library with no name"
-                << std::endl;
-#endif /* DEBUG */
-    throw meat::Exception("Unable to create new library");
-  }
-
-  //this->name = name;
-
-#ifdef DEBUG
-  std::cout << "LIBRARY: Creating library file " << name << ".mlib"
-						<< std::endl;
-#endif /* DEBUG */
-
-  std::ofstream lib_file((name + ".mlib").c_str(),
-                         std::ios::out | std::ios::binary);
-
-  if (lib_file.is_open()) {
-    sgelib_header_t header = {
-      {'M', 'L', 'I', 'B'},
-      1, 0,
-    };
-
-    /*  We initially write the header to the file here to make sure that all
-     * data after is in the right places. We have to rewrite this header with
-     * all the offset filled in later.
-     */
-    lib_file.write((const char *)&header, sizeof(sgelib_header_t));
-
-		// Reserved for future flags.
-		lib_file.put(0);
-
-		// Add the application class hash ID if the library is executable.
-		uint32_t app_hash_id = 0;
-		if (!application.is_null()) {
-			app_hash_id = endian::write_be(CLASS(application).hash_id());
-		}
-		lib_file.write((const char *)&app_hash_id, 4);
-
-#ifdef DEBUG
-    std::cout << "LIBRARY: Adding " << (int)LIST(imports).size()
-              << " imports" << std::endl;
-#endif /* DEBUG */
-    /* Write all import strings to the library file next. */
-    meat::uint8_t import_cnt = LIST(imports).size();
-
-    lib_file.put(import_cnt);
-    for (meat::List::iterator it = LIST(imports).begin();
-         it != LIST(imports).end();
-         it++) {
-      lib_file.write(TEXT(*it).data(), TEXT(*it).length());
-      lib_file.put('\0');
-    }
-
-#ifdef DEBUG
-    std::cout << "LIBRARY: Adding " << (int)this->classes.size()
-              << " classes" << std::endl;
-#endif /* DEBUG */
-    lib_file.put((uint8_t)classes.size());
-    for (std::deque<Reference>::iterator it = classes.begin();
-         it != classes.end(); it++) {
-      ((Class &)*(*it)).write(lib_file);
-    }
-
-		// Write the symbols table to the file.
-		uint32_t sz = endian::write_be(syms_size);
-		lib_file.write((const char *)&sz, 4);
-		if (symbols)
-			lib_file.write((const char *)symbols, syms_size);
-
-    lib_file.close();
-  }
-}
-
 /********************************************
  * meat::data::Library::import_from_archive *
  ********************************************/
@@ -641,8 +557,8 @@ void meat::data::Library::import_from_archive(const std::string &name) {
     Reference cls = meat::Class::import(lib_file);
     classes.push_back(cls);
     Class::record(cls);
-		CLASS(cls).library = this;
-		if (app_id && CLASS(cls).hash_id() == app_id)
+		cast<Class>(cls).library = this;
+		if (app_id && cast<Class>(cls).hash_id() == app_id)
 			application = cls;
   }
 
@@ -695,44 +611,44 @@ void meat::data::Library::import_from_native(const std::string &filename,
  */
 
 static meat::vtable_entry_t LibraryMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x00379f78, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x34003578, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER, 0, {.offset = 0}},
-  {0x7b840562, 0x00000000, VTM_SUPER, 0, {.offset = 0}}
+  {0x0000043c, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}}
 };
 
 // class method import:
 static meat::Reference Library_cm_import_(meat::Reference context) {
-  //meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference filename = CONTEXT(context).get_param(0);
+  //meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference filename = meat::cast<meat::Context>(context).parameter(0);
 
 #ifdef DEBUG
-  std::cout << "DEBUG: Importing library " << TEXT(filename)
+  std::cout << "DEBUG: Importing library " << meat::cast<meat::Text>(filename)
             << std::endl;
 #endif /* DEBUG */
 
   if (compiler_import() != NULL) {
-    compiler_import()(TEXT(filename), context);
+    compiler_import()(meat::cast<meat::Text>(filename), context);
   } else {
-    meat::data::Library::import(TEXT(filename).c_str());
+    meat::data::Library::import(meat::cast<meat::Text>(filename).c_str());
   }
   return null;
 }
 
 // class method include:
 static meat::Reference Library_cm_include_(meat::Reference context) {
-  //meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference cpp_includes = CONTEXT(context).get_param(0);
+  //meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference cpp_includes = meat::cast<meat::Context>(context).parameter(0);
 
 	meat::compiler_import_fn &import = compiler_import();
 
   if (import != NULL) {
-    meat::data::Library::include(TEXT(cpp_includes).c_str());
+    meat::data::Library::include(meat::cast<meat::Text>(cpp_includes).c_str());
   } else {
     throw meat::Exception("Method Library include is only with the compiler");
 	}
@@ -742,25 +658,25 @@ static meat::Reference Library_cm_include_(meat::Reference context) {
 
 // class method setApplication:
 static meat::Reference Library_cm_setApplication_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  //meat::Reference klass = CONTEXT(context).get_class();
-  meat::Reference class_name = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  //meat::Reference klass = meat::cast<meat::Context>(context).get_class();
+  meat::Reference class_name = meat::cast<meat::Context>(context).parameter(0);
 	return null;
 }
 
 static meat::vtable_entry_t LibraryCMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x05614602, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_include_},
-  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
 	{0x1c461870, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_setApplication_},
-  {0x2c296348, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x2c296348, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x72cd0161, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_import_},
-  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
+  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}}
 };
 
 /******************************************************************************
@@ -894,7 +810,7 @@ void meat::data::Archive::set_object(Reference &object) {
 
     Index new_index;
     new_index.object = object;
-    new_index.cls_id = CLASS(object->type()).hash_id();
+    new_index.cls_id = cast<Class>(object->type()).hash_id();
 
     index.clear();
     index.push_back(new_index);
@@ -933,7 +849,7 @@ meat::uint32_t meat::data::Archive::add_property(Reference property) {
       /* Add the object to the index and return the index offset. */
       Index new_index;
       new_index.object = property.weak();
-      new_index.cls_id = CLASS(property->type()).hash_id();
+      new_index.cls_id = cast<Class>(property->type()).hash_id();
       index.push_back(new_index);
       return index.size() - 1;
     }
@@ -973,6 +889,11 @@ meat::Reference meat::data::Archive::get_object() {
 /***********************************
  * meat::data::Archive::get_object *
  ***********************************/
+
+typedef struct _props_index_s {
+	meat::uint32_t offset;
+	meat::uint8_t flags;
+} props_index_t;
 
 meat::Reference meat::data::Archive::get_object(uint32_t index) {
 
@@ -1035,17 +956,18 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
   Reference obj_class = Class::resolve(this->index.at(index).cls_id);
 
 #ifdef DEBUG
-  std::cout << "         -> " << CLASS(obj_class) << std::endl;
+  std::cout << "         -> " << cast<Class>(obj_class) << std::endl;
 #endif /* DEBUG */
 
-  Reference obj = CLASS(obj_class).new_object();
+  Reference obj = cast<Class>(obj_class).new_object();
 
   // Read in all the index offsets for the object's properties.
-  meat::uint8_t num_of_props = CLASS(obj_class).obj_properties();
-  struct _props_index_s {
+  meat::uint8_t num_of_props = cast<Class>(obj_class).obj_properties();
+	std::vector<props_index_t> prop_idxs(num_of_props);
+  /*struct _props_index_s {
     meat::uint32_t offset;
     meat::uint8_t flags;
-  } prop_idxs[num_of_props];
+		} prop_idxs[num_of_props];*/
 
 #ifdef DEBUG
   std::cout << "         -> " << std::dec << (unsigned int)num_of_props
@@ -1121,12 +1043,12 @@ void meat::data::Archive::sync() {
 
 #ifdef TESTING
         meat::test::test("Serializing number of properties", false);
-        if (props != CLASS(index[c].object->type()).obj_properties()) {
+        if (props != cast<Class>(index[c].object->type()).obj_properties()) {
           meat::test::failed("Serializing number of properties", false);
 #ifdef DEBUG
           std::cout << "      " << std::dec << (unsigned int)props << " != "
-                    << (unsigned int)CLASS(index[c].object->type()).obj_properties()
-                    << " for type " << CLASS(index[c].object->type())
+                    << (unsigned int)cast<Class>(index[c].object->type()).obj_properties()
+                    << " for type " << cast<Class>(index[c].object->type())
                     << std::endl;
 #endif
         }
@@ -1322,37 +1244,37 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
 
 // class method create:
 static meat::Reference Archive_cm_create_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference filename = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference filename = meat::cast<meat::Context>(context).parameter(0);
 
-  return new meat::data::Archive(TEXT(filename).c_str(), true);
+  return new meat::data::Archive(meat::cast<meat::Text>(filename).c_str(), true);
 }
 
 // class method open:
 static meat::Reference Archive_cm_open_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference filename = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference filename = meat::cast<meat::Context>(context).parameter(0);
 
-  return new meat::data::Archive(TEXT(filename).c_str());
+  return new meat::data::Archive(meat::cast<meat::Text>(filename).c_str());
 }
 
 static meat::vtable_entry_t ArchiveCMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x0650a330, 0x36a178be, VTM_NATIVE, 1, Archive_cm_open_},
-  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x2c296348, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x2c296348, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x3d4e7ee8, 0x36a178be, VTM_NATIVE, 1, Archive_cm_create_},
-  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
+  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}}
 };
 
 // method getObject
 static meat::Reference Archive_om_getObject(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
+  meat::Reference self = meat::cast<meat::Context>(context).self();
 
   meat::data::Archive &store_obj = (meat::data::Archive &)(*self);
   return store_obj.get_object();
@@ -1360,19 +1282,19 @@ static meat::Reference Archive_om_getObject(meat::Reference context) {
 
 // method import:
 static meat::Reference Archive_om_import_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference filename = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference filename = meat::cast<meat::Context>(context).parameter(0);
 
   meat::data::Archive &archive_obj = (meat::data::Archive &)(*self);
-  meat::data::Library::import(TEXT(filename).c_str());
-  archive_obj.add_import(TEXT(filename).c_str());
+  meat::data::Library::import(meat::cast<meat::Text>(filename).c_str());
+  archive_obj.add_import(meat::cast<meat::Text>(filename).c_str());
   return null;
 }
 
 // method setObject:
 static meat::Reference Archive_om_setObject_(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
-  meat::Reference value = CONTEXT(context).get_param(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference value = meat::cast<meat::Context>(context).parameter(0);
 
   meat::data::Archive &archive_obj = (meat::data::Archive &)(*self);
   archive_obj.set_object(value);
@@ -1381,26 +1303,26 @@ static meat::Reference Archive_om_setObject_(meat::Reference context) {
 
 // method sync
 static meat::Reference Archive_om_sync(meat::Reference context) {
-  meat::Reference self = CONTEXT(context).get_self();
+  meat::Reference self = meat::cast<meat::Context>(context).self();
 
   ((meat::data::Archive &)(*self)).sync();
   return null;
 }
 
 static meat::vtable_entry_t ArchiveMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x000007a0, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x00361a9b, 0x36a178be, VTM_NATIVE, 0, Archive_om_sync},
-  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x00379f78, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x28186b3f, 0x36a178be, VTM_NATIVE, 0, Archive_om_getObject},
-  {0x34003578, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x34003578, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x4e688b77, 0x36a178be, VTM_NATIVE, 1, Archive_om_setObject_},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x72cd0161, 0x36a178be, VTM_NATIVE, 1, Archive_om_import_},
-  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {.offset = 0}},
-  {0x7b840562, 0x00000000, VTM_SUPER,  0, {.offset = 0}}
+  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}}
 };
 
 /******************************************************************************

@@ -54,6 +54,6 @@ namespace meat {
   /* Fixed size floating point types. */
   typedef float float_t __attribute__((__mode__(__SF__)));   // 32 bits
   typedef double double_t __attribute__((__mode__(__DF__))); // 64 bits
-};
+}
 
 #endif /* MEAT_TYPES_H */

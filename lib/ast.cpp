@@ -183,11 +183,11 @@ Method::Method(const meat::List &properties, int p_offset,
 
   List::const_iterator it;
   for (it = properties.begin(); it != properties.end(); it++)
-    this->properties.push_back(CONST_TEXT(*it));
+    this->properties.push_back(meat::cast<const meat::Text>(*it));
   this->p_offset = p_offset;
 
   for (it = class_properties.begin(); it != class_properties.end(); it++)
-    this->class_properties.push_back(CONST_TEXT(*it));
+    this->class_properties.push_back(meat::cast<const meat::Text>(*it));
   this->cp_offset = cp_offset;
 
   temp_counter = 0;
@@ -373,7 +373,7 @@ void Block::add(ASTNode *command) {
 
 void Block::set_parent_block(Block *parent) {
   this->parent = parent;
-};
+}
 
 void Block::gen_bytecode(bool prelim) {
   throw Exception("Can't generate a code block without a local variable"

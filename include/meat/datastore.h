@@ -96,6 +96,9 @@ namespace meat {
 
       void set_application(const std::string &name);
 
+			/** Get a native dynamic symbol from the library, if it was a native
+			 * library.
+			 */
 			void *dlsymbol(const std::string &name);
 
       const std::string &get_name() { return name; }
@@ -105,15 +108,13 @@ namespace meat {
 			void clear_symbols();
 			std::string lookup(meat::uint32_t hash_id) const;
 
-      /** Creates and writes a new Meat library file if the library was
-       * created with the create() method.
-       */
-      void write();
-
       const std::deque<Reference> &get_classes() const { return classes; }
 
     protected:
-      /* These are only used when compiling a new class library file. */
+      /**
+			 * @todo Imports and includes should be moved to the Grinder.Library
+			 *       class.
+			 */
 			Reference imports;
       std::deque<Reference> classes;
       std::string includes;
@@ -223,8 +224,8 @@ namespace meat {
     Archive &operator<<(Archive &archive, meat::uint32_t value);
     Archive &operator<<(Archive &archive, meat::int32_t value);
     Archive &operator<<(Archive &archive, meat::float_t value);
-  };
-};
+  }
+}
 
 typedef void *(*init_library_proc_t)(meat::data::Library &library);
 

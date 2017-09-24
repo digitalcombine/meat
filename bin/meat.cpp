@@ -21,6 +21,7 @@
 
 #include <meat.h>
 #include <meat/datastore.h>
+#include "getopt.h"
 
 #include <iostream>
 #include <exception>
@@ -62,37 +63,30 @@ int main(int argc, const char *argv[]) {
 	/*********************************
 	 * Parse the command line options.
 	 */
-	for (int c = 1; c < argc; c++) {
-
-		if (argv[c][0] == '-') {
-			switch (argv[c][1]) {
-			case 'i': // Include library path
-				meat::data::Library::add_path(argv[c + 1]);
-				c++;
-				break;
-
-			case 'h': // Help option
-				help();
+	int opt;
+	while ((opt = getopt(argc, argv, "i:h")) != -1) {
+		switch (opt) {
+		case 'i':
+			meat::data::Library::add_path(optarg);
+			break;
+		case 'h': // Help option
+			help();
 #ifdef TESTING
-				meat::test::summary();
+			meat::test::summary();
 #endif
-				return 0;
-
-			default: { // Unknown option
-#ifdef DEBUG
-				for (int i = 0; i < argc; i++) {
-					std::cerr << argv[i] << " ";
-				}
-				std::cerr << std::endl;
-#endif
-				std::cerr << "FATAL: unknown option -" << argv[c][1] << std::endl;
-				return 1;
-			}
-			}
-		} else {
-			filename = argv[c];
+			return 0;
+		default: { // Unknown option
+			std::cerr << "FATAL: unknown option -" << opt << std::endl;
+			return 1;
+		}
 		}
 	}
+
+	if (optind >= argc) {
+		std::cerr << "FATAL: expected a file to execute" << std::endl;
+		return 1;
+	}
+	filename = argv[optind];
 
 	try {
 		int fl_type = meat::data::fl_type(filename);

@@ -231,11 +231,11 @@ namespace memory {
       return (this->obj != obj.obj);
     }
 
-    /** Deference the reference.
+    /** Dereference the reference.
      */
     Ty &operator *(void) { return (Ty &)(*obj); }
 
-    /** Constant deference the reference.
+    /** Constant dereference the reference.
      */
     const Ty &operator *(void) const { return (Ty &)(*obj); }
     Ty *operator ->() { return (Ty *)(*obj); }
@@ -276,5 +276,5 @@ namespace memory {
     __reference *obj;
 
   };
-};
+}
 #endif /* _MEAT_MEMORY_H */

@@ -278,9 +278,6 @@ namespace meat {
 
     /**************************************************************************
      * Library Class
-     *
-     * Property 0 Library Name
-     * Property 1 List of Classes
      */
 
     /** Language parser for compiling library files.
@@ -334,6 +331,11 @@ namespace meat {
       bool to_cpp;
       Reference context;
       Reference result;
+
+			std::string app_class;
+
+			void write_mlib(std::ostream &out);
+			void write_cpp(std::ostream &out);
     };
 
     /**************************************************************************
@@ -355,7 +357,7 @@ namespace meat {
       int16_t have_obj_property(const std::string &name) const;
       int16_t have_cls_property(const std::string &name) const;
       Reference get_super() const {
-        return meat::Class::resolve(CONST_TEXT(property(1)));
+        return meat::Class::resolve(meat::cast<const meat::Text>(property(1)));
       }
 
       void add_method(Reference method);
@@ -370,8 +372,8 @@ namespace meat {
 
       bool is_cpp() const;
 
-      std::string cpp_methods();
-      std::string cpp_new_class() const;
+      void cpp_methods(std::ostream &out);
+      void cpp_new_class(std::ostream &out) const;
       std::string cpp_hash_id() const;
 
       virtual void command(Tokenizer &tokens);
@@ -450,9 +452,9 @@ namespace meat {
     namespace Utils {
       DECLSPEC bool is_integer(const std::string &value, int32_t *res);
       DECLSPEC bool is_float(const std::string &value, float_t *res);
-    };
+    }
 
-  }; /* namespace compiler */
-}; /* namespace meat */
+  } /* namespace compiler */
+} /* namespace meat */
 
 #endif /* _MEAT_COMPILER_H */

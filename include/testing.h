@@ -41,7 +41,7 @@ namespace meat {
     void summary();
 
     void run_tests();
-  };
-};
+  }
+}
 
 #endif /* MEAT_TESTING */

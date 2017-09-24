@@ -281,8 +281,8 @@ namespace meat {
 				bool super;
 			};
 
-		}; /* namespace ast */
-  }; /* namespace compiler */
-}; /* namespace meat */
+		} /* namespace ast */
+  } /* namespace compiler */
+} /* namespace meat */
 
 #endif /* _MEAT_AST_H */
