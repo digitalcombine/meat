@@ -85,39 +85,17 @@ static bool vtable_comp(struct _vtable_entry_s left,
  */
 
 extern "C" {
-  DECLSPEC void *create_interpreter(const std::string &);
-  DECLSPEC void exec_interpreter(void *, std::istream &);
-  DECLSPEC void close_interpreter(void *);
-
   DECLSPEC void exec_library(meat::Reference, std::istream &);
-
   DECLSPEC void exec_class(meat::Reference, std::istream &);
 }
 
-void * create_interpreter(const std::string &name) {
-  meat::grinder::Interpreter *interp = new meat::grinder::Interpreter();
-
-  interp->create(name);
-
-  return (void *)interp;
-}
-
-void exec_interpreter(void *interp, std::istream &code) {
-  ((meat::grinder::Interpreter *)interp)->execute(code);
-}
-
-void close_interpreter(void *interp) {
-  ((meat::grinder::Interpreter *)interp)->write();
-  delete ((meat::grinder::Interpreter *)interp);
-}
-
 void exec_library(meat::Reference library, std::istream &code) {
-  dynamic_cast<meat::grinder::Library &>(*library).execute(code);
+  cast<grinder::Library>(library).execute(code);
 }
 
 void exec_class(meat::Reference klass, std::istream &code) {
-  dynamic_cast<meat::grinder::Class &>(*klass).execute(code);
-  dynamic_cast<meat::grinder::Class &>(*klass).create_class();
+  cast<grinder::Class>(klass).execute(code);
+  cast<grinder::Class>(klass).create_class();
 }
 
 /******************************************************************************
@@ -1120,11 +1098,13 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
         } else if (tokens[1] == "method" || tokens[1] == "function") {
 
           uint8_t body_index = tokens.count() - 1;
-          std::string method_name;
+          std::string method_name_str;
+					List *method_name = new List();
 
           // Build the method name
           for (int c = 2; c < body_index; c += 2) {
-            method_name += (std::string &)(tokens[c]);
+            method_name_str += (std::string &)(tokens[c]);
+						method_name->push_back(new Text((std::string &)(tokens[c])));
           }
 
 #ifdef DEBUG
@@ -1132,12 +1112,11 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
                     << std::endl;
 #endif /* DEBUG */
 
-          Method *mb = new Method(*this,
-                                                (tokens[1] == "function"));
+          Method *mb = new Method(*this, (tokens[1] == "function"));
 
-          Reference name = new Text(method_name);
+          Reference name = new Text(method_name_str);
           cast<Index>(classMethods)[name] = mb;
-          mb->property(0) = name;
+          mb->property(0) = method_name;
 
           for (int c = 3; c < body_index; c += 2) {
             mb->add_parameter(tokens[c]);
@@ -1169,11 +1148,13 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
         } else if (tokens[0] == "method" || tokens[0] == "function") {
 
           uint8_t body_index = tokens.count() - 1;
-          std::string method_name;
+          std::string method_name_str;
+					List *method_name = new List();
 
           // Build the method name
           for (int c = 1; c < body_index; c += 2) {
-            method_name += (std::string &)(tokens[c]);
+            method_name_str += (std::string &)(tokens[c]);
+						method_name->push_back(new Text((std::string &)(tokens[c])));
           }
 
 #ifdef DEBUG
@@ -1183,11 +1164,10 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
 #endif /* DEBUG */
 
           // Create a new method builder and add it to the vtable mappings.
-          Method *mb = new Method(*this,
-                                                (tokens[0] == "function"));
-          Reference name = new Text(method_name);
+          Method *mb = new Method(*this, (tokens[0] == "function"));
+          Reference name = new Text(method_name_str);
           cast<Index>(objectMethods)[name] = mb;
-          mb->property(0) = name;
+          mb->property(0) = method_name;
 
           // Add the method parameters to the method build..
           for (int c = 2; c < body_index; c += 2) {
@@ -1355,7 +1335,11 @@ meat::grinder::Method::update_symbols(std::set<std::string> &symbols) const {
  **************************************/
 
 std::string meat::grinder::Method::cpp_hash_id() {
-  return itohex(hash(cast<const Text>(this->property(0))));
+	std::string name;
+	List::const_iterator cit = cast<const List>(this->property(0)).begin();
+	for (; cit != cast<const List>(this->property(0)).end(); ++cit)
+		name += cast<const Text>(*cit);
+  return itohex(hash(name));
 }
 
 /***********************************
@@ -1363,7 +1347,10 @@ std::string meat::grinder::Method::cpp_hash_id() {
  ***********************************/
 
 std::string meat::grinder::Method::cpp_name(const char *prelim) {
-  std::string orig_name = cast<Text>(this->property(0));
+  std::string orig_name; // = cast<Text>(this->property(0));
+	List::const_iterator cit = cast<const List>(this->property(0)).begin();
+	for (; cit != cast<const List>(this->property(0)).end(); ++cit)
+		orig_name += cast<const Text>(*cit);
 
   // Transform operator names
   if (orig_name == "==") orig_name = "equals";

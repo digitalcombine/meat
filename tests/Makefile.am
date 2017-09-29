@@ -26,10 +26,10 @@ CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 			 data.mar tests.mapp hello.mlib libtests.mlib
 
 .meat.mlib:
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -l $* $<
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<
 
 .meat.cpp:
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -l $* $<
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<
 	@./fixnames.sh $*.cpp
 
 Test.Characters.mlib: UnitTest.mlib @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat
@@ -56,7 +56,7 @@ Datastore.cpp: @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat
 grinder.cpp: @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat
 
 data.mar: Test.Data.mlib
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -a data.mar data.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -s data.meat
 
 tests.mapp: @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat
 tests.mapp: UnitTest.mlib Test.Application.mlib
@@ -65,7 +65,7 @@ tests.mapp: Test.Index.mlib Test.Data.mlib Test.Compiler.mlib
 tests.mapp: builtin.cpp Datastore.cpp grinder.cpp
 tests.mapp: data.mar
 tests.mapp: tests.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -a tests.mapp tests.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -s tests.meat
 
 libtests.mlib: @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat
 libtests.mlib: Test.Characters.mlib
@@ -76,7 +76,7 @@ libtests.mlib: Test.Boolean.mlib Test.Numeric.mlib
 libtests.mlib: Test.Integer.mlib
 libtests.mlib: Test.List.mlib
 libtests.mlib: libtests.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -c Tests -l libtests libtests.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -c Tests libtests.meat
 
 hello.mlib: hello.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -c Hello -l hello hello.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -c Hello hello.meat

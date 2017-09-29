@@ -33,7 +33,7 @@ Library include: {
 
 Object subClass: Grinder.Libraryᶲ as: {
 
-  property name
+  property _name
   property classes
   property documentation
   property requiredLibraries
@@ -55,9 +55,9 @@ Object subClass: Grinder.Libraryᶲ as: {
   class function new: libraryName {
     meat::Reference new_object = CLASS(klass).new_object();
 
-    name = libraryName;
-    dynamic_cast<meat::grinder::Library &>
-		  (*new_object).register_as(TEXT(name));
+    _name = libraryName;
+    meat::cast<meat::grinder::Library>
+		  (new_object).register_as(meat::cast<meat::Text>(_name));
 
     return new_object;
   }
@@ -66,10 +66,8 @@ Object subClass: Grinder.Libraryᶲ as: {
     requiredLibraries append: libraryName
   }
 
-	function removeImport: libraryName {
-	  dynamic_cast<meat::grinder::Library &>
-      (*self).remove_import(TEXT(libraryName));
-		return null;
+	method removeImport: libraryName {
+	  requiredLibraries remove: libraryName
 	}
 
 	method getImportList {
@@ -78,12 +76,12 @@ Object subClass: Grinder.Libraryᶲ as: {
 
 	# Return the name of the Library.
   method getName {
-    context return: name
+    context return: _name
   }
 
   method renameTo: newName {
     Exception throw: "Currently unable to rename libraries."
-    name = [newName asText]
+    _name = [newName asText]
   }
 
   method setDocumentation: document {
@@ -95,7 +93,7 @@ Object subClass: Grinder.Libraryᶲ as: {
   }
 
   function addClass: theClass {
-    dynamic_cast<meat::grinder::Library &>(*self).add_class(theClass);
+    meat::cast<meat::grinder::Library>(self).add_class(theClass);
 	  return null;
   }
 
@@ -106,13 +104,15 @@ Object subClass: Grinder.Libraryᶲ as: {
       }
     }
     Exception throw: [[["Class " + className] + \
-		                   " was not found in library "] + name]
+		                   " was not found in library "] + _name]
   }
 
   method getClassList {
     context return: [classes copy]
   }
 
+  # XXX This is going to work. We need to unregister the class from the
+	#     system as well.
   method removeClass: className {
     theClass = [self getClass: className]
     classes remove: theClass
@@ -125,7 +125,7 @@ Object subClass: Grinder.Libraryᶲ as: {
   }
 
   function compile {
-    dynamic_cast<meat::grinder::Library &>(*self).write();
+    meat::cast<meat::grinder::Library>(self).write();
     return null;
   }
 }
@@ -153,6 +153,7 @@ Object subClass: Grinder.Classᶲ as: {
 
     objectProperties = [List new]
     classProperties = [List new]
+		# XXX These should only be lists also.
     objectMethods = [Index new]
     classMethods = [Index new]
   }
@@ -254,7 +255,7 @@ Object subClass: Grinder.Methodᶲ as: {
 
   class method new: name {
     self newObject
-    methodName = [name asText]
+    methodName = name
     context return: self
   }
 

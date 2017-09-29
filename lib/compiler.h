@@ -261,16 +261,11 @@ namespace meat {
 
       virtual void command(Tokenizer &tokens);
 
-      void create(const std::string &name);
-
-      void write();
-
     protected:
       Reference resolve_object(Token &token);
 
     private:
       std::map<std::string, Reference> variables;
-      data::Archive *archive;
 
       Reference context;
       Reference result;

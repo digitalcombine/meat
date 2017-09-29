@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
+archive = [Archive create: "data.mar"]
+
 archive import: "Test.Data"
 
 # Create an index as the object to add to the archive
@@ -51,4 +53,4 @@ data set: "Empty List" to: [List new]
 
 # Create the data archive
 archive setObject: data
-#archive sync
+archive sync

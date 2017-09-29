@@ -25,6 +25,26 @@
 #include <iostream>
 #endif
 
+extern "C" {
+  DECLSPEC void *create_interpreter(const std::string &);
+  DECLSPEC void exec_interpreter(void *, std::istream &);
+  DECLSPEC void close_interpreter(void *);
+}
+
+void * create_interpreter(const std::string &name) {
+  meat::grinder::Interpreter *interp = new meat::grinder::Interpreter();
+  return (void *)interp;
+}
+
+void exec_interpreter(void *interp, std::istream &code) {
+  ((meat::grinder::Interpreter *)interp)->execute(code);
+}
+
+void close_interpreter(void *interp) {
+  delete ((meat::grinder::Interpreter *)interp);
+}
+
+
 /******************************************************************************
  * Interpreter Class Implementation
  */
@@ -133,23 +153,6 @@ void meat::grinder::Interpreter::command(Tokenizer &tokens) {
   //std::cout << "DEBUG:  clear " << object << " " << message << std::endl;
 #endif /* DEBUG */
   tokens.clear();
-}
-
-/***********************
- * Interpreter::create *
- ***********************/
-
-void meat::grinder::Interpreter::create(const std::string &name) {
-  archive = new meat::data::Archive(name.c_str(), true);
-  variables["archive"] = archive;
-}
-
-/**********************
- * Interpreter::write *
- **********************/
-
-void meat::grinder::Interpreter::write() {
-  if (archive != NULL) archive->sync();
 }
 
 /*******************************

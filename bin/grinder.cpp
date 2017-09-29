@@ -47,11 +47,19 @@ static void help() {
   std::cout << "grinder [-l libname|-a archname] [-i path] source ...\n";
   std::cout << "grinder -h\n";
   std::cout << "  -i path      Include path to the library search\n";
-  std::cout << "  -l libname   Compile a library\n";
   std::cout << "  -c appclass  Compile a library\n";
-  std::cout << "  -s script    Compile an archive\n";
+  std::cout << "  -s           Run the source as an intrepreted script\n";
   std::cout << "  -# text      Return a hash value for the text\n";
   std::cout << "  -h           Displays this help" << std::endl;
+}
+
+static std::string library_name(const std::string &filename) {
+	size_t end = filename.find_last_of(".");
+	size_t start = filename.find_last_of("/\\");
+
+	if (start == std::string::npos) start = 0;
+
+	return filename.substr(start, end - start);
 }
 
 typedef void (*exec_class_fn)(meat::Reference, std::istream &);
@@ -152,12 +160,6 @@ static void build_library_app() {
 	exec_library_fn exec_library =
 		(exec_library_fn)grinder->dlsymbol("exec_library");
 
-	meat::Reference context =
-		meat::message(meat::Class::resolve("Grinder.Library"),
-									"new:", meat::Null());
-	meat::cast<meat::Context>(context).parameter(0, new meat::Text(out_file));
-	library = meat::execute(context);
-
 	// Go through each file and compile them
 	for (std::deque<const char *>::iterator it = source_files.begin();
 			 it != source_files.end();
@@ -179,6 +181,13 @@ static void build_library_app() {
 			}
 
 		} else {
+			meat::Reference context =
+				meat::message(meat::Class::resolve("Grinder.Library"),
+											"new:", meat::Null());
+			meat::cast<meat::Context>
+				(context).parameter(0, new meat::Text(library_name(*it)));
+			library = meat::execute(context);
+
 			std::ifstream meat_file;
 
 			meat_file.open(*it, std::ios::in);
@@ -191,16 +200,17 @@ static void build_library_app() {
 				return;
 			}
 		}
-	}
 
-	if (not app_class.empty()) {
-		context = message(library, "setApplicationClass:", meat::Null());
-		meat::cast<meat::Context>(context).parameter(0, new meat::Text(app_class));
+		if (not app_class.empty()) {
+			meat::Reference context = message(library, "setApplicationClass:",
+																				meat::Null());
+			meat::cast<meat::Context>(context).parameter(0, new meat::Text(app_class));
+			meat::execute(context);
+		}
+
+		meat::Reference context = message(library, "compile", meat::Null());
 		meat::execute(context);
 	}
-
-	context = message(library, "compile", meat::Null());
-	meat::execute(context);
 
 	library = NULL;
 }
@@ -212,8 +222,8 @@ int main(int argc, const char *argv[]) {
 
   /* The compiler state specified by the command line options. */
   static enum {
-    UNSET, BUILD_LIBRARY, BUILD_ARCHIVE
-  } state = UNSET;
+    BUILD_LIBRARY, INTREPRETER
+  } state = BUILD_LIBRARY;
 
 #ifdef DEBUG
   std::cout << "Grinder the Meat Compiler" << std::endl;
@@ -233,44 +243,22 @@ int main(int argc, const char *argv[]) {
    * Parse the command line options.
    */
 	int opt;
-	while ((opt = getopt(argc, argv, "i:l:a:c:#:h?")) != -1) {
+	while ((opt = getopt(argc, argv, "i:sc:#:h?")) != -1) {
 		switch (opt) {
 		case '#': // Display a hash value used in the vtables.
 			std::cout << itohex(hash(optarg)) << std::endl;
 			return 0;
-		case 'a': // Build archive option
-			if (state != UNSET) {
-				std::cerr << "FATAL: option -l/-a cannot be used at the same time."
-									<< std::endl;
-				return 1;
-			}
-			out_file = optarg;
-			state = BUILD_ARCHIVE;
-			break;
 		case 'c':
 			app_class = optarg;
 			break;
 		case 'i':
 			meat::data::Library::add_path(optarg);
 			break;
-		case 'l':
-			if (state != UNSET) {
-				std::cerr << "FATAL: options -l/-a cannot be used at the same time."
-									<< std::endl;
-				return 1;
-			}
-			out_file = optarg;
-			state = BUILD_LIBRARY;
+		case 's':
+			state = INTREPRETER;
 			break;
-		case '?':
-		case 'h': // Help option
-			help();
-#ifdef TESTING
-			meat::test::summary();
-#endif
-			return 0;
 		default: { // Unknown option
-			std::cerr << "FATAL: unknown option -" << opt << std::endl;
+			std::cerr << "FATAL: unknown option -" << (char)opt << std::endl;
 			return 1;
 		}
 		}
@@ -293,7 +281,7 @@ int main(int argc, const char *argv[]) {
 		case BUILD_LIBRARY:
 			build_library_app();
 			break;
-		case BUILD_ARCHIVE:
+		case INTREPRETER:
 			build_archive_app();
 			break;
 		default:
