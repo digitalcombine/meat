@@ -30,8 +30,10 @@
 #include <testing.h>
 #endif
 
-/** Display simple help for the -h option
- */
+/********
+ * help *
+ ********/
+
 static void help() {
 	std::cout << "Meat v" << VERSION << "\n\n";
 	std::cout << "meat [-i path] archive ...\n";
@@ -40,7 +42,23 @@ static void help() {
 	std::cout << "  -h           Displays this help" << std::endl;
 }
 
-/** Here's where is all starts.
+/***********
+ * verison *
+ ***********/
+
+static void version() {
+	std::cout << "Meat v" << VERSION << "\n\n";
+  std::cout << "Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>\n";
+	std::cout << "License GPLv3+: GNU GPL version 3 or later "
+						<< "<http://gnu.org/licenses/gpl.html>\n";
+	std::cout << "This is free software: you are free to change and "
+						<< "redistribute it.\n";
+	std::cout << "There is NO WARRANTY, to the extent permitted by law."
+						<< std::endl;
+}
+
+/******************************************************************************
+ * Here's where is all starts.
  */
 int main(int argc, const char *argv[]) {
 
@@ -64,13 +82,19 @@ int main(int argc, const char *argv[]) {
 	 * Parse the command line options.
 	 */
 	int opt;
-	while ((opt = getopt(argc, argv, "i:h")) != -1) {
+	while ((opt = getopt(argc, argv, "i:hV")) != -1) {
 		switch (opt) {
 		case 'i':
 			meat::data::Library::add_path(optarg);
 			break;
 		case 'h': // Help option
 			help();
+#ifdef TESTING
+			meat::test::summary();
+#endif
+			return 0;
+		case 'V':
+			version();
 #ifdef TESTING
 			meat::test::summary();
 #endif

@@ -1,6 +1,6 @@
 #                                                           -*- Makefile.am -*-
 
-dist_man1_MANS = meat.1 grinder.1
+dist_man1_MANS = meat.1 meat-grinder.1
 pkgdata_DATA = Meat-Language-Reference.odt
 
 LATEX_SRCS = Meat-Standard.tex Component-Reference.tex \

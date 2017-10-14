@@ -40,8 +40,10 @@ std::string app_class;
 
 meat::Reference library;
 
-/** Display simple help for the -h option
- */
+/********
+ * help *
+ ********/
+
 static void help() {
   std::cout << "Meat Compiler v" << VERSION << "\n\n";
   std::cout << "grinder [-l libname|-a archname] [-i path] source ...\n";
@@ -50,8 +52,28 @@ static void help() {
   std::cout << "  -c appclass  Compile a library\n";
   std::cout << "  -s           Run the source as an intrepreted script\n";
   std::cout << "  -# text      Return a hash value for the text\n";
+	std::cout << "  -V           Version information\n";
   std::cout << "  -h           Displays this help" << std::endl;
 }
+
+/***********
+ * verison *
+ ***********/
+
+static void version() {
+	std::cout << "Meat Compiler v" << VERSION << "\n\n";
+  std::cout << "Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>\n";
+	std::cout << "License GPLv3+: GNU GPL version 3 or later "
+						<< "<http://gnu.org/licenses/gpl.html>\n";
+	std::cout << "This is free software: you are free to change and "
+						<< "redistribute it.\n";
+	std::cout << "There is NO WARRANTY, to the extent permitted by law."
+						<< std::endl;
+}
+
+/****************
+ * library_name *
+ ****************/
 
 static std::string library_name(const std::string &filename) {
 	size_t end = filename.find_last_of(".");
@@ -62,57 +84,16 @@ static std::string library_name(const std::string &filename) {
 	return filename.substr(start, end - start);
 }
 
-typedef void (*exec_class_fn)(meat::Reference, std::istream &);
-
-/** Used to add functionallity to the Class subClass method when the compiler
- * is initialized. If the compiler is not initialized then the Class subClass
- * method should just raise an exception.
- */
-static void classbuilder_int(meat::Reference super,
-														 const std::string &cls_name,
-                             const std::string &cls_body,
-														 meat::Reference context) {
-	meat::data::Library *grinder = meat::data::Library::get("Grinder");
-	exec_class_fn exec_class =
-		(exec_class_fn)grinder->dlsymbol("exec_class");
-
-	meat::Reference ctx =
-		meat::message(meat::Class::resolve("Grinder.Class"),
-									"subClass:as:",
-									context);
-	meat::cast<meat::Context>(ctx).parameter(0, super);
-	meat::cast<meat::Context>(ctx).parameter(1, new meat::Text(cls_name));
-	meat::Reference cb = meat::execute(ctx);
-
-	ctx = meat::message(library, "addClass:", context);
-	meat::cast<meat::Context>(ctx).parameter(0, cb);
-	execute(ctx);
-
-  std::string body(cls_body);
-  std::istringstream is(body);
-
-	exec_class(cb, is);
-}
-
-/** Used for the Library import method when the compiler is initialized.
- */
-static void compiler_import(const std::string &name,
-														meat::Reference context) {
-	meat::Reference new_ctx = message(library, "import:", context);
-	meat::cast<meat::Context>(new_ctx).parameter(0, new meat::Text(name));
-	execute(new_ctx);
-}
-
-/*********************
- * build_archive_app *
- *********************/
+/***************
+ * interpreter *
+ ***************/
 
 typedef void * interp_t;
 typedef interp_t (*create_interp_fn)(const std::string &);
 typedef void (*exec_interp_fn)(interp_t, std::istream &);
 typedef void (*close_interp_fn)(interp_t);
 
-static void build_archive_app() {
+static void interpreter() {
   meat::data::Library *grinder = meat::data::Library::get("Grinder");
 
 	create_interp_fn create_interpreter =
@@ -149,13 +130,13 @@ static void build_archive_app() {
 	close_interpreter(interp);
 }
 
-/*********************
- * build_library_app *
- *********************/
+/*****************
+ * build_library *
+ *****************/
 
 typedef void (*exec_library_fn)(meat::Reference, std::istream &);
 
-static void build_library_app() {
+static void build_library() {
 	meat::data::Library *grinder = meat::data::Library::get("Grinder");
 	exec_library_fn exec_library =
 		(exec_library_fn)grinder->dlsymbol("exec_library");
@@ -192,6 +173,7 @@ static void build_library_app() {
 
 			meat_file.open(*it, std::ios::in);
 
+			meat::grinder_impl(&meat::cast<meat::GrinderImplementation>(library));
 			if (meat_file.is_open()) {
 				exec_library(library, meat_file);
 				meat_file.close();
@@ -199,12 +181,14 @@ static void build_library_app() {
 				std::cerr << "ERROR: Unable to open " << *it << std::endl;
 				return;
 			}
+			meat::grinder_impl(NULL);
 		}
 
 		if (not app_class.empty()) {
 			meat::Reference context = message(library, "setApplicationClass:",
 																				meat::Null());
-			meat::cast<meat::Context>(context).parameter(0, new meat::Text(app_class));
+			meat::cast<meat::Context>(context).parameter(0,
+																									 new meat::Text(app_class));
 			meat::execute(context);
 		}
 
@@ -233,7 +217,7 @@ int main(int argc, const char *argv[]) {
 #endif
 #endif
 
-  meat::initialize(argc, argv, compiler_import, classbuilder_int);
+  meat::initialize(argc, argv);
 
 #ifdef TESTING
   meat::test::run_tests();
@@ -243,7 +227,7 @@ int main(int argc, const char *argv[]) {
    * Parse the command line options.
    */
 	int opt;
-	while ((opt = getopt(argc, argv, "i:sc:#:h?")) != -1) {
+	while ((opt = getopt(argc, argv, "i:sc:#:hV?")) != -1) {
 		switch (opt) {
 		case '#': // Display a hash value used in the vtables.
 			std::cout << itohex(hash(optarg)) << std::endl;
@@ -257,6 +241,12 @@ int main(int argc, const char *argv[]) {
 		case 's':
 			state = INTREPRETER;
 			break;
+		case 'h':
+			help();
+			return 0;
+		case 'V':
+			version();
+			return 0;
 		default: { // Unknown option
 			std::cerr << "FATAL: unknown option -" << (char)opt << std::endl;
 			return 1;
@@ -279,10 +269,10 @@ int main(int argc, const char *argv[]) {
 
 		switch (state) {
 		case BUILD_LIBRARY:
-			build_library_app();
+			build_library();
 			break;
 		case INTREPRETER:
-			build_archive_app();
+			interpreter();
 			break;
 		default:
 			throw meat::Exception("Options -l or -a were not specified, "

@@ -1656,6 +1656,25 @@ std::ostream &meat::operator <<(std::ostream &out, Class &cls) {
 }
 #endif
 
+/*****************
+ * meat::grinder *
+ *****************/
+
+/** Contains the library search path.
+ */
+static meat::GrinderImplementation *&_grinder() {
+  static meat::GrinderImplementation *impl;
+  return impl;
+}
+
+void meat::grinder_impl(GrinderImplementation *impl) {
+	_grinder() = impl;
+}
+
+meat::GrinderImplementation *meat::grinder_impl() {
+	return _grinder();
+}
+
 /********************
  * meat::ClassClass *
  ********************/
@@ -1675,7 +1694,7 @@ meat::Reference meat::ClassClass(bool initializing) {
  **************/
 
 meat::Reference meat::BTrue() {
-  static Reference true_object;
+	static Reference true_object;
 
   if (true_object.is_null()) {
     true_object = Class::resolve("Boolean")->property(0);
@@ -1714,6 +1733,16 @@ meat::Reference meat::Boolean(bool value) {
   }
 
   return (value ? true_object : false_object);
+}
+
+bool DECLSPEC meat::Boolean(meat::Reference value) {
+	static Reference true_object;
+
+  if (true_object.is_null()) {
+    true_object = Class::resolve("Boolean")->property(0);
+  }
+
+	return (value == true_object);
 }
 
 /**************

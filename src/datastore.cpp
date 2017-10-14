@@ -119,16 +119,6 @@ static std::map<std::string, meat::data::Library *> &get_libraries() {
   return imported;
 }
 
-static std::string &get_includes() {
-  static std::string includes;
-  return includes;
-}
-
-static meat::compiler_import_fn &compiler_import() {
-	static meat::compiler_import_fn importfn;
-	return importfn;
-}
-
 /********************************
  * meat::data::Library::Library *
  ********************************/
@@ -136,7 +126,7 @@ static meat::compiler_import_fn &compiler_import() {
 meat::data::Library::Library(const std::string &name)
 	: imports(new meat::List()), syms_free(false), syms_size(0), symbols(NULL),
 		dlhandle(0) {
-  this->name = name;
+  this->_name = name;
   this->is_new = false;
 }
 
@@ -154,7 +144,7 @@ meat::data::Library::~Library() throw() {
    * any of these classes the references will keep the class until no one is
    * using them any more.
    */
-	if (name != "__builtin__") {
+	if (_name != "__builtin__") {
 		std::deque<Reference>::iterator it;
 		for (it = classes.begin(); it != classes.end(); it++)
 			Class::unrecord(*it);
@@ -171,10 +161,10 @@ meat::data::Library::~Library() throw() {
 
 meat::data::Library *meat::data::Library::create(const std::string &name) {
   Library *new_lib = new Library(name);
-  new_lib->name = name;
+  new_lib->_name = name;
 
 	// The __builtin__ library is special ;)
-	if (new_lib->name == "__builtin__")
+	if (new_lib->_name == "__builtin__")
 		new_lib->is_new = false;
 	else
 		new_lib->is_new = true;
@@ -224,18 +214,6 @@ meat::Reference meat::data::Library::execute(const std::string &name) {
 												" is not executable.");
 }
 
-/********************************
- * meat::data::Library::include *
- ********************************/
-
-void meat::data::Library::include(const std::string &includes) {
-  get_includes() = includes;
-}
-
-const std::string &meat::data::Library::include() {
-	return get_includes();
-}
-
 /****************************
  * meat::data::Library::get *
  ****************************/
@@ -279,7 +257,7 @@ void meat::data::Library::import() {
 #endif
 
 	// First see if the library is already loaded.
-  std::map<std::string, Library *>::iterator lib = get_libraries().find(name);
+  std::map<std::string, Library *>::iterator lib = get_libraries().find(_name);
   if (lib != get_libraries().end()) {
     return;
   }
@@ -292,14 +270,13 @@ void meat::data::Library::import() {
 
 	bool found = false;
   for (; it != get_path().end(); it++) {
-    if (fexists(((*it) + (this->name + ".mlib")).c_str())) {
-      import_from_archive(((*it) + (this->name + ".mlib")).c_str());
+    if (fexists(((*it) + (this->_name + ".mlib")).c_str())) {
+      import_from_archive((*it) + (this->_name + ".mlib"));
 			found = true;
 			break;
-    } else if (fexists(((*it) + (this->name + DLLEXT)).c_str())) {
+    } else if (fexists(((*it) + (this->_name + DLLEXT)).c_str())) {
       // The .mlib failed, now try try to open a native library file.
-      import_from_native(((*it) + (this->name + DLLEXT)).c_str(),
-                         this->name.c_str());
+      import_from_native((*it) + (this->_name + DLLEXT), this->_name);
 			found = true;
 			break;
     }
@@ -307,7 +284,7 @@ void meat::data::Library::import() {
 	if (!found) {
 		/* OMG, we couldn't find the library. Must be a vegetarian :P */
 		throw meat::Exception(std::string("Unable to find library ") +
-													this->name);
+													this->_name);
 	}
 
 	// Initialize all the imported classes.
@@ -334,42 +311,6 @@ void meat::data::Library::add_path(const std::string &name) {
   get_path().push_front(name);
 }
 
-/***********************************
- * meat::data::Library::add_import *
- ***********************************/
-
-void meat::data::Library::add_import(const std::string &name) {
-  // Import the library.
-  import(name.c_str());
-
-  /* Record that the library should always be imported when this library
-   * is loaded.
-   */
-  meat::cast<meat::List>(imports).push_back(new meat::Text(name));
-}
-
-/************************************
- * meat::data::Library::get_imports *
- ************************************/
-
-meat::Reference meat::data::Library::get_imports() const {
-	return imports;
-}
-
-/**************************************
- * meat::data::Library::remove_import *
- **************************************/
-
-void meat::data::Library::remove_import(const std::string &name) {
-	meat::List::iterator it = meat::cast<meat::List>(imports).begin();
-	for (; it != meat::cast<meat::List>(imports).end(); ++it) {
-		if (meat::cast<meat::Text>(*it) == name) {
-			meat::cast<meat::List>(imports).erase(it);
-			return;
-		}
-	}
-}
-
 /****************************
  * meat::data::Library::add *
  ****************************/
@@ -384,7 +325,7 @@ void meat::data::Library::add(Class *cls, const std::string &id) {
 #endif /* DEBUG */
   Reference newcls = cls;
   classes.push_back(newcls);
-	if (name != "__builtin__")
+	if (_name != "__builtin__")
 		Class::record(newcls, id.c_str());
 	cls->library = this;
 }
@@ -398,7 +339,7 @@ void meat::data::Library::clear() {
    * any of these classes the references will keep the class until no one is
    * using them any more.
    */
-	if (name != "__builtin__") {
+	if (_name != "__builtin__") {
 		std::deque<Reference>::iterator it;
 		for (it = classes.begin(); it != classes.end(); it++)
 			Class::unrecord(*it);
@@ -417,7 +358,7 @@ void meat::data::Library::clear() {
  *        loaded libraries.
  */
 void meat::data::Library::set_application(const std::string &name) {
-	application = Class::resolve(name.c_str());
+	application = Class::resolve(_name);
 }
 
 /******************************
@@ -429,12 +370,12 @@ void *meat::data::Library::dlsymbol(const std::string &name) {
 		void *result = dl_symbol(dlhandle, name.c_str());
 		if (!result) {
 			throw Exception(std::string("Unable to load DL symbol ") + name +
-											" from library " + this->name);
+											" from library " + this->_name);
 		}
 		return result;
 	}
 	throw Exception(std::string("Unable to load DL symbol from non-native "
-															"library ") + this->name);
+															"library ") + this->_name);
 }
 
 /************************************
@@ -632,10 +573,11 @@ static meat::Reference Library_cm_import_(meat::Reference context) {
             << std::endl;
 #endif /* DEBUG */
 
-  if (compiler_import() != NULL) {
-    compiler_import()(meat::cast<meat::Text>(filename), context);
+  if (meat::grinder_impl() != NULL) {
+		meat::grinder_impl()->import(meat::cast<meat::Text>(filename), context);
+    //compiler_import()(meat::cast<meat::Text>(filename), context);
   } else {
-    meat::data::Library::import(meat::cast<meat::Text>(filename).c_str());
+    meat::data::Library::import(meat::cast<meat::Text>(filename));
   }
   return null;
 }
@@ -643,12 +585,11 @@ static meat::Reference Library_cm_import_(meat::Reference context) {
 // class method include:
 static meat::Reference Library_cm_include_(meat::Reference context) {
   //meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference cpp_includes = meat::cast<meat::Context>(context).parameter(0);
+  meat::Reference cpp_includes =
+		meat::cast<meat::Context>(context).parameter(0);
 
-	meat::compiler_import_fn &import = compiler_import();
-
-  if (import != NULL) {
-    meat::data::Library::include(meat::cast<meat::Text>(cpp_includes).c_str());
+  if (meat::grinder_impl() != NULL) {
+		meat::grinder_impl()->include(meat::cast<meat::Text>(cpp_includes));
   } else {
     throw meat::Exception("Method Library include is only with the compiler");
 	}
@@ -1329,7 +1270,7 @@ static meat::vtable_entry_t ArchiveMethods[] = {
  * Public Interface
  */
 
-void meat::data::initialize(compiler_import_fn import) {
+void meat::data::initialize() {
   meat::Class *cls;
 
   Library::add_path("");
@@ -1345,6 +1286,4 @@ void meat::data::initialize(compiler_import_fn import) {
   cls->set_vtable(13, ArchiveMethods, STATIC);
   cls->set_class_vtable(11, ArchiveCMethods, STATIC);
   Class::record(cls, "Archive");
-
-	compiler_import() = import;
 }

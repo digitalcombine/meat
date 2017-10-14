@@ -154,11 +154,6 @@ static meat::uint8_t ObjectBytecode[] = {
  *
  */
 
-static meat::class_compiler_fn &class_compiler() {
-	static meat::class_compiler_fn compiler;
-	return compiler;
-}
-
 static meat::vtable_entry_t ClassMethods[] = {
   {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -204,8 +199,10 @@ static meat::Reference Class_cm_subClass_as_(meat::Reference context) {
   meat::Reference name = meat::cast<meat::Context>(context).parameter(0);
   meat::Reference block = meat::cast<meat::Context>(context).parameter(1);
 
-	if (class_compiler() != 0) {
-		class_compiler()(self, meat::cast<meat::Text>(name), meat::cast<meat::Text>(block), context);
+	if (meat::grinder_impl() != NULL) {
+		//class_compiler()(self, meat::cast<meat::Text>(name), meat::cast<meat::Text>(block), context);
+		meat::grinder_impl()->create_class(self, meat::cast<meat::Text>(name),
+																			 meat::cast<meat::Text>(block), context);
 	} else {
 		throw meat::Exception("No compiler implementation is loaded.");
 	}
@@ -2301,9 +2298,7 @@ static meat::uint8_t Symbols[] = {
  * Public API
  */
 
-void meat::initialize(int argc, const char *argv[],
-											compiler_import_fn import,
-											class_compiler_fn compiler) {
+void meat::initialize(int argc, const char *argv[]) {
   arg_count(argc);
   args(argv);
 
@@ -2427,8 +2422,8 @@ void meat::initialize(int argc, const char *argv[],
   app_cls->bytecode(61, ApplicationBytecode, STATIC);
   Class::record(app_cls, "Application");
 
-	class_compiler() = compiler;
-  meat::data::initialize(import);
+	//class_compiler() = compiler;
+  meat::data::initialize();
 
 #if defined(__WIN32__)
   meat::data::Library::add_path("C:\\meat\\");

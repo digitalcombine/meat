@@ -277,7 +277,8 @@ namespace meat {
 
     /** Language parser for compiling library files.
      */
-    class DECLSPEC Library : public Language, public Object {
+    class DECLSPEC Library : public Language, public Object,
+														 public meat::GrinderImplementation {
     public:
       /** Construct a new Library object.
        */
@@ -295,15 +296,19 @@ namespace meat {
        */
       virtual void command(Tokenizer &tokens);
 
-      void add_import(const std::string &name);
-      void remove_import(const std::string &name);
+      //Reference get_imports() const;
 
-      Reference get_imports() const;
-
-      void set_application(const std::string &name);
+      //void set_application(const std::string &name);
 
       void add_symbol(const std::string &symbol);
       void clear_symbols();
+
+			virtual void import(const std::string &library, meat::Reference context);
+			virtual void include(const std::string &code);
+			virtual void create_class(meat::Reference super,
+																const std::string &cls_name,
+																const std::string &cls_body,
+																meat::Reference context);
 
       void compile();
       /** Actually create the new library file.
@@ -327,8 +332,6 @@ namespace meat {
       Reference context;
       Reference result;
 
-			std::string app_class;
-
 			void write_mlib(std::ostream &out);
 			void write_cpp(std::ostream &out);
     };
@@ -347,18 +350,12 @@ namespace meat {
       Class(Reference klass, uint8_t properties);
       virtual ~Class() throw() {};
 
-      uint8_t obj_property(const std::string &name);
-      uint8_t cls_property(const std::string &name);
-      int16_t have_obj_property(const std::string &name) const;
-      int16_t have_cls_property(const std::string &name) const;
-      Reference get_super() const {
-        return meat::Class::resolve(meat::cast<const meat::Text>(property(1)));
-      }
-
       void add_method(Reference method);
       void add_class_method(Reference method);
 
-      uint8_t constant(const std::string name);
+			Reference super() const {
+        return meat::Class::resolve(cast<const Text>(property(1)));
+      }
 
       /** Creates the actual class within the Meat engine.
        * XXX Rename to compile
@@ -369,16 +366,17 @@ namespace meat {
 
       void cpp_methods(std::ostream &out);
       void cpp_new_class(std::ostream &out) const;
-      std::string cpp_hash_id() const;
+
 
       virtual void command(Tokenizer &tokens);
-
-      void update_symbols(std::set<std::string> &symbols) const;
 
       virtual void unserialize(data::Archive &store,
                                std::istream &data_stream);
 
       friend class Library;
+
+		protected:
+
 
     private:
       Library *library;
@@ -388,6 +386,13 @@ namespace meat {
 
       uint8_t method_count() const;
       uint8_t class_method_count() const;
+			uint8_t obj_property(const std::string &name);
+      uint8_t cls_property(const std::string &name);
+      int16_t have_obj_property(const std::string &name) const;
+      int16_t have_cls_property(const std::string &name) const;
+			uint8_t constant(const std::string name);
+			void update_symbols(std::set<std::string> &symbols) const;
+			std::string cpp_hash_id() const;
     };
 
     /**************************************************************************
@@ -404,25 +409,16 @@ namespace meat {
 
       virtual void command(Tokenizer &tokens);
 
-      void add_parameter(const std::string &name);
-      void add_body(const std::string &body);
-
       /** Compile the method into bytecode.
        */
       void compile();
 
-      void update_symbols(std::set<std::string> &symbols) const;
-
-      std::string cpp_hash_id();
-
-      std::string cpp_name(const char *prelim);
-
       /** Compile C++ code
        */
-      std::string cpp_method(const char *prelim);
+      void cpp_method(const std::string &prelim, std::ostream &out);
 
       void gen_bytecode(std::vector<uint8_t> &bytecode);
-      uint8_t local_count() { return locals; }
+      uint8_t locals() { return _locals; }
 
       void is_cpp(bool value) { _is_cpp = value; }
       bool is_cpp() const { return _is_cpp; }
@@ -439,9 +435,15 @@ namespace meat {
 
       bool _is_cpp;
       std::vector<uint8_t> bytecode;
-      uint8_t locals;
+      uint8_t _locals;
 
       std::set<std::string> symbols;
+
+			std::string cpp_hash_id();
+			void update_symbols(std::set<std::string> &symbols) const;
+			std::string cpp_name(const std::string &prelim);
+			void add_parameter(const std::string &name);
+      void add_body(const std::string &body);
     };
 
     namespace Utils {

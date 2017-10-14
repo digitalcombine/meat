@@ -35,7 +35,7 @@ Object subClass: Grinder.Libraryᶲ as: {
 
   property _name
   property classes
-  property documentation
+  property applicationClass
   property requiredLibraries
   property cppInclude
 
@@ -48,21 +48,20 @@ Object subClass: Grinder.Libraryᶲ as: {
 
     classes = [List new]
     requiredLibraries = [Set new]
-		#requiredLibraries = [List new]
   }
 
 	# Create a new Library Object with the given name.
   class function new: libraryName {
-    meat::Reference new_object = CLASS(klass).new_object();
+    Reference new_object = cast<meat::Class>(self).new_object();
 
-    _name = libraryName;
-    meat::cast<meat::grinder::Library>
-		  (new_object).register_as(meat::cast<meat::Text>(_name));
+		cast<grinder::Library>(new_object).property(0) = libraryName;
+		cast<grinder::Library>(new_object).register_as(cast<Text>(libraryName));
 
-    return new_object;
+	  return new_object;
   }
 
   method import: libraryName {
+		Library import: libraryName
     requiredLibraries append: libraryName
   }
 
@@ -84,14 +83,6 @@ Object subClass: Grinder.Libraryᶲ as: {
     _name = [newName asText]
   }
 
-  method setDocumentation: document {
-    documentation = [document asText]
-  }
-
-  method getDocumentation {
-    context return: documentation
-  }
-
   function addClass: theClass {
     meat::cast<meat::grinder::Library>(self).add_class(theClass);
 	  return null;
@@ -111,17 +102,15 @@ Object subClass: Grinder.Libraryᶲ as: {
     context return: [classes copy]
   }
 
-  # XXX This is going to work. We need to unregister the class from the
+  # XXX This isn't going to work. We need to unregister the class from the
 	#     system as well.
   method removeClass: className {
     theClass = [self getClass: className]
     classes remove: theClass
   }
 
-  function setApplicationClass: className {
-    dynamic_cast<meat::grinder::Library &>
-      (*self).set_application(className->to_string());
-    return null;
+  method setApplicationClass: theClass {
+		applicationClass = theClass
   }
 
   function compile {
@@ -142,7 +131,6 @@ Object subClass: Grinder.Classᶲ as: {
   property objectMethods
   property classMethods
   property constr
-	property documentation
 
   constructor {
     return new meat::grinder::Class(klass, properties);
@@ -151,9 +139,9 @@ Object subClass: Grinder.Classᶲ as: {
   method initialize {
     super initialize
 
-    objectProperties = [List new]
-    classProperties = [List new]
-		# XXX These should only be lists also.
+    objectProperties = [Set new]
+    classProperties = [Set new]
+
     objectMethods = [Index new]
     classMethods = [Index new]
   }
@@ -171,14 +159,6 @@ Object subClass: Grinder.Classᶲ as: {
 
   method getSuperName {
 	  context return: superClass
-	}
-
-	method setDocumentation: document {
-	  documentation = document
-	}
-
-	method getDocumentation {
-	  context return: documentation
 	}
 
   method addProperty: propertyName {
@@ -242,7 +222,6 @@ Object subClass: Grinder.Methodᶲ as: {
   property methodName
   property parameters
   property body
-  property documentation
 
   constructor {
     return new meat::grinder::Method(klass, properties);
@@ -284,16 +263,16 @@ Object subClass: Grinder.Methodᶲ as: {
   }
 
   function isNative {
-    if (dynamic_cast<meat::grinder::Method &>(*self).is_cpp())
+    if (meat::cast<meat::grinder::Method>(*self).is_cpp())
       return meat::True();
     return meat::False();
   }
 
 	function isNative: value {
 	  if (value == meat::True())
-	    dynamic_cast<meat::grinder::Method &>(*self).is_cpp(true);
+	    meat::cast<meat::grinder::Method>(self).is_cpp(true);
 	  else if (value == meat::False())
-	    dynamic_cast<meat::grinder::Method &>(*self).is_cpp(false);
+	    meat::cast<meat::grinder::Method>(self).is_cpp(false);
 	  else
 	    throw meat::Exception("Grinder.Method isNative value is not a boolean");
 	}

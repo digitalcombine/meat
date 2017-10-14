@@ -1,0 +1,36 @@
+.TH meat-grinder 1 "29 September 2017" "version 0.2"
+.SH NAME
+meat-grinder - the Meat compiler.
+.SH SYNOPSIS
+.B meat-grinder
+[
+.B -i
+.I path
+] [
+.B -s
+] source ...
+.PP
+.B meat-grinder
+.B -# name
+.PP
+.B meat-grinder
+.B -h
+|
+.B -?
+.SH DESCRIPTION
+.B meat-grinder
+compiles meat source code into a platform independant bytecode library for
+the \fImeat\fR virtual machine. Each source file gets compiled into a .mlib
+file.
+.SH OPTIONS
+.IP "-i path"
+Adds a path to the library search path. This can be used multiple times.
+.IP -s
+Runs the source file through an intrepreter rather
+than compiling is as a library.
+.IP "-# name"
+This returns the hashed ID value for the given name.
+.IP "-h | -?"
+Displays a help screen and exits.
+.SH SEE ALSO
+\fBmeat\fR(1)

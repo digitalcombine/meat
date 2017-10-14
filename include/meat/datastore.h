@@ -46,7 +46,7 @@ namespace meat {
 
     /** Internal command to initialize the Meat classes.
      */
-    DECLSPEC void initialize(compiler_import_fn import = NULL);
+    DECLSPEC void initialize();
 
     static const int FL_ARCHIVE = 1;
     static const int FL_LIBRARY = 2;
@@ -63,8 +63,6 @@ namespace meat {
       /** If the library has an application
        */
       static Reference execute(const std::string &name);
-      static void include(const std::string &includes);
-      static const std::string &include();
 
 			static Library *get(const std::string &name);
 			static void unload(const std::string &name);
@@ -82,10 +80,6 @@ namespace meat {
 			 */
 			void init_classes();
 
-      void add_import(const std::string &name);
-			Reference get_imports() const;
-			void remove_import(const std::string &name);
-
 			/**
 			 */
       void add(Class *cls, const std::string &id);
@@ -101,7 +95,7 @@ namespace meat {
 			 */
 			void *dlsymbol(const std::string &name);
 
-      const std::string &get_name() { return name; }
+      const std::string &name() { return _name; }
 
 			void set_symbols(meat::uint8_t *symbols,
 											 meat::alloc_t sym_alloc);
@@ -124,7 +118,7 @@ namespace meat {
       void import();
 
     private:
-      std::string name;
+      std::string _name;
       bool is_new;
 
 			std::map<meat::uint32_t, const char *> syms_table;

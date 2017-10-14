@@ -68,20 +68,9 @@ namespace meat {
 	template <class Ty>
 	Ty &cast(Reference object) { return dynamic_cast<Ty &>(*(object)); }
 
-	//#define CLASS(ref) (dynamic_cast<meat::Class &>(*(ref)))
-
-	typedef void (*class_compiler_fn)(meat::Reference super,
-																		const std::string &cls_name,
-																		const std::string &cls_body,
-																	 meat::Reference context);
-	typedef void (*compiler_import_fn)(const std::string &name,
-																		 meat::Reference context);
-
 	/** Initializes the scripting engine.
 	 */
-	void DECLSPEC initialize(int argc, const char *argv[],
-													 compiler_import_fn import = 0,
-													 class_compiler_fn compiler = 0);
+	void DECLSPEC initialize(int argc, const char *argv[]);
 
 	/** Creates a new message context to an Object.
 	 * @param Object The Object to send the message to.
@@ -168,9 +157,7 @@ namespace meat {
     virtual Reference &property(uint8_t index);
     virtual const Reference &property(uint8_t index) const;
 
-		friend void initialize(int argc, const char *argv[],
-													 compiler_import_fn import,
-													 class_compiler_fn compiler);
+		friend void initialize(int argc, const char *argv[]);
 
 	private:
 		meat::Reference _type;
@@ -331,9 +318,7 @@ namespace meat {
 #ifdef DEBUG
 		friend std::ostream &operator <<(std::ostream &out, Class &cls);
 #endif /* DEBUG */
-		friend void initialize(int argc, const char *argv[],
-													 compiler_import_fn import,
-													 class_compiler_fn compiler);
+		friend void initialize(int argc, const char *argv[]);
 		friend Reference message(Reference object,
                                       uint32_t hash_id,
                                       Reference context);
@@ -747,6 +732,20 @@ namespace meat {
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
 	};
 
+	class DECLSPEC GrinderImplementation {
+	public:
+		virtual void import(const std::string &library,
+												meat::Reference context) = 0;
+		virtual void include(const std::string &code) = 0;
+		virtual void create_class(meat::Reference super,
+															const std::string &cls_name,
+															const std::string &cls_body,
+															meat::Reference context) = 0;
+	};
+
+	void DECLSPEC grinder_impl(GrinderImplementation *impl);
+	GrinderImplementation* DECLSPEC grinder_impl();
+
 	/** A quick way of resolving a reference to the Class class Object.
 	 * @param initializing Used internally during initialization, not to be
 	 *                     used otherwise.
@@ -762,6 +761,8 @@ namespace meat {
 	Reference DECLSPEC BFalse();
 
 	Reference DECLSPEC Boolean(bool value);
+
+	bool DECLSPEC Boolean(Reference value);
 
 	Reference DECLSPEC Null();
 
