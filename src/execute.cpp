@@ -26,6 +26,10 @@
 #include <cstring>
 #include <sstream>
 
+#ifdef TESTING
+#include <testing.h>
+#endif
+
 #ifdef DEBUG
 #include <iostream>
 #include <iomanip>
@@ -64,7 +68,7 @@ meat::Reference meat::execute(Reference context) {
   } else  if (cast<Context>(context).flags == Context::PRIMATIVE) {
     /* Here we execute a c++ native function */
 
-    cast<Context>(context).local(2, context.weak()); // context
+    cast<Context>(context).local(2) = context.weak(); // context
     Reference result = cast<Context>(context).pointer(context);
     cast<Context>(context).result(result);
 
@@ -74,8 +78,8 @@ meat::Reference meat::execute(Reference context) {
     /* The bytecode interpreter starts here */
     meat::uint16_t ip = meat::cast<Context>(context)._ip;
     const uint8_t *code =
-      cast<Class>(meat::cast<Context>(context).klass()).bytecode();
-    cast<Context>(context).local(2, context.weak());
+      cast<Class>(cast<Context>(context).klass()).bytecode();
+    cast<Context>(context).local(2) = context.weak();
 
 #ifdef DEBUG
     // Adds the class hash id and ip to debugging messages.
@@ -142,14 +146,14 @@ meat::Reference meat::execute(Reference context) {
 
         // Execute the message.
         if (cast<Context>(new_ctx).flags == Context::PRIMATIVE) {
-          cast<Context>(new_ctx).local(2, new_ctx.weak());
+          cast<Context>(new_ctx).local(2) = new_ctx.weak();
           cast<Context>(new_ctx).pointer(new_ctx);
         } else {
           context = new_ctx;
           ip = cast<Context>(context)._ip;
           code =
             cast<Class>(cast<Context>(context).klass()).bytecode();
-          cast<Context>(context).local(2, context.weak());
+          cast<Context>(context).local(2) = context.weak();
         }
 
         break;
@@ -205,14 +209,14 @@ meat::Reference meat::execute(Reference context) {
 
         // Execute the message.
         if (cast<Context>(new_ctx).flags == Context::PRIMATIVE) {
-          cast<Context>(new_ctx).local(2, new_ctx.weak());
+          cast<Context>(new_ctx).local(2) = new_ctx.weak();
           Reference result = cast<Context>(new_ctx).pointer(new_ctx);
           cast<Context>(new_ctx).result(result);
         } else {
           context = new_ctx;
           ip = cast<Context>(context)._ip;
           code = cast<Class>(cast<Context>(context).klass()).bytecode();
-          cast<Context>(context).local(2, context.weak());
+          cast<Context>(context).local(2) = context.weak();
         }
 
         break;
@@ -229,7 +233,7 @@ meat::Reference meat::execute(Reference context) {
 #endif /* DEBUG */
 
         Reference block = new BlockContext(context, bc->o.bc.locals, ip + 5);
-        cast<Context>(context).local(bc->o.bc.result, block);
+        cast<Context>(context).local(bc->o.bc.result) = block;
 
         ip += endian::read_be(bc->o.bc.code_size) + 5;
         cast<Context>(context)._ip = ip;
@@ -253,7 +257,7 @@ meat::Reference meat::execute(Reference context) {
 #endif /* DEBUG */
         Reference src =
           cast<Context>(context).local(bc->o.a.source);
-        cast<Context>(context).local(bc->o.a.destination, src);
+        cast<Context>(context).local(bc->o.a.destination) = src;
         ip += 3;
         break;
       }
@@ -279,8 +283,8 @@ meat::Reference meat::execute(Reference context) {
                   << (unsigned int)bc->o.ap.property_id
                   << std::endl;
 #endif /* DEBUG */
-        cast<Context>(context).local(bc->o.ap.destination,
-																				 self->property(bc->o.ap.property_id));
+        cast<Context>(context).local(bc->o.ap.destination) =
+					self->property(bc->o.ap.property_id);
         ip += 3;
         break;
       }
@@ -294,8 +298,8 @@ meat::Reference meat::execute(Reference context) {
                   << std::endl;
 #endif /* DEBUG */
 
-        cast<Context>(context).local(bc->o.c.destination,
-          Class::resolve(endian::read_be(bc->o.c.class_id)));
+        cast<Context>(context).local(bc->o.c.destination) =
+          Class::resolve(endian::read_be(bc->o.c.class_id));
         ip += 6;
         break;
       }
@@ -309,7 +313,7 @@ meat::Reference meat::execute(Reference context) {
 #endif /* DEBUG */
 
         Reference intobj = new Value(endian::read_be(bc->o.ci.value));
-        cast<Context>(context).local(bc->o.ci.destination, intobj);
+        cast<Context>(context).local(bc->o.ci.destination) = intobj;
         ip += 6;
         break;
       }
@@ -323,7 +327,7 @@ meat::Reference meat::execute(Reference context) {
 #endif /* DEBUG */
 
         Reference float_obj = new Value(endian::read_be(bc->o.cn.value));
-        cast<Context>(context).local(bc->o.cn.destination, float_obj);
+        cast<Context>(context).local(bc->o.cn.destination) = float_obj;
         ip += 6;
         break;
       }
@@ -337,7 +341,7 @@ meat::Reference meat::execute(Reference context) {
 #endif /* DEBUG */
 
         Reference strobj = new Text((const char *)bc->o.ct.value);
-        cast<Context>(context).local(bc->o.ct.destination, strobj);
+        cast<Context>(context).local(bc->o.ct.destination) = strobj;
         ip += strlen((const char *)bc->o.ct.value) + 3;
         break;
       }
@@ -388,9 +392,16 @@ meat::Reference meat::execute(Reference context) {
          * context. This ensures when a block context is kept that only
          * necessary contexts are kept.
          */
+#ifdef TESTING
+				meat::test::test("Context weak self reference", false);
+				if (not cast<Context>(context).local(2).is_weak()) {
+					meat::test::failed("Context weak self reference", false);
+				}
+#endif
         Reference old_ctx = context;
         context = cast<Context>(context).messenger();
         cast<Context>(old_ctx).messenger(meat::Null());
+				//cast<Context>(old_ctx).local(2) = NULL; // context
 
         // If we are the top level context then return.
         if (context.is_null() or context == meat::Null()) {
@@ -407,7 +418,7 @@ meat::Reference meat::execute(Reference context) {
         if (not cast<Context>(context).is_done()) {
           ip = cast<Context>(context)._ip;
           code = cast<Class>(cast<Context>(context).klass()).bytecode();
-          cast<Context>(context).local(2, context.weak()); // context
+          cast<Context>(context).local(2) = context.weak(); // context
         }
       }
     }

@@ -68,9 +68,11 @@ namespace meat {
 	template <class Ty>
 	Ty &cast(Reference object) { return dynamic_cast<Ty &>(*(object)); }
 
-	/** Initializes the scripting engine.
+	/** Initializes the Meat virutal machine.
 	 */
 	void DECLSPEC initialize(int argc, const char *argv[]);
+
+	void DECLSPEC cleanup();
 
 	/** Creates a new message context to an Object.
 	 * @param Object The Object to send the message to.
@@ -106,7 +108,7 @@ namespace meat {
 	/****************************************************************************
 	 * Base Object class for all data within the scripting game engine.
 	 */
-	class DECLSPEC Object {
+	class DECLSPEC Object : public memory::recyclable {
 	public:
 		/** Creates a new Object of the given class type.
 		 * @param type A Reference to the class for the new Object.
@@ -439,7 +441,7 @@ namespace meat {
 
 		/**
 		 */
-		virtual void local(uint8_t index, Reference value);
+		//virtual void local(uint8_t index, Reference value);
 
 		/** Get a local variable from the context. If the index is out of range
 		 * then an meat::Exception is raised.
@@ -447,7 +449,7 @@ namespace meat {
 		 * @return A reference to the local variable.
 		 * @see get_num_of_locals()
 		 */
-		virtual Reference local(uint8_t index) const;
+		virtual Reference &local(uint8_t index) const;
 
 		/** Returns the number of local variables the context contains. This is
 		 * set when the context is created and cannot be changed.
@@ -541,8 +543,7 @@ namespace meat {
 		 * @param value The value to set the local variable to.
 		 * @throw Exception If the index is out of range.
 		 */
-		virtual void local(uint8_t index, Reference value);
-		virtual Reference local(uint8_t index) const;
+		virtual Reference &local(uint8_t index) const;
 
 		/** Returns the number of locals in this context and in the containing
 		 * context.
@@ -744,21 +745,7 @@ namespace meat {
 	};
 
 	void DECLSPEC grinder_impl(GrinderImplementation *impl);
-	GrinderImplementation* DECLSPEC grinder_impl();
-
-	/** A quick way of resolving a reference to the Class class Object.
-	 * @param initializing Used internally during initialization, not to be
-	 *                     used otherwise.
-	 * @return A reference to the Class class Object.
-	 */
-	Reference DECLSPEC ClassClass(bool initializing = false);
-
-	/** A quick way of resolving a Reference to the True Object.
-	 * @return A Reference to the True Object.
-	 */
-	Reference DECLSPEC BTrue();
-
-	Reference DECLSPEC BFalse();
+	GrinderImplementation DECLSPEC *grinder_impl();
 
 	Reference DECLSPEC Boolean(bool value);
 

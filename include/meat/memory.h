@@ -17,13 +17,46 @@
  * along with Meat.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <ctime>
+#include <map>
+#include <new>
+
 #ifndef _MEAT_MEMORY_H
 #define _MEAT_MEMORY_H
 
 namespace memory {
 
+	class gc {
+	public:
+		static std::size_t limit;
+		static time_t collection_age;
+
+		static void *alloc(std::size_t size) throw(std::bad_alloc);
+
+		static void recycle(void *ptr) throw();
+
+		static void collect(void);
+
+		static void collect_all(void);
+
+	private:
+		static std::multimap<std::size_t, void *> free_memory;
+		static std::size_t free_size;
+	};
+
+	class recyclable {
+	public:
+		void *operator new(std::size_t size) throw(std::bad_alloc);
+
+		void *operator new[](std::size_t size) throw(std::bad_alloc);
+
+		void operator delete(void *ptr) throw();
+
+		void operator delete[](void *ptr) throw();
+	};
+
   template <typename Ty>
-  class reference {
+  class reference : public recyclable {
   private:
 
     /** Reference Counting Class Wrapper.
@@ -135,6 +168,10 @@ namespace memory {
       return (obj ? obj->__ref_cnt() : 0);
     }
 
+		unsigned int weak_references(void) {
+      return (obj ? obj->__wref_cnt() : 0);
+    }
+
     /** Test if we reference an object or just a NULL pointer.
      * @return If true if the reference in pointing to null.
      */
@@ -144,7 +181,7 @@ namespace memory {
 
     /** Creates a new weak reference.
      */
-    reference weak() {
+    reference weak(void) {
       reference result;
       result.obj = obj;
       result.weak_ref = true;
@@ -208,8 +245,8 @@ namespace memory {
       if (this != &obj) {
         dec_reference();
         this->obj = obj.obj;
-        this->weak_ref = false;
-        //this->weak_ref = obj.weak_ref;
+        //this->weak_ref = false;
+        this->weak_ref = obj.weak_ref;
         inc_reference();
       }
       return *this;
@@ -249,15 +286,19 @@ namespace memory {
       if (obj) {
         if (weak_ref) {
           obj->dec_weak_ref();
-          if (obj->__ref_cnt() == 0 and obj->__wref_cnt() == 0)
+          if (obj->__ref_cnt() == 0 and obj->__wref_cnt() == 0) {
             delete obj;
+						obj = 0;
+					}
         } else {
           obj->dec_ref();
           if (!obj->__ref_cnt()) {
             if (obj->__wref_cnt())
               obj->free();
-            else
+            else {
               delete obj;
+							obj = 0;
+						}
           }
         }
       }

@@ -1178,9 +1178,9 @@ void meat::grinder::Class::command(Tokenizer &tokens) {
           }
 
 #ifdef DEBUG
-          std::cout << "COMPILE: " << tokens[0] << " " << method_name << " as "
+          /*std::cout << "COMPILE: " << tokens[0] << " " << method_name << " as "
                     << std::hex << (unsigned int)hash(method_name.c_str())
-                    << std::endl;
+                    << std::endl;*/
 #endif /* DEBUG */
 
           // Create a new method builder and add it to the vtable mappings.

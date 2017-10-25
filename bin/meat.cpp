@@ -151,7 +151,12 @@ int main(int argc, const char *argv[]) {
 #ifdef TESTING
 			meat::test::summary();
 #endif
-			try { return INTEGER(result); }
+
+			try {
+				int res = INTEGER(result);
+				meat::cleanup();
+				return res;
+			}
 			catch (...) { return 1; }
 		}
 
@@ -162,6 +167,7 @@ int main(int argc, const char *argv[]) {
 #ifdef TESTING
 		meat::test::summary();
 #endif
+		meat::cleanup();
 		return 1;
 	}
 

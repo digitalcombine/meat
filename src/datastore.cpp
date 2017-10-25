@@ -124,8 +124,8 @@ static std::map<std::string, meat::data::Library *> &get_libraries() {
  ********************************/
 
 meat::data::Library::Library(const std::string &name)
-	: imports(new meat::List()), syms_free(false), syms_size(0), symbols(NULL),
-		dlhandle(0) {
+	: syms_free(false), syms_size(0), symbols(NULL),
+		is_native(false), dlhandle(0) {
   this->_name = name;
   this->is_new = false;
 }
@@ -137,7 +137,7 @@ meat::data::Library::Library(const std::string &name)
 meat::data::Library::~Library() throw() {
 
 #ifdef DEBUG
-  std::cout << "LIBRARY: Final unloading of " << name << std::endl;
+  std::cout << "LIBRARY: Final unloading of " << _name << std::endl;
 #endif
 
   /*  Cleanup all the classes in the libray. Note if any object is still using
@@ -246,6 +246,16 @@ void meat::data::Library::unload(const std::string &name) {
   }
 }
 
+void meat::data::Library::unload() {
+	std::map<std::string, meat::data::Library *>::iterator it =
+		get_libraries().begin();
+	for (; it != get_libraries().end(); ++it) {
+		if (it->second->_name != "__builtin__")
+			delete it->second;
+	}
+	get_libraries().clear();
+}
+
 /*******************************
  * meat::data::Library::import *
  *******************************/
@@ -253,7 +263,7 @@ void meat::data::Library::unload(const std::string &name) {
 void meat::data::Library::import() {
 
 #ifdef DEBUG
-  std::cout << "LIBRARY: Importing " << name << std::endl;
+  std::cout << "LIBRARY: Importing " << _name << std::endl;
 #endif
 
 	// First see if the library is already loaded.
@@ -872,12 +882,7 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
     data_stream >> value;
 
     data_stream.seekg(save_pos);
-    switch (value) {
-    case 0:
-      return meat::BFalse();
-    default:
-      return meat::BTrue();
-    }
+		return meat::Boolean(value != 0);
   } else if (not this->index.at(index).object.is_null()) {
     return this->index.at(index).object;
   }
@@ -905,10 +910,6 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
   // Read in all the index offsets for the object's properties.
   meat::uint8_t num_of_props = cast<Class>(obj_class).obj_properties();
 	std::vector<props_index_t> prop_idxs(num_of_props);
-  /*struct _props_index_s {
-    meat::uint32_t offset;
-    meat::uint8_t flags;
-		} prop_idxs[num_of_props];*/
 
 #ifdef DEBUG
   std::cout << "         -> " << std::dec << (unsigned int)num_of_props

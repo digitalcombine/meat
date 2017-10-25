@@ -1,6 +1,6 @@
 #                                                           -*- Makefile.am -*-
 
-TESTS = tests.mapp libtests.mlib hello.mlib
+TESTS = memory_tests tests.mapp libtests.mlib hello.mlib
 LOG_COMPILER = @top_srcdir@/bin/meat
 AM_LOG_FLAGS = -i ../lib/.libs/
 
@@ -24,6 +24,13 @@ CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 			 Test.Application.mlib Test.Compiler.mlib \
 			 builtin.cpp grinder.cpp Datastore.cpp \
 			 data.mar tests.mapp hello.mlib libtests.mlib
+
+check_PROGRAMS = memory_tests
+
+memory_tests_SOURCES = memory_tests.cpp
+memory_tests_CPPFLAGS = -I@top_srcdir@/include
+memory_tests_LDADD = @top_srcdir@/src/libmeat.la
+memory_tests_LDFLAGS = -rdynamic
 
 .meat.mlib:
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<

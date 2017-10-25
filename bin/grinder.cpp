@@ -287,6 +287,7 @@ int main(int argc, const char *argv[]) {
     meat::test::summary();
 #endif
 
+		meat::cleanup();
     return 1;
   }
 
@@ -294,5 +295,6 @@ int main(int argc, const char *argv[]) {
   meat::test::summary();
 #endif
 
+	meat::cleanup();
   return 0;
 }

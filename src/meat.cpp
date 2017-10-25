@@ -160,6 +160,20 @@ const meat::Reference &meat::Object::property(meat::uint8_t index) const {
  * meat::Class Class
  */
 
+/********************
+ * meat::ClassClass *
+ ********************/
+
+static meat::Reference ClassClass(bool initializing = false) {
+  static meat::Reference cls;
+
+  if (cls.is_null() and not initializing) {
+    cls = meat::Class::resolve("Class");
+  }
+
+  return cls;
+}
+
 /** The mapping type for the class registry.
  */
 typedef std::map<meat::uint32_t, meat::Reference> class_registry_t;
@@ -179,14 +193,14 @@ static class_registry_t &class_registry() {
  **********************/
 
 meat::Class::Class(const char *parent, uint8_t obj_props)
-  : Object(meat::ClassClass(), 0), _hash_id(0), _obj_properties(obj_props),
+  : Object(ClassClass(), 0), _hash_id(0), _obj_properties(obj_props),
     library(NULL), _bytecode_size(0), _bytecode(0), _bytecode_static(true) {
 
   _super = resolve(parent);
 }
 
 meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
-  : Object(meat::ClassClass(), cls_props), _hash_id(0),
+  : Object(ClassClass(), cls_props), _hash_id(0),
     _obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
     _bytecode_static(true) {
 
@@ -194,7 +208,7 @@ meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
 }
 
 meat::Class::Class(meat::Reference parent, uint8_t obj_props)
-  : Object(meat::ClassClass(true), 0), _hash_id(0), _super(parent),
+  : Object(ClassClass(true), 0), _hash_id(0), _super(parent),
     _obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
     _bytecode_static(true) {
 }
@@ -202,7 +216,7 @@ meat::Class::Class(meat::Reference parent, uint8_t obj_props)
 meat::Class::Class(meat::Reference parent,
                    uint8_t cls_props,
                    uint8_t obj_props)
-  : Object(meat::ClassClass(), cls_props), _hash_id(0), _super(parent),
+  : Object(ClassClass(), cls_props), _hash_id(0), _super(parent),
     _obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
     _bytecode_static(true) {
 }
@@ -962,6 +976,11 @@ meat::Context::Context(Reference cls,
 
 meat::Context::~Context() throw() {
   delete [] _locals;
+	//std::cout << "~Context" << std::endl;
+	//if (_messenger.is_null() or _messenger == Null())
+	//	memory::GC::collect_all();
+	//else
+	memory::gc::collect();
 }
 
 /***********************
@@ -1004,17 +1023,7 @@ void meat::Context::parameter(uint8_t index, Reference value) {
  * meat::Context::local *
  ************************/
 
-void meat::Context::local(uint8_t index, Reference value) {
-  if (index < num_of_locals) _locals[index] = value;
-  else {
-    std::stringstream msg;
-    msg << "Setting local variable " << (unsigned int)index
-        << " out of range (0-" << (unsigned int)(num_of_locals - 1) << ")";
-    throw Exception(msg.str());
-  }
-}
-
-meat::Reference meat::Context::local(uint8_t index) const {
+meat::Reference &meat::Context::local(uint8_t index) const {
   if (index >= 0 and index < num_of_locals) return _locals[index];
   else {
     std::stringstream msg;
@@ -1030,7 +1039,7 @@ meat::Reference meat::Context::local(uint8_t index) const {
 
 void meat::Context::result_index(uint8_t local_parent_index) {
   _result_index = local_parent_index;
-  cast<Context>(_messenger).local(_result_index, meat::Null());
+  cast<Context>(_messenger).local(_result_index) = meat::Null();
 }
 
 /*************************
@@ -1040,7 +1049,7 @@ void meat::Context::result_index(uint8_t local_parent_index) {
 void meat::Context::result(Reference value) {
   _result = value;
   if (_result_index)
-    cast<Context>(_messenger).local(_result_index, _result);
+    cast<Context>(_messenger).local(_result_index) = _result;
 }
 
 meat::Reference meat::Context::result() const {
@@ -1079,17 +1088,7 @@ meat::BlockContext::~BlockContext() throw() {
  * meat::BlockContext::local *
  *****************************/
 
-void meat::BlockContext::local(meat::uint8_t index,
-															 meat::Reference value) {
-  meat::uint8_t local_cnt = cast<Context>(_origin).locals();
-
-  if (index < local_cnt)
-    cast<Context>(_origin).local(index, value);
-  else
-    Context::local(index - local_cnt, value);
-}
-
-meat::Reference meat::BlockContext::local(meat::uint8_t index) const {
+meat::Reference &meat::BlockContext::local(meat::uint8_t index) const {
   meat::uint8_t local_cnt = cast<const Context>(_origin).locals();
 
   //if (index == 3) return self
@@ -1452,7 +1451,7 @@ bool meat::obj_less::operator()(const Reference &first,
   Reference ctx = message((Reference)first, "<", meat::Null());
   cast<Context>(ctx).parameter(0, (Reference)second);
   Reference result = execute(ctx);
-  if (result == meat::BTrue())
+  if (result == meat::Boolean(true))
     return true;
   return false;
 }
@@ -1509,6 +1508,15 @@ void meat::Index::unserialize(data::Archive &store,
 
 /******************************************************************************
  */
+
+/*****************
+ * meat::cleanup *
+ *****************/
+
+void meat::cleanup() {
+	meat::data::Library::unload();
+	memory::gc::collect_all();
+}
 
 /*****************
  * meat::message *
@@ -1656,9 +1664,9 @@ std::ostream &meat::operator <<(std::ostream &out, Class &cls) {
 }
 #endif
 
-/*****************
- * meat::grinder *
- *****************/
+/**********************
+ * meat::grinder_impl *
+ **********************/
 
 /** Contains the library search path.
  */
@@ -1673,48 +1681,6 @@ void meat::grinder_impl(GrinderImplementation *impl) {
 
 meat::GrinderImplementation *meat::grinder_impl() {
 	return _grinder();
-}
-
-/********************
- * meat::ClassClass *
- ********************/
-
-meat::Reference meat::ClassClass(bool initializing) {
-  static Reference cls;
-
-  if (cls.is_null() and not initializing) {
-    cls = Class::resolve("Class");
-  }
-
-  return cls;
-}
-
-/**************
- * meat::True *
- **************/
-
-meat::Reference meat::BTrue() {
-	static Reference true_object;
-
-  if (true_object.is_null()) {
-    true_object = Class::resolve("Boolean")->property(0);
-  }
-
-  return true_object;
-}
-
-/***************
- * meat::False *
- ***************/
-
-meat::Reference meat::BFalse() {
-  static Reference false_object;
-
-  if (false_object.is_null()) {
-    false_object = Class::resolve("Boolean")->property(1);
-  }
-
-  return false_object;
 }
 
 /*****************

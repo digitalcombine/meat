@@ -27,4 +27,4 @@ Math_la_LDFLAGS = -module -avoid-version -shared
 #CLEANFILES = Console.cpp Math.cpp
 
 .meat.cpp:
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -l $* $<
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<

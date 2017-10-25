@@ -67,6 +67,10 @@ namespace meat {
 			static Library *get(const std::string &name);
 			static void unload(const std::string &name);
 
+			/** Unload all libraries.
+			 */
+			static void unload();
+
       virtual ~Library() throw();
 
 			/** Adds a directory path to the list of library paths.
@@ -109,9 +113,7 @@ namespace meat {
 			 * @todo Imports and includes should be moved to the Grinder.Library
 			 *       class.
 			 */
-			Reference imports;
       std::deque<Reference> classes;
-      std::string includes;
 
 			/**
 			 */
