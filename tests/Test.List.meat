@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: UnitTest
+Library requires: UnitTest
 
-Test.Suite subClass: Test.List as: {
+Test.Suite subclass: Test.List as: {
 
   method setup {
 	  alist = [List new]

@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: UnitTest
+Library requires: UnitTest
 
-Numeric subClass: BadNumeric as: {
+Numeric subclass: BadNumeric as: {
 
   class method new {
     self newObject
@@ -28,7 +28,7 @@ Numeric subClass: BadNumeric as: {
 
 }
 
-Test.Suite subClass: Test.Numeric as: {
+Test.Suite subclass: Test.Numeric as: {
 
   method setup {
     self title: "3.8 The Numeric Class"

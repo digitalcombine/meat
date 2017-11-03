@@ -53,4 +53,3 @@ data set: "Empty List" to: [List new]
 
 # Create the data archive
 archive setObject: data
-archive sync

@@ -31,7 +31,10 @@ Makefile.in
 /tests/*.mar
 /tests/*.mlib
 /tests/*.mapp
-/tests/*.cpp
+/tests/builtin.cpp
+/tests/Datastore.cpp
+/tests/grinder.cpp
+/tests/memory_tests
 /docs/*.pdf
 /docs/*.aux
 /docs/*.log

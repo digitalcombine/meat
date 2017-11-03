@@ -17,14 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: UnitTest
+Library requires: UnitTest
 
 #==============================================================================
 # Class BlockTests
 #
 #  This class contains various block scenarios to be tested.
 
-Object subClass: BlockTests as: {
+Object subclass: BlockTests as: {
 
   # Simply executes a block context.
 	class method executeBlock: block {
@@ -117,7 +117,7 @@ Object subClass: BlockTests as: {
 #==============================================================================
 # Class Test.BlockContext
 
-Test.Suite subClass: Test.BlockContext as: {
+Test.Suite subclass: Test.BlockContext as: {
 
   method setup {
     self title: "3.4 The BlockContext Class"

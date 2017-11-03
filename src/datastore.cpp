@@ -42,6 +42,8 @@
 #define DLLEXT ".so"
 #endif
 
+using namespace meat;
+
 #define null (meat::Null())
 
 extern "C" {
@@ -562,72 +564,96 @@ void meat::data::Library::import_from_native(const std::string &filename,
  */
 
 static meat::vtable_entry_t LibraryMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x000007a0, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x00379f78, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x34003578, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x7b840562, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}}
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 // class method import:
-static meat::Reference Library_cm_import_(meat::Reference context) {
-  //meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference filename = meat::cast<meat::Context>(context).parameter(0);
+static Reference Library_cm_import_(Reference context) {
+  meat::Reference libraryName = cast<Context>(context).parameter(0);
 
 #ifdef DEBUG
-  std::cout << "DEBUG: Importing library " << meat::cast<meat::Text>(filename)
+  std::cout << "DEBUG: Importing library " << cast<Text>(libraryName)
             << std::endl;
 #endif /* DEBUG */
 
-  if (meat::grinder_impl() != NULL) {
-		meat::grinder_impl()->import(meat::cast<meat::Text>(filename), context);
-    //compiler_import()(meat::cast<meat::Text>(filename), context);
-  } else {
-    meat::data::Library::import(meat::cast<meat::Text>(filename));
-  }
+  data::Library::import(cast<Text>(libraryName));
   return null;
 }
 
 // class method include:
-static meat::Reference Library_cm_include_(meat::Reference context) {
-  //meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference cpp_includes =
-		meat::cast<meat::Context>(context).parameter(0);
+static Reference Library_cm_include_(Reference context) {
+  //Reference self = cast<Context>(context).self();
+  Reference cpp_includes = cast<Context>(context).parameter(0);
 
-  if (meat::grinder_impl() != NULL) {
-		meat::grinder_impl()->include(meat::cast<meat::Text>(cpp_includes));
+  if (compiler() != NULL) {
+		compiler()->include(cast<Text>(cpp_includes));
   } else {
-    throw meat::Exception("Method Library include is only with the compiler");
+    throw Exception("Method Library include is only with the compiler");
 	}
 
   return null;
 }
 
+// class method requires:
+static Reference Library_cm_requires_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference libraryName = cast<Context>(context).parameter(0);
+
+#ifdef DEBUG
+  std::cout << "DEBUG: Importing required library " << cast<Text>(libraryName)
+            << std::endl;
+#endif /* DEBUG */
+
+  if (compiler() != NULL)
+    compiler()->import(cast<Text>(libraryName), context);
+  else
+    throw Exception("Method Library requires: is only with the compiler");
+
+  return null;
+}
+
 // class method setApplication:
-static meat::Reference Library_cm_setApplication_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  //meat::Reference klass = meat::cast<meat::Context>(context).get_class();
-  meat::Reference class_name = meat::cast<meat::Context>(context).parameter(0);
-	return null;
+static Reference Library_cm_setApplicationClass_(Reference context) {
+  //Reference self = cast<Context>(context).self();
+  //Reference klass = cast<Context>(context).klass();
+  Reference theClass = cast<Context>(context).parameter(0);
+
+  if (compiler() != NULL)
+    compiler()->set_application_class(theClass);
+  else
+    throw Exception("Method Library setApplicationClass: compiler not loaded");
+  return null;
 }
 
 static meat::vtable_entry_t LibraryCMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-  {0x000007a0, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-  {0x05614602, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_include_},
-  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-	{0x1c461870, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_setApplication_},
-  {0x2c296348, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
-  {0x72cd0161, 0x6d20bcbb, VTM_NATIVE, 1, Library_cm_import_},
-  {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}}
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x05614602, 0x6d20bcbb, VTM_NATIVE  , 1, Library_cm_include_},
+  {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x29950066, 0x6d20bcbb, VTM_NATIVE  , 1, Library_cm_requires_},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x645271d8, 0x6d20bcbb, VTM_NATIVE  , 1, Library_cm_setApplicationClass_},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x72cd0161, 0x6d20bcbb, VTM_NATIVE  , 1, Library_cm_import_},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 /******************************************************************************
@@ -1278,8 +1304,8 @@ void meat::data::initialize() {
 
   /* Create the Library class. */
   cls = new Class(Class::resolve("Object"));
-	cls->set_vtable(9, LibraryMethods, STATIC);
-  cls->set_class_vtable(12, LibraryCMethods, STATIC);
+	cls->set_vtable(14, LibraryMethods, STATIC);
+  cls->set_class_vtable(14, LibraryCMethods, STATIC);
   Class::record(cls, "Library");
 
   /* Create the Archive class */

@@ -278,7 +278,7 @@ namespace meat {
     /** Language parser for compiling library files.
      */
     class DECLSPEC Library : public Language, public Object,
-														 public meat::GrinderImplementation {
+														 public meat::CompilerInterface {
     public:
       /** Construct a new Library object.
        */
@@ -309,6 +309,7 @@ namespace meat {
 																const std::string &cls_name,
 																const std::string &cls_body,
 																meat::Reference context);
+      virtual void set_application_class(meat::Reference klass);
 
       void compile();
       /** Actually create the new library file.

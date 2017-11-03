@@ -21,11 +21,11 @@
 # on the Boolean functionallity itself. So this becomes a test of "if it works
 # it works", but it really does need to work for all the other testing.
 
-Library import: UnitTest
+Library requires: UnitTest
 
 #==============================================================================
 #
-Test.Suite subClass: Test.Null as: {
+Test.Suite subclass: Test.Null as: {
 
   method setup {
     self title: "3.5 The Null Class"

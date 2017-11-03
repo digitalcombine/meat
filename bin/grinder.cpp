@@ -173,7 +173,7 @@ static void build_library() {
 
 			meat_file.open(*it, std::ios::in);
 
-			meat::grinder_impl(&meat::cast<meat::GrinderImplementation>(library));
+			meat::compiler(&meat::cast<meat::CompilerInterface>(library));
 			if (meat_file.is_open()) {
 				exec_library(library, meat_file);
 				meat_file.close();
@@ -181,7 +181,7 @@ static void build_library() {
 				std::cerr << "ERROR: Unable to open " << *it << std::endl;
 				return;
 			}
-			meat::grinder_impl(NULL);
+			meat::compiler(NULL);
 		}
 
 		if (not app_class.empty()) {

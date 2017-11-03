@@ -23,77 +23,82 @@ Library include: {
 #==============================================================================
 # Library
 
-Object subClass: Libraryᶲ as: {
+Object subclass: Libraryᶲ as: {
 
   class function import: libraryName {
-    meat::data::Library::import(filename->to_string());
+  
+#ifdef DEBUG
+    std::cout << "DEBUG: Import library " << cast<Text>(libraryName)
+              << std::endl;
+#endif
+  
+    data::Library::import(cast<Text>(libraryName));
 		return null;
   }
 
-	class function requires: filename {
+	class function requires: libraryName {
 #ifdef DEBUG
-		std::cout << "DEBUG: Importing library " << filename->to_string()
+		std::cout << "DEBUG: Importing library " << cast<Text>(filename)
   	          << std::endl;
 #endif /* DEBUG */
 
-		if (meat::data::compiler_import != 0)
-			meat::data::compiler_import(filename->to_string());
+		if (compiler() != NULL)
+			compiler()->import(cast<Text>(filename), context);
 		else 
-		  throw Exception("Method Library requires: is only with the compiler");
+		  throw Exception("Method Library requires: compiler not loaded");
 
 		return null;
 	}
 
 	class function include: cpp_includes {
-		if (meat::data::compiler_import != 0)
-		  meat::data::Library::include(cpp_includes->to_string());
+		if (compiler() != NULL)
+		  compiler()->include(cast<Text>(cpp_includes));
 		else
-		  throw Exception("Method Library include: is only with the compiler");
+		  throw Exception("Method Library include: compiler not loaded");
 
 		return null;
 	}
 
-	class function setApplication: class_name {
-		((meat::data::Library &)(*self)).set_application(class_name->to_string());
+	class function setApplicationClass: theClass {
+	  if (compiler() != NULL)
+		  compiler()->set_application_class(theClass);
+		else
+		  throw Exception("Method Library setApplicationClass: compiler not loaded");
+		return null;
 	}
 }
 
 #==============================================================================
 #
 
-Object subClass: Archiveᶲ as: {
+Object subclass: Archiveᶲ as: {
 
+  # Only opens an existing archive as readonly.
 	class function open: filename {
-		return new meat::data::Archive(filename->to_string());
+		return new data::Archive(cast<Text>(filename));
 	}
 
 	class function create: filename {
-		return new meat::data::Archive(filename->to_string(), true);
+		return new data::Archive(cast<Text>(filename), true);
 	}
 
-  # Change to requires: libraryName
-	function import: filename {
-		meat::data::Archive &archive_obj = (meat::Data::Archive &)(*self);
-
-		meat::data::Library::import(filename->to_string());
-		archive_obj.add_import(filename->to_string());
-
+	function requires: libraryName {
+		data::Library::import(cast<Text>(libraryName));
+		cast<data::Archive>(self).add_import(cast<Text>(libraryName));
 		return null;
 	}
 
 	function getObject {
-		meat::data::Archive &store_obj = (meat::Data::Archive &)(*self);
-		return store_obj.get_object();
+		return cast<data::Archive>(self).get_object();
 	}
 
 	function setObject: value {
-		meat::data::Archive &archive_obj = (meat::Data::Archive &)(*self);
-		archive_obj.set_object(obj);
+		cast<data::Archive>(self).set_object(obj);
 		return null;
 	}
 
 	function sync {
-		((meat::data::Archive &)(*self)).sync();
+		cast<data::Archive>(self).sync();
 		return null;
 	}
 }

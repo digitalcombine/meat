@@ -17,27 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: UnitTest
+Library requires: UnitTest
 
-Test subClass: Test.Application as: {
+Test.Suite subclass: Test.Application as: {
 
-	method initialize {
-		super initialize
-		self setTitle: "Application basic functionallity"
-	}
-
-	method execute {
-		[[Application parameters] >= 2] isFalse: {
-			self fail: "Not enough parameters counted"
-		}
-
-		Application parameter: 1
-		Application parameter: 2
-
-		[[Application getEnviron: "PATH"] == ""] isTrue: {
-			self fail: "Unable to read the path from the system environment"
-		}
-
-		self pass
+	method setup {
+	  self title: "3.17 The Application Class"
 	}
 }

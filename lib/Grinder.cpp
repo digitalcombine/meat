@@ -245,10 +245,10 @@ static meat::vtable_entry_t Grinder_ClassCMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+	{0x06c015a2, 0x475aee3c, VTM_BYTECODE, 7, {(meat::method_ptr_t)260}},
   {0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x50188993, 0x475aee3c, VTM_BYTECODE, 7, {(meat::method_ptr_t)260}},
   {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}

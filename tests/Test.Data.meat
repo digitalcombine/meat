@@ -19,9 +19,9 @@
 #
 # See data.meat for the building of the test data.dat file.
 
-Library import: UnitTest
+Library requires: UnitTest
 
-Object subClass: TestObject as: {
+Object subclass: TestObject as: {
 	property list
 	property uninitialized
 	property pfoo
@@ -37,7 +37,7 @@ Object subClass: TestObject as: {
 	}
 }
 
-Test subClass: Test.Data as: {
+Test subclass: Test.Data as: {
 
 	method initialize {
 		super initialize

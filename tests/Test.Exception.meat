@@ -17,11 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: UnitTest
+Library requires: UnitTest
 
 #==============================================================================
 #
-Test.Suite subClass: Test.Exception as: {
+Test.Suite subclass: Test.Exception as: {
 
   # Where all the tests happen.
   method setup {

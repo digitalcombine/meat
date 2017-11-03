@@ -20,7 +20,6 @@
 archive = [Archive create: "tests.mapp"]
 
 archive import: "UnitTest"
-archive import: "Test.Application"
 archive import: "Test.Number"
 archive import: "Test.Text"
 archive import: "Test.Index"
@@ -31,7 +30,6 @@ archive import: "Test.Compiler"
 suite = [TestSuite new]
 
 # Add all our tests to the test suite
-suite add: [Test.Application new]
 suite add: [Test.NumberBadness new]
 suite add: [Test.Text new]
 suite add: [Test.Index new]
@@ -40,4 +38,3 @@ suite add: [Test.Compiler new]
 
 # Add the Test Suite to the archive.
 archive setObject: suite
-#archive sync

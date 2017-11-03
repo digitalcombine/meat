@@ -41,45 +41,52 @@ using namespace meat;
  * Object Class
  */
 
-static meat::Reference Object_constructor(meat::Reference &klass,
-																					meat::uint8_t properties) {
+static meat::Reference Object_constructor(Reference &klass,
+                                          meat::uint8_t properties) {
   return new meat::Object(klass, properties);
 }
 
 // method is:
-static meat::Reference Object_om_is_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+static Reference Object_om_is_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference other = cast<Context>(context).parameter(0);
 
-	return meat::Boolean(self == other);
+  return Boolean(self == other);
 }
 
 // method isNot:
-static meat::Reference Object_om_isNot_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+static Reference Object_om_isNot_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference other = cast<Context>(context).parameter(0);
 
-	return meat::Boolean(!(self == other));
+  return Boolean(!(self == other));
 }
 
 // method isType:
-static meat::Reference Object_om_isType_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference type = meat::cast<meat::Context>(context).parameter(0);
+static Reference Object_om_isType_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference type = cast<Context>(context).parameter(0);
 
-  return meat::Boolean(self->is_type(type));
+  return Boolean(self->is_type(type));
+}
+
+// method reference
+static Reference Object_om_reference(Reference context) {
+  Reference self = cast<Context>(context).self();
+
+  return self.normal();
 }
 
 // method type
-static meat::Reference Object_om_type(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference Object_om_type(Reference context) {
+  Reference self = cast<Context>(context).self();
 
   return self->type();
 }
 
-// method weak
-static meat::Reference Object_om_weak(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+// method weakReference
+static Reference Object_om_weakReference(Reference context) {
+  Reference self = cast<Context>(context).self();
 
   return self.weak();
 }
@@ -89,31 +96,32 @@ static meat::vtable_entry_t ObjectMethods[] = {
   {0x000007a0, 0x0c658f60, VTM_BYTECODE, 6, {(meat::method_ptr_t)18}},
   {0x00019850, 0x0c658f60, VTM_NATIVE  , 1, Object_om_is_},
   {0x00368f3a, 0x0c658f60, VTM_NATIVE  , 0, Object_om_type},
-  {0x00379f78, 0x0c658f60, VTM_NATIVE  , 0, Object_om_weak},
+  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x0c658f60, VTM_NATIVE  , 0, Object_om_weakReference},
   {0x331152ee, 0x0c658f60, VTM_BYTECODE, 4, {(meat::method_ptr_t)36}},
   {0x34003578, 0x0c658f60, VTM_BYTECODE, 4, {(meat::method_ptr_t)37}},
   {0x39a68c12, 0x0c658f60, VTM_NATIVE  , 1, Object_om_isNot_},
   {0x39a6a1d2, 0x0c658f60, VTM_BYTECODE, 6, {(meat::method_ptr_t)61}},
+  {0x48dbf560, 0x0c658f60, VTM_NATIVE  , 0, Object_om_reference},
   {0x6b2d9a7a, 0x0c658f60, VTM_BYTECODE, 6, {(meat::method_ptr_t)84}},
   {0x7a8e569a, 0x0c658f60, VTM_BYTECODE, 6, {(meat::method_ptr_t)38}},
   {0x7b840562, 0x0c658f60, VTM_NATIVE  , 1, Object_om_isType_}
 };
 
 // class method is:
-static meat::Reference Object_cm_is_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+static Reference Object_cm_is_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference other = cast<Context>(context).parameter(0);
 
-	return meat::Boolean(self == other);
-
+  return Boolean(self == other);
 }
 
 // class method isNot:
-static meat::Reference Object_cm_isNot_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+static Reference Object_cm_isNot_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference other = cast<Context>(context).parameter(0);
 
-	return meat::Boolean(!(self == other));
+  return Boolean(not (self == other));
 }
 
 static meat::vtable_entry_t ObjectCMethods[] = {
@@ -171,51 +179,49 @@ static meat::vtable_entry_t ClassMethods[] = {
 
 // class method getName
 static meat::Reference Class_cm_getName(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  //meat::Reference klass = meat::cast<meat::Context>(context).klass();
+  Reference self = cast<Context>(context).self();
 
-	return new meat::Text(meat::cast<meat::Class>(self).name());
+  return new Text(cast<Class>(self).name());
 }
 
 // class method newObject
-static meat::Reference Class_cm_newObject(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-	meat::Reference messanger =
-		meat::cast<meat::Context>(context).messenger();
+static Reference Class_cm_newObject(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-	// Create the new object and call the initialize method.
-	meat::Reference new_object = meat::cast<meat::Class>(self).new_object();
-	meat::Reference init_ctx = message(new_object, "initialize", context);
-	execute(init_ctx);
+  Reference messanger = cast<Context>(context).messenger();
 
-	// We replace the self object to the new object.
-	meat::cast<meat::Context>(messanger).self(new_object);
+  // Create the new object and call the initialize method.
+  Reference new_object = cast<Class>(self).new_object();
+  Reference init_ctx = message(new_object, "initialize", context);
+  execute(init_ctx);
 
-	return null;
+  // We replace the self object to the new object.
+  cast<Context>(messanger).self(new_object);
+
+  return null;
 }
 
 // class method subClass:body:
-static meat::Reference Class_cm_subClass_as_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference name = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference block = meat::cast<meat::Context>(context).parameter(1);
+static Reference Class_cm_subclass_as_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference name = cast<Context>(context).parameter(0);
+  Reference block = cast<Context>(context).parameter(1);
 
-	if (meat::grinder_impl() != NULL) {
-		//class_compiler()(self, meat::cast<meat::Text>(name), meat::cast<meat::Text>(block), context);
-		meat::grinder_impl()->create_class(self, meat::cast<meat::Text>(name),
-																			 meat::cast<meat::Text>(block), context);
-	} else {
-		throw meat::Exception("No compiler implementation is loaded.");
-	}
+  if (compiler() != NULL) {
+    compiler()->create_class(self, cast<Text>(name),
+                             cast<Text>(block), context);
+  } else {
+    throw Exception("No compiler implementation is loaded.");
+  }
 
-	return null;
+  return null;
 }
 
 // class method super
-static meat::Reference Class_cm_superClass(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference Class_cm_superClass(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-	return meat::cast<meat::Class>(self).super();
+  return cast<Class>(self).super();
 }
 
 static meat::vtable_entry_t ClassCMethods[] = {
@@ -228,8 +234,8 @@ static meat::vtable_entry_t ClassCMethods[] = {
   {0x34003578, 0x03e2b958, VTM_BYTECODE, 4, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x50188993, 0x03e2b958, VTM_NATIVE  , 2, Class_cm_subClass_as_},
   {0x54aa30e6, 0x03e2b958, VTM_NATIVE  , 0, Class_cm_newObject},
+  {0x58a69b58, 0x03e2b958, VTM_NATIVE  , 2, Class_cm_subclass_as_},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7b82e32c, 0x03e2b958, VTM_NATIVE  , 0, Class_cm_getName}
@@ -243,119 +249,122 @@ static meat::uint8_t ClassBytecode[] = {
  * Context Class
  */
 
-static meat::Reference Context_constructor(meat::Reference &cls,
-																					 meat::uint8_t properties) {
+static Reference Context_constructor(Reference &cls,
+                                     meat::uint8_t properties) {
   return new meat::Context(properties);
 }
 
 // method getLocal:
-static meat::Reference Context_om_getLocal_(meat::Reference context) {
-	meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference index = meat::cast<meat::Context>(context).parameter(0);
+static Reference Context_om_getLocal_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference index = cast<Context>(context).parameter(0);
 
-	return meat::cast<meat::Context>(self).local(INTEGER(index));
+  return cast<Context>(self).local(INTEGER(index));
 }
 
 // method localVariables
-static meat::Reference Context_om_localVariables(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference Context_om_localVariables(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-	return new meat::Value(meat::cast<meat::Context>(self).locals() - 4);
+  return new meat::Value(cast<Context>(self).locals() - 4);
 }
 
 // method messenger
-static meat::Reference Context_om_messenger(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference Context_om_messenger(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-	return meat::cast<meat::Context>(self).messenger();
+  return cast<Context>(self).messenger();
 }
 
 // method repeat:
-static meat::Reference Context_om_repeat_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference block = meat::cast<meat::Context>(context).parameter(0);
+static Reference Context_om_repeat_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference block = cast<Context>(context).parameter(0);
 
-	meat::cast<meat::Context>(block).messenger(context);
+  cast<Context>(block).messenger(context);
 
-	for (;;) {
-		meat::cast<meat::BlockContext>(block).set_break_trap();
-		meat::cast<meat::BlockContext>(block).set_continue_trap();
-		execute(block);
+  for (;;) {
+    cast<BlockContext>(block).set_break_trap();
+    cast<BlockContext>(block).set_continue_trap();
+    execute(block);
 
-		if (meat::cast<meat::BlockContext>(block).break_called() or
-				meat::cast<meat::Context>(block).is_done())
-			break;
+    if (cast<BlockContext>(block).break_called() or
+        cast<Context>(block).is_done())
+      break;
 
-		meat::cast<meat::BlockContext>(block).reset();
-	}
-	meat::cast<meat::BlockContext>(block).reset();
+    cast<BlockContext>(block).reset();
+  }
+  cast<BlockContext>(block).reset();
 
-	return null;
+  return null;
 }
 
 // method return
-static meat::Reference Context_om_return(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference Context_om_return(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-	meat::cast<meat::Context>(self).finish();
-	return null;
+  cast<Context>(self).finish();
+  return null;
 }
 
 // method return:
-static meat::Reference Context_om_return_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference value = meat::cast<meat::Context>(context).parameter(0);
+static Reference Context_om_return_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference value = cast<Context>(context).parameter(0);
 
-	meat::cast<meat::Context>(self).result(value); // Set the return value
-	meat::cast<meat::Context>(self).finish(); // Tell the context it's done.
-	return null;
+  cast<Context>(self).result(value); // Set the return value
+  cast<Context>(self).finish();      // Tell the context it's done.
+  return null;
 }
 
 // method setLocal:to:
-static meat::Reference Context_om_setLocal_to_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference index = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference value = meat::cast<meat::Context>(context).parameter(1);
+static Reference Context_om_setLocal_to_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference index = cast<Context>(context).parameter(0);
+  Reference value = cast<Context>(context).parameter(1);
 
-  meat::cast<meat::Context>(self).local(INTEGER(index)) = value;
+  cast<Context>(self).local(INTEGER(index)) = value;
   return null;
 }
 
 static meat::vtable_entry_t ContextMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x000007a0, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x00019850, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x00379f78, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x059a58ff, 0x1befcdac, VTM_BYTECODE, 4, {(meat::method_ptr_t)0}},
-  {0x23add62f, 0x1befcdac, VTM_NATIVE,   1, Context_om_getLocal_},
-  {0x2a67696c, 0x1befcdac, VTM_NATIVE,   0, Context_om_messenger},
-  {0x34003578, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x39a68c12, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-	{0x4139862f, 0x1befcdac, VTM_NATIVE,   1, Context_om_repeat_},
-  {0x4179693a, 0x1befcdac, VTM_NATIVE,   1, Context_om_return_},
-  {0x47206ce4, 0x1befcdac, VTM_NATIVE,   0, Context_om_localVariables},
-  {0x484e3d31, 0x1befcdac, VTM_NATIVE,   0, Context_om_return},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x23add62f, 0x1befcdac, VTM_NATIVE  , 1, Context_om_getLocal_},
+  {0x2a67696c, 0x1befcdac, VTM_NATIVE  , 0, Context_om_messenger},
+  {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x4139862f, 0x1befcdac, VTM_NATIVE  , 1, Context_om_repeat_},
+  {0x4179693a, 0x1befcdac, VTM_NATIVE  , 1, Context_om_return_},
+  {0x47206ce4, 0x1befcdac, VTM_NATIVE  , 0, Context_om_localVariables},
+  {0x484e3d31, 0x1befcdac, VTM_NATIVE  , 0, Context_om_return},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x5e3131ca, 0x1befcdac, VTM_BYTECODE, 4, {(meat::method_ptr_t)1}},
-  {0x675bde74, 0x1befcdac, VTM_NATIVE,   2, Context_om_setLocal_to_},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x7b840562, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}}
+  {0x675bde74, 0x1befcdac, VTM_NATIVE  , 2, Context_om_setLocal_to_},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 static meat::vtable_entry_t ContextCMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x000007a0, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x00019850, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x068b6f7b, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x2c296348, 0x1befcdac, VTM_BYTECODE, 8, {(meat::method_ptr_t)72}},
-  {0x39a68c12, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x54aa30e6, 0x1befcdac, VTM_BYTECODE, 7, {(meat::method_ptr_t)2}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}}
+  {0x58a69b58, 0x1befcdac, VTM_BYTECODE, 8, {(meat::method_ptr_t)72}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 static meat::uint8_t ContextBytecode[] = {
@@ -377,138 +386,132 @@ static meat::uint8_t ContextBytecode[] = {
  */
 
 // method break
-static meat::Reference BlockContext_om_break(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference BlockContext_om_break(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-  meat::cast<meat::BlockContext>(self).c_break();
-	if (not meat::cast<meat::BlockContext>(self).break_trap_set()) {
-		meat::Reference init_ctx =
-			meat::cast<meat::BlockContext>(self).origin();
-		meat::Reference up_context = message(init_ctx, "break", context);
+  cast<BlockContext>(self).c_break();
+  if (not cast<BlockContext>(self).break_trap_set()) {
+    Reference init_ctx = cast<BlockContext>(self).origin();
+    Reference up_context = message(init_ctx, "break", context);
     execute(up_context);
-	}
+  }
   return null;
 }
 
 // method continue
-static meat::Reference BlockContext_om_continue(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference BlockContext_om_continue(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-  meat::cast<meat::BlockContext>(self).c_continue();
-	if (not meat::cast<meat::BlockContext>(self).continue_trap_set()) {
-		meat::Reference init_ctx =
-			meat::cast<meat::BlockContext>(self).origin();
-		meat::Reference up_context = message(init_ctx, "continue", context);
+  cast<BlockContext>(self).c_continue();
+  if (not meat::cast<meat::BlockContext>(self).continue_trap_set()) {
+    Reference init_ctx = cast<BlockContext>(self).origin();
+    Reference up_context = message(init_ctx, "continue", context);
     execute(up_context);
-	}
+  }
   return null;
 }
 
 // method execute
-static meat::Reference BlockContext_om_execute(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference BlockContext_om_execute(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-	meat::cast<meat::BlockContext>(self).messenger(context);
-	execute(self);
-	meat::cast<meat::BlockContext>(self).reset();
+  cast<BlockContext>(self).messenger(context);
+  execute(self);
+  cast<BlockContext>(self).reset();
 
-	return null;
+  return null;
 }
 
 // method executeOnBreak:
-static meat::Reference
-BlockContext_om_executeOnBreak_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference breakBlock = meat::cast<meat::Context>(context).parameter(0);
+static Reference BlockContext_om_executeOnBreak_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference breakBlock = cast<Context>(context).parameter(0);
 
-	meat::cast<meat::BlockContext>(self).set_break_trap();
-	meat::cast<meat::BlockContext>(self).messenger(context);
-	execute(self);
+  cast<BlockContext>(self).set_break_trap();
+  cast<BlockContext>(self).messenger(context);
+  execute(self);
 
-	if (meat::cast<meat::BlockContext>(self).break_called()) {
-		meat::Reference up_context = message(breakBlock, "execute", context);
-		execute(up_context);
-	}
+  if (cast<BlockContext>(self).break_called()) {
+    Reference up_context = message(breakBlock, "execute", context);
+    execute(up_context);
+  }
 
-	meat::cast<meat::BlockContext>(self).reset();
+  cast<BlockContext>(self).reset();
 
-	return null;
+  return null;
 }
 
 // method executeOnBreak:onContinue:
-static meat::Reference
-BlockContext_om_executeOnBreak_onContinue_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference breakBlock = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference continueBlock =
-		meat::cast<meat::Context>(context).parameter(1);
+static Reference
+BlockContext_om_executeOnBreak_onContinue_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference breakBlock = cast<Context>(context).parameter(0);
+  Reference continueBlock = cast<Context>(context).parameter(1);
 
-	meat::cast<meat::BlockContext>(self).set_break_trap();
-	meat::cast<meat::BlockContext>(self).set_continue_trap();
-	meat::cast<meat::BlockContext>(self).messenger(context);
-	execute(self);
+  cast<BlockContext>(self).set_break_trap();
+  cast<BlockContext>(self).set_continue_trap();
+  cast<BlockContext>(self).messenger(context);
+  execute(self);
 
-	if (meat::cast<meat::BlockContext>(self).break_called()) {
-		meat::Reference up_context = message(breakBlock, "execute", context);
-		execute(up_context);
-	} else if (meat::cast<meat::BlockContext>(self).continue_called()) {
-		meat::Reference up_context = message(continueBlock, "execute", context);
-		execute(up_context);
-	}
+  if (cast<BlockContext>(self).break_called()) {
+    Reference up_context = message(breakBlock, "execute", context);
+    execute(up_context);
+  } else if (meat::cast<meat::BlockContext>(self).continue_called()) {
+    Reference up_context = message(continueBlock, "execute", context);
+    execute(up_context);
+  }
 
-	meat::cast<meat::BlockContext>(self).reset();
+  cast<BlockContext>(self).reset();
 
-	return null;
+  return null;
 }
 
 // method executeOnContinue:
-static meat::Reference
-BlockContext_om_executeOnContinue_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference continueBlock =
-		meat::cast<meat::Context>(context).parameter(0);
+static Reference BlockContext_om_executeOnContinue_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference continueBlock = cast<Context>(context).parameter(0);
 
-	meat::cast<meat::BlockContext>(self).set_continue_trap();
-	meat::cast<meat::BlockContext>(self).messenger(context);
-	execute(self);
+  cast<meat::BlockContext>(self).set_continue_trap();
+  cast<meat::BlockContext>(self).messenger(context);
+  execute(self);
 
-	if (meat::cast<meat::BlockContext>(self).continue_called()) {
-		meat::Reference up_context = message(continueBlock, "execute", context);
-		execute(up_context);
-	}
+  if (cast<BlockContext>(self).continue_called()) {
+    Reference up_context = message(continueBlock, "execute", context);
+    execute(up_context);
+  }
 
-	meat::cast<meat::BlockContext>(self).reset();
+  cast<BlockContext>(self).reset();
 
-	return null;
+  return null;
 }
 
 // method return
-static meat::Reference BlockContext_om_return(meat::Reference context) {
-	meat::Reference self = meat::cast<meat::Context>(context).self();
+static Reference BlockContext_om_return(Reference context) {
+  Reference self = cast<Context>(context).self();
 
-	// We need to get the actual context to message the return method from.
-	meat::Reference origin = meat::cast<meat::BlockContext>(self).origin();
-	meat::Reference up_context = message(origin, "return", context);
-	execute(up_context);
+  // We need to get the actual context to message the return method from.
+  Reference origin = cast<BlockContext>(self).origin();
+  Reference up_context = message(origin, "return", context);
+  execute(up_context);
 
-	meat::cast<meat::Context>(self).finish(); // Tell the context it's done.
+  cast<Context>(self).finish(); // Tell the context it's done.
 
-	return null;
+  return null;
 }
 
 // method return:
-static meat::Reference BlockContext_om_return_(meat::Reference context) {
-	meat::Reference self = meat::cast<meat::Context>(context).self();
-	meat::Reference value = meat::cast<meat::Context>(context).parameter(0);
+static Reference BlockContext_om_return_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference value = cast<Context>(context).parameter(0);
 
-	meat::Reference origin = meat::cast<meat::BlockContext>(self).origin();
-	meat::Reference up_context = message(origin, "return:", context);
-	meat::cast<meat::Context>(up_context).parameter(0, value);
-	execute(up_context);
+  Reference origin = cast<BlockContext>(self).origin();
+  Reference up_context = message(origin, "return:", context);
+  cast<Context>(up_context).parameter(0, value);
+  execute(up_context);
 
-	meat::cast<meat::Context>(self).finish(); // Tell the context it's done.
+  cast<Context>(self).finish(); // Tell the context it's done.
 
-	return null;
+  return null;
 }
 
 static meat::vtable_entry_t BlockContextMethods[] = {
@@ -518,6 +521,7 @@ static meat::vtable_entry_t BlockContextMethods[] = {
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x059a58ff, 0x46ba8a20, VTM_NATIVE  , 0, BlockContext_om_break},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x290a0d52, 0x46ba8a20, VTM_NATIVE  , 1, BlockContext_om_executeOnContinue_},
   {0x3158f7a0, 0x46ba8a20, VTM_NATIVE  , 0, BlockContext_om_execute},
   {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -526,6 +530,7 @@ static meat::vtable_entry_t BlockContextMethods[] = {
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x4179693a, 0x46ba8a20, VTM_NATIVE  , 1, BlockContext_om_return_},
   {0x484e3d31, 0x46ba8a20, VTM_NATIVE  , 0, BlockContext_om_return},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x5a7f66e9, 0x46ba8a20, VTM_NATIVE  , 1, BlockContext_om_executeOnBreak_},
   {0x5e3131ca, 0x46ba8a20, VTM_NATIVE  , 0, BlockContext_om_continue},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -535,17 +540,16 @@ static meat::vtable_entry_t BlockContextMethods[] = {
 };
 
 static meat::vtable_entry_t BlockContextCMethods[] = {
-  {0x0000043c, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x000007a0, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x00019850, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x00368f3a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x068b6f7b, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x2c296348, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x39a68c12, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x39a6a1d2, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x54aa30e6, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x6b2d9a7a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER, 0, {(meat::method_ptr_t)0}}
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 /******************************************************************************
@@ -560,10 +564,13 @@ static meat::vtable_entry_t NullMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x002539a7, VTM_BYTECODE, 6, {(meat::method_ptr_t)0}},
   {0x4300a340, 0x002539a7, VTM_BYTECODE, 5, {(meat::method_ptr_t)23}},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
@@ -575,11 +582,10 @@ static meat::vtable_entry_t NullCMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x50188993, 0x002539a7, VTM_BYTECODE, 9, {(meat::method_ptr_t)102}},
   {0x54aa30e6, 0x002539a7, VTM_BYTECODE, 7, {(meat::method_ptr_t)35}},
+  {0x58a69b58, 0x002539a7, VTM_BYTECODE, 9, {(meat::method_ptr_t)102}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
@@ -606,8 +612,8 @@ static meat::uint8_t NullBytecode[] = {
  * Exception Class
  */
 
-static meat::Reference Exception_constructor(meat::Reference &klass,
-																						 meat::uint8_t properties) {
+static Reference Exception_constructor(Reference &klass,
+                                       meat::uint8_t properties) {
   return new meat::Exception(klass, properties);
 }
 
@@ -620,91 +626,106 @@ static meat::vtable_entry_t ExceptionMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x38b735d9, 0x4fc26166, VTM_BYTECODE, 5, {(meat::method_ptr_t)0}},
   {0x38eb0035, 0x4fc26166, VTM_BYTECODE, 5, {(meat::method_ptr_t)12}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
+#undef mesg
+#undef cntxt
+
 // class method throw
-static meat::Reference Exception_cm_throw(meat::Reference context) {
-	meat::Reference ctx = meat::cast<meat::Context>(context).messenger();
-	throw meat::Exception(null, ctx);
+static Reference Exception_cm_throw(Reference context) {
+  Reference self = cast<Context>(context).self();
+
+  Reference ctx = cast<Context>(context).messenger();
+  throw Exception(null, ctx);
 }
 
 // class method throw:
-static meat::Reference Exception_cm_throw_(meat::Reference context) {
-  meat::Reference message = meat::cast<meat::Context>(context).parameter(0);
-	meat::Reference ctx = meat::cast<meat::Context>(context).messenger();
-	throw meat::Exception(message, ctx);
+static Reference Exception_cm_throw_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference message = cast<Context>(context).parameter(0);
+
+  Reference ctx = cast<Context>(context).messenger();
+  throw Exception(message, ctx);
 }
 
 // class method throw:for:
-static meat::Reference Exception_cm_throw_for_(meat::Reference context) {
-  meat::Reference message = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference ctx = meat::cast<meat::Context>(context).parameter(1);
-	throw meat::Exception(message, ctx);
+static Reference Exception_cm_throw_for_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference message = cast<Context>(context).parameter(0);
+  Reference ctx = cast<Context>(context).parameter(1);
+
+  throw Exception(message, ctx);
 }
 
 // class method try:
-static meat::Reference Exception_cm_try_(meat::Reference context) {
-  meat::Reference block = meat::cast<meat::Context>(context).parameter(0);
+static Reference Exception_cm_try_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference block = cast<Context>(context).parameter(0);
 
-	meat::cast<meat::Context>(block).messenger(context);
-	try {
-		execute(block);
-	} catch (meat::Exception &err) {
-	} catch (...) {
-	}
-	meat::cast<meat::BlockContext>(block).reset();
+  cast<Context>(block).messenger(context);
 
-	return null;
+  try {
+    execute(block);
+  } catch (meat::Exception &err) {
+  } catch (...) {
+  }
+  cast<BlockContext>(block).reset();
+
+  return null;
 }
 
 // class method try:catch:
-static meat::Reference Exception_cm_try_catch_(meat::Reference context) {
-  meat::Reference try_block = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference catch_block = meat::cast<meat::Context>(context).parameter(1);
+static Reference Exception_cm_try_catch_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference try_block = cast<Context>(context).parameter(0);
+  Reference catch_block = cast<Context>(context).parameter(1);
 
-	meat::cast<meat::Context>(try_block).messenger(context);
-	meat::cast<meat::Context>(catch_block).messenger(context);
-	try {
-		execute(try_block);
-	} catch (std::exception &err) {
-		execute(catch_block);
-	}
+  try {
+    cast<meat::Context>(try_block).messenger(context);
+    execute(try_block);
+  } catch (std::exception &err) {
+    cast<Context>(catch_block).messenger(context);
+    execute(catch_block);
+    cast<BlockContext>(catch_block).reset();
+  }
 
-	meat::cast<meat::BlockContext>(try_block).reset();
-	meat::cast<meat::BlockContext>(catch_block).reset();
+  cast<BlockContext>(try_block).reset();
 
-	return null;
+  return null;
 }
 
-// class method try:catch:do
-static meat::Reference Exception_cm_try_catch_do_(meat::Reference context) {
-  meat::Reference try_block = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference error = meat::cast<meat::Context>(context).parameter(1);
-  meat::Reference catch_block = meat::cast<meat::Context>(context).parameter(2);
+// class method try:catch:do:
+static Reference Exception_cm_try_catch_do_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference try_block = cast<Context>(context).parameter(0);
+  Reference error = cast<Context>(context).parameter(1);
+  Reference catch_block = cast<Context>(context).parameter(2);
 
-	meat::cast<meat::Context>(try_block).messenger(context);
-	meat::cast<meat::Context>(catch_block).messenger(context);
-	try {
-		execute(try_block);
-	} catch (meat::Exception &err) {
-		meat::Reference excp = new meat::Exception(err);
-		meat::cast<meat::Context>(catch_block).local(INTEGER(error)) = excp;
-		execute(catch_block);
-	}
+  try {
+    cast<Context>(try_block).messenger(context);
+    execute(try_block);
+  } catch (Exception &err) {
+    Reference excp = new meat::Exception(err);
+    cast<Context>(catch_block).local(INTEGER(error)) = excp;
+    cast<Context>(catch_block).messenger(context);
+    execute(catch_block);
+    cast<BlockContext>(catch_block).reset();
+  }
 
-	meat::cast<meat::BlockContext>(try_block).reset();
-	meat::cast<meat::BlockContext>(catch_block).reset();
+  cast<BlockContext>(try_block).reset();
 
-	return null;
+  return null;
 }
 
 static meat::vtable_entry_t ExceptionCMethods[] = {
@@ -715,7 +736,6 @@ static meat::vtable_entry_t ExceptionCMethods[] = {
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x0693a6e6, 0x4fc26166, VTM_NATIVE  , 0, Exception_cm_throw},
-  {0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x4be13615, 0x4fc26166, VTM_NATIVE  , 1, Exception_cm_throw_},
@@ -740,99 +760,99 @@ static meat::uint8_t ExceptionBytecode[] = {
 #define falseObject (klass->property(1))
 
 // method and:
-static meat::Reference Boolean_om_and_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference klass = meat::cast<meat::Context>(context).klass();
-  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+static Reference Boolean_om_and_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference other = cast<Context>(context).parameter(0);
 
-	return ((self == trueObject and other == trueObject) ?
-					trueObject : falseObject);
+  return ((self == trueObject and other == trueObject) ?
+          trueObject : falseObject);
 }
 
 // method isFalse:
-static meat::Reference Boolean_om_isFalse_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference klass = meat::cast<meat::Context>(context).klass();
-  meat::Reference block = meat::cast<meat::Context>(context).parameter(0);
+static Reference Boolean_om_isFalse_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference block = cast<Context>(context).parameter(0);
 
-	if (self == falseObject) {
-		meat::cast<meat::BlockContext>(block).messenger(context);
-		execute(block);
-		meat::cast<meat::BlockContext>(block).reset();
-	}
-	return null;
+  if (self == falseObject) {
+    cast<BlockContext>(block).messenger(context);
+    execute(block);
+    cast<BlockContext>(block).reset();
+  }
+  return null;
 }
 
 // method isFalse:else:
-static meat::Reference Boolean_om_isFalse_else_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference klass = meat::cast<meat::Context>(context).klass();
-  meat::Reference falseBlock = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference elseBlock = meat::cast<meat::Context>(context).parameter(1);
+static Reference Boolean_om_isFalse_else_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference falseBlock = cast<Context>(context).parameter(0);
+  Reference elseBlock = cast<Context>(context).parameter(1);
 
-	if (self == falseObject) {
-		meat::cast<meat::BlockContext>(falseBlock).messenger(context);
-		execute(falseBlock);
-		meat::cast<meat::BlockContext>(falseBlock).reset();
-	} else {
-		meat::cast<meat::BlockContext>(elseBlock).messenger(context);
-		execute(elseBlock);
-		meat::cast<meat::BlockContext>(elseBlock).reset();
-	}
-	return null;
+  if (self == falseObject) {
+    cast<BlockContext>(falseBlock).messenger(context);
+    execute(falseBlock);
+    cast<BlockContext>(falseBlock).reset();
+  } else {
+    cast<BlockContext>(elseBlock).messenger(context);
+    execute(elseBlock);
+    cast<BlockContext>(elseBlock).reset();
+  }
+  return null;
 }
 
 // method isTrue:
-static meat::Reference Boolean_om_isTrue_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference klass = meat::cast<meat::Context>(context).klass();
-  meat::Reference block = meat::cast<meat::Context>(context).parameter(0);
+static Reference Boolean_om_isTrue_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference block = cast<Context>(context).parameter(0);
 
-	if (self == trueObject)  {
-		meat::cast<meat::BlockContext>(block).messenger(context);
-		execute(block);
-		meat::cast<meat::BlockContext>(block).reset();
-	}
-	return null;
+  if (self == trueObject) {
+    cast<BlockContext>(block).messenger(context);
+    execute(block);
+    cast<BlockContext>(block).reset();
+  }
+  return null;
 }
 
 // method isTrue:else:
-static meat::Reference Boolean_om_isTrue_else_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference klass = meat::cast<meat::Context>(context).klass();
-  meat::Reference trueBlock = meat::cast<meat::Context>(context).parameter(0);
-  meat::Reference elseBlock = meat::cast<meat::Context>(context).parameter(1);
+static Reference Boolean_om_isTrue_else_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference trueBlock = cast<Context>(context).parameter(0);
+  Reference elseBlock = cast<Context>(context).parameter(1);
 
-	if (self == trueObject) {
-		meat::cast<meat::BlockContext>(trueBlock).messenger(context);
-		execute(trueBlock);
-		meat::cast<meat::BlockContext>(trueBlock).reset();
-	} else {
-		meat::cast<meat::BlockContext>(elseBlock).messenger(context);
-		execute(elseBlock);
-		meat::cast<meat::BlockContext>(elseBlock).reset();
-	}
-	return null;
+  if (self == trueObject) {
+    cast<BlockContext>(trueBlock).messenger(context);
+    execute(trueBlock);
+    cast<BlockContext>(trueBlock).reset();
+  } else {
+    cast<BlockContext>(elseBlock).messenger(context);
+    execute(elseBlock);
+    cast<BlockContext>(elseBlock).reset();
+  }
+  return null;
 }
 
 // method or:
-static meat::Reference Boolean_om_or_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference klass = meat::cast<meat::Context>(context).klass();
-  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+static Reference Boolean_om_or_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference other = cast<Context>(context).parameter(0);
 
-	return ((self == trueObject or other == trueObject) ?
-					trueObject : falseObject);
+  return ((self == trueObject or other == trueObject) ?
+          trueObject : falseObject);
 }
 
 // method xor:
-static meat::Reference Boolean_om_xor_(meat::Reference context) {
-  meat::Reference self = meat::cast<meat::Context>(context).self();
-  meat::Reference klass = meat::cast<meat::Context>(context).klass();
-  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+static Reference Boolean_om_xor_(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+  Reference other = cast<Context>(context).parameter(0);
 
-	return (((self == trueObject) xor (other == trueObject)) ?
-					trueObject : falseObject);
+  return ((self == trueObject xor other == trueObject) ?
+          trueObject : falseObject);
 }
 
 static meat::vtable_entry_t BooleanMethods[] = {
@@ -845,12 +865,14 @@ static meat::vtable_entry_t BooleanMethods[] = {
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00383b3f, 0x67140424, VTM_NATIVE  , 1, Boolean_om_xor_},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x2c025c80, 0x67140424, VTM_BYTECODE, 8, {(meat::method_ptr_t)0}},
   {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x47607971, 0x67140424, VTM_NATIVE  , 2, Boolean_om_isTrue_else_},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x57c628fe, 0x67140424, VTM_NATIVE  , 2, Boolean_om_isFalse_else_},
   {0x5bc502b2, 0x67140424, VTM_NATIVE  , 1, Boolean_om_isFalse_},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -867,7 +889,6 @@ static meat::vtable_entry_t BooleanCMethods[] = {
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x05cb1923, 0x67140424, VTM_BYTECODE, 5, {(meat::method_ptr_t)121}},
   {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -913,12 +934,14 @@ static meat::vtable_entry_t NumericMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x2c025c80, 0x6bfcb30e, VTM_BYTECODE, 6, {(meat::method_ptr_t)479}},
   {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x36e711e1, 0x6bfcb30e, VTM_BYTECODE, 6, {(meat::method_ptr_t)536}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x6701127b, 0x6bfcb30e, VTM_BYTECODE, 6, {(meat::method_ptr_t)436}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -932,7 +955,6 @@ static meat::vtable_entry_t NumericCMethods[] = {
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x17cbc00b, 0x6bfcb30e, VTM_BYTECODE, 6, {(meat::method_ptr_t)579}},
-  {0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x2ded23e0, 0x6bfcb30e, VTM_BYTECODE, 6, {(meat::method_ptr_t)631}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -1002,7 +1024,7 @@ static meat::uint8_t NumericBytecode[] = {
  */
 
 static meat::Reference Integer_constructor(meat::Reference &klass,
-																					 meat::uint8_t properties) {
+                                           meat::uint8_t properties) {
   return new meat::Value(klass, properties);
 }
 
@@ -1019,9 +1041,9 @@ static meat::Reference Integer_om_mult(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	int32_t res;
-	if (__builtin_mul_overflow(INTEGER(self), INTEGER(other), &res))
-		throw meat::Exception("Integer multiplication overflow");
+  int32_t res;
+  if (__builtin_mul_overflow(INTEGER(self), INTEGER(other), &res))
+    throw meat::Exception("Integer multiplication overflow");
   return new meat::Value(res);
 }
 
@@ -1030,9 +1052,9 @@ static meat::Reference Integer_om_add(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	int32_t res;
-	if (__builtin_add_overflow(INTEGER(self), INTEGER(other), &res))
-		throw meat::Exception("Integer addition overflow");
+  int32_t res;
+  if (__builtin_add_overflow(INTEGER(self), INTEGER(other), &res))
+    throw meat::Exception("Integer addition overflow");
   return new meat::Value(res);
 }
 
@@ -1041,9 +1063,9 @@ static meat::Reference Integer_om_sub(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	int32_t res;
-	if (__builtin_sub_overflow(INTEGER(self), INTEGER(other), &res))
-		throw meat::Exception("Integer subtraction underflow");
+  int32_t res;
+  if (__builtin_sub_overflow(INTEGER(self), INTEGER(other), &res))
+    throw meat::Exception("Integer subtraction underflow");
   return new meat::Value(res);
 }
 
@@ -1133,7 +1155,7 @@ static meat::Reference Integer_om_pow(meat::Reference context) {
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
   return new meat::Value((meat::float_t)std::pow(FLOAT(self),
-																								 FLOAT(other)));
+                                                 FLOAT(other)));
 }
 
 // method and:
@@ -1267,7 +1289,7 @@ static meat::Reference Integer_cm_maxValue(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	return new meat::Value(2147483647);
+  return new meat::Value(2147483647);
 }
 
 // class method minValue
@@ -1275,7 +1297,7 @@ static meat::Reference Integer_cm_minValue(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	return new meat::Value(-2147483647-1);
+  return new meat::Value(-2147483647-1);
 }
 
 static meat::vtable_entry_t IntegerCMethods[] = {
@@ -1299,7 +1321,7 @@ static meat::vtable_entry_t IntegerCMethods[] = {
  */
 
 static meat::Reference Number_constructor(meat::Reference &klass,
-																					meat::uint8_t properties) {
+                                          meat::uint8_t properties) {
   return new meat::Value(klass, properties);
 }
 
@@ -1308,7 +1330,7 @@ static meat::Reference Number_om_mod(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return new meat::Value(std::fmod(FLOAT(self), FLOAT(other)));
+  return new meat::Value(std::fmod(FLOAT(self), FLOAT(other)));
 }
 
 // method *
@@ -1316,7 +1338,7 @@ static meat::Reference Number_om_mult(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return new meat::Value(FLOAT(self) * FLOAT(other));
+  return new meat::Value(FLOAT(self) * FLOAT(other));
 }
 
 // method +
@@ -1324,7 +1346,7 @@ static meat::Reference Number_om_add(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return new meat::Value(FLOAT(self) + FLOAT(other));
+  return new meat::Value(FLOAT(self) + FLOAT(other));
 }
 
 // method -
@@ -1332,7 +1354,7 @@ static meat::Reference Number_om_sub(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return new meat::Value(FLOAT(self) - FLOAT(other));
+  return new meat::Value(FLOAT(self) - FLOAT(other));
 }
 
 // method /
@@ -1343,7 +1365,7 @@ static meat::Reference Number_om_div(meat::Reference context) {
   if (FLOAT(other) == 0.0)
     throw meat::Exception("Divide by zero");
 
-	return new meat::Value(FLOAT(self) / FLOAT(other));
+  return new meat::Value(FLOAT(self) / FLOAT(other));
 }
 
 // method <
@@ -1351,11 +1373,11 @@ static meat::Reference Number_om_less(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	try {
-		if (FLOAT(self) < FLOAT(other))
-			return meat::Boolean(true);
-	} catch (...) {}
-	return meat::Boolean(false);
+  try {
+    if (FLOAT(self) < FLOAT(other))
+      return meat::Boolean(true);
+  } catch (...) {}
+  return meat::Boolean(false);
 }
 
 // method <=
@@ -1363,11 +1385,11 @@ static meat::Reference Number_om_less_equal(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	try {
-		if (FLOAT(self) <= FLOAT(other))
-			return meat::Boolean(true);
-	} catch (...) {}
-	return meat::Boolean(false);
+  try {
+    if (FLOAT(self) <= FLOAT(other))
+      return meat::Boolean(true);
+  } catch (...) {}
+  return meat::Boolean(false);
 }
 
 // method <>
@@ -1376,23 +1398,23 @@ static meat::Reference Number_om_nequals(meat::Reference context) {
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	try {
-		if (FLOAT(self) != FLOAT(other))
-			return meat::Boolean(true);
-	} catch (...) {}
-	return meat::Boolean(false);
+  try {
+    if (FLOAT(self) != FLOAT(other))
+      return meat::Boolean(true);
+  } catch (...) {}
+  return meat::Boolean(false);
 }
 
 // method ==
 static meat::Reference Number_om_equals(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
-	meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
+  meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	try {
-		if (FLOAT(self) == FLOAT(other))
-			return meat::Boolean(true);
-	} catch (...) {}
-	return meat::Boolean(false);
+  try {
+    if (FLOAT(self) == FLOAT(other))
+      return meat::Boolean(true);
+  } catch (...) {}
+  return meat::Boolean(false);
 }
 
 // method >
@@ -1400,11 +1422,11 @@ static meat::Reference Number_om_greater(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	try {
-		if (FLOAT(self) > FLOAT(other))
-			return meat::Boolean(true);
-	} catch (...) {}
-	return meat::Boolean(false);
+  try {
+    if (FLOAT(self) > FLOAT(other))
+      return meat::Boolean(true);
+  } catch (...) {}
+  return meat::Boolean(false);
 }
 
 // method >=
@@ -1412,11 +1434,11 @@ static meat::Reference Number_om_greater_equal(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	try {
-		if (FLOAT(self) >= FLOAT(other))
-			return meat::Boolean(true);
-	} catch (...) {}
-	return meat::Boolean(false);
+  try {
+    if (FLOAT(self) >= FLOAT(other))
+      return meat::Boolean(true);
+  } catch (...) {}
+  return meat::Boolean(false);
 }
 
 // method ^
@@ -1424,31 +1446,31 @@ static meat::Reference Number_om_pow(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return new meat::Value((meat::float_t)std::pow(FLOAT(self),
-																								 FLOAT(other)));
+  return new meat::Value((meat::float_t)std::pow(FLOAT(self),
+                                                 FLOAT(other)));
 }
 
 // method absolute
 static meat::Reference Number_om_absolute(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	return new meat::Value(std::abs(FLOAT(self)));
+  return new meat::Value(std::abs(FLOAT(self)));
 }
 
 // method asText
 static meat::Reference Number_om_asText(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	std::stringstream result;
-	result << (double)FLOAT(self);
-	return new meat::Text(result.str());
+  std::stringstream result;
+  result << (double)FLOAT(self);
+  return new meat::Text(result.str());
 }
 
 // method negative
 static meat::Reference Number_om_negative(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	return new meat::Value(-FLOAT(self));
+  return new meat::Value(-FLOAT(self));
 }
 
 static meat::vtable_entry_t NumberMethods[] = {
@@ -1500,7 +1522,7 @@ static meat::vtable_entry_t NumberCMethods[] = {
  */
 
 static meat::Reference Text_constructor(meat::Reference &klass,
-																				meat::uint8_t properties) {
+                                        meat::uint8_t properties) {
   return new meat::Text(klass, properties);
 }
 
@@ -1509,7 +1531,7 @@ static meat::Reference Text_om_nequal(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return Boolean(cast<Text>(self).compare(cast<Text>(other)) != 0);
+  return Boolean(cast<Text>(self).compare(cast<Text>(other)) != 0);
 }
 
 // method *
@@ -1518,7 +1540,7 @@ static meat::Reference Text_om_mult(meat::Reference context) {
   meat::Reference count = meat::cast<meat::Context>(context).parameter(0);
 
   meat::int32_t cnt_value = INTEGER(count);
-	meat::Text *result = new meat::Text();
+  meat::Text *result = new meat::Text();
 
   for (int c = 0; c < cnt_value; c++)
     (*result) += meat::cast<meat::Text>(self);
@@ -1531,7 +1553,7 @@ static meat::Reference Text_om_add(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return new Text(cast<Text>(self) + cast<Text>(other));
+  return new Text(cast<Text>(self) + cast<Text>(other));
 }
 
 // method <
@@ -1539,7 +1561,7 @@ static meat::Reference Text_om_less(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return Boolean(cast<Text>(self).compare(cast<Text>(other)) < 0);
+  return Boolean(cast<Text>(self).compare(cast<Text>(other)) < 0);
 }
 
 // method <=
@@ -1547,7 +1569,7 @@ static meat::Reference Text_om_less_equal(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return Boolean(cast<Text>(self).compare(cast<Text>(other)) <= 0);
+  return Boolean(cast<Text>(self).compare(cast<Text>(other)) <= 0);
 }
 
 // method ==
@@ -1555,7 +1577,7 @@ static meat::Reference Text_om_equal(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return Boolean(cast<Text>(self).compare(cast<Text>(other)) == 0);
+  return Boolean(cast<Text>(self).compare(cast<Text>(other)) == 0);
 }
 
 // method >
@@ -1563,7 +1585,7 @@ static meat::Reference Text_om_greater(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return Boolean(cast<Text>(self).compare(cast<Text>(other)) > 0);
+  return Boolean(cast<Text>(self).compare(cast<Text>(other)) > 0);
 }
 
 // method >=
@@ -1571,7 +1593,7 @@ static meat::Reference Text_om_greater_equal(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	return Boolean(cast<Text>(self).compare(cast<Text>(other)) >= 0);
+  return Boolean(cast<Text>(self).compare(cast<Text>(other)) >= 0);
 }
 
 // method get:
@@ -1579,7 +1601,7 @@ static meat::Reference Text_om_get_(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference index = meat::cast<meat::Context>(context).parameter(0);
 
-	meat::Text *new_string = new meat::Text();
+  meat::Text *new_string = new meat::Text();
   (*new_string) += meat::cast<meat::Text>(self)[INTEGER(index) - 1];
   return new_string;
 }
@@ -1593,7 +1615,7 @@ static meat::Reference Text_om_get_to_(meat::Reference context) {
   meat::int32_t start_pos = INTEGER(start) - 1;
   meat::int32_t len = INTEGER(end) - start_pos;
 
-	meat::Text *new_string = new meat::Text();
+  meat::Text *new_string = new meat::Text();
   (*new_string) += meat::cast<meat::Text>(self).substr(start_pos, len);
   return new_string;
 }
@@ -1603,29 +1625,29 @@ static meat::Reference Text_om_getCharAt_(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference index = meat::cast<meat::Context>(context).parameter(0);
 
-	char ch = meat::cast<meat::Text>(self)[INTEGER(index) - 1];
-	return new meat::Text(&ch);
+  char ch = meat::cast<meat::Text>(self)[INTEGER(index) - 1];
+  return new meat::Text(&ch);
 }
 
 // method isEmpty
 static meat::Reference Text_om_isEmpty(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	return Boolean(cast<Text>(self).empty());
+  return Boolean(cast<Text>(self).empty());
 }
 
 // method length
 static meat::Reference Text_om_length(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	unsigned int len = 0;
-	meat::Text &str = meat::cast<meat::Text>(self);
+  unsigned int len = 0;
+  meat::Text &str = meat::cast<meat::Text>(self);
 
-	// Count UTF-8 characters not bytes.
-	for (unsigned int i = 0; str[i]; ++i)
-		if ((str[i] & 0xC0) != 0x80) len++;
+  // Count UTF-8 characters not bytes.
+  for (unsigned int i = 0; str[i]; ++i)
+    if ((str[i] & 0xC0) != 0x80) len++;
 
-	return new meat::Value((meat::int32_t)len);
+  return new meat::Value((meat::int32_t)len);
 }
 
 static meat::vtable_entry_t TextMethods[] = {
@@ -1637,20 +1659,20 @@ static meat::vtable_entry_t TextMethods[] = {
   {0x00000781, 0x0027b94d, VTM_NATIVE  , 1, Text_om_less_equal},
   {0x000007a0, 0x0027b94d, VTM_NATIVE  , 1, Text_om_equal},
   {0x000007bf, 0x0027b94d, VTM_NATIVE  , 1, Text_om_greater_equal},
-	{0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-	{0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-	{0x2c025c80, 0x0027b94d, VTM_BYTECODE, 4, {(meat::method_ptr_t)0}},
+  {0x2c025c80, 0x0027b94d, VTM_BYTECODE, 4, {(meat::method_ptr_t)0}},
   {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-	{0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x3e0e3ae7, 0x0027b94d, VTM_NATIVE  , 0, Text_om_length},
-	{0x69eddf35, 0x0027b94d, VTM_NATIVE  , 1, Text_om_getCharAt_},
-	{0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x69eddf35, 0x0027b94d, VTM_NATIVE  , 1, Text_om_getCharAt_},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7aab326f, 0x0027b94d, VTM_NATIVE  , 0, Text_om_isEmpty},
   {0x7b7a1326, 0x0027b94d, VTM_NATIVE  , 2, Text_om_get_to_},
-	{0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 static meat::vtable_entry_t TextCMethods[] = {
@@ -1676,7 +1698,7 @@ static meat::uint8_t TextBytecode[] = {
  */
 
 static meat::Reference list_constructor(meat::Reference &cls,
-					 meat::uint8_t properties) {
+           meat::uint8_t properties) {
   return new meat::List(cls, properties);
 }
 
@@ -1717,9 +1739,9 @@ static meat::Reference List_cm_clear(meat::Reference context) {
 static meat::Reference List_om_copy(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	meat::Reference new_list = new meat::List();
-	meat::cast<meat::List>(new_list) = meat::cast<meat::List>(self);
-	return new_list;
+  meat::Reference new_list = new meat::List();
+  meat::cast<meat::List>(new_list) = meat::cast<meat::List>(self);
+  return new_list;
 }
 
 // method forEach:do:
@@ -1733,50 +1755,50 @@ static meat::Reference List_cm_forEach_do_(meat::Reference context) {
 
   meat::List::iterator it = meat::cast<meat::List>(self).begin();
   for (; it != meat::cast<meat::List>(self).end(); it++) {
-		meat::cast<meat::BlockContext>(block).set_break_trap();
+    meat::cast<meat::BlockContext>(block).set_break_trap();
     meat::cast<meat::Context>(block).local(local_id) = *it;
     execute(block);
 
-		if (meat::cast<meat::BlockContext>(block).break_called()) break;
-		else meat::cast<meat::BlockContext>(block).reset();
+    if (meat::cast<meat::BlockContext>(block).break_called()) break;
+    else meat::cast<meat::BlockContext>(block).reset();
   }
-	meat::cast<meat::BlockContext>(block).reset();
+  meat::cast<meat::BlockContext>(block).reset();
 
   return null;
 }
 
 // method get:
 static meat::Reference List_cm_get_(meat::Reference context) {
-	meat::Reference self = meat::cast<meat::Context>(context).self();
-	meat::Reference index = meat::cast<meat::Context>(context).parameter(0);
+  meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference index = meat::cast<meat::Context>(context).parameter(0);
 
-	try {
-		return meat::cast<meat::List>(self).at(INTEGER(index) - 1);
-	} catch (std::out_of_range &err) {
-		throw meat::Exception("List index out of Range", context);
-	}
+  try {
+    return meat::cast<meat::List>(self).at(INTEGER(index) - 1);
+  } catch (std::out_of_range &err) {
+    throw meat::Exception("List index out of Range", context);
+  }
 }
 
 // method isEmpty
 static meat::Reference List_cm_isEmpty(meat::Reference context) {
-	meat::Reference self = meat::cast<meat::Context>(context).self();
+  meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	return Boolean(meat::cast<meat::List>(self).empty());
+  return Boolean(meat::cast<meat::List>(self).empty());
 }
 
 // method last
 static meat::Reference List_cm_last(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	return meat::cast<meat::List>(self).back();
+  return meat::cast<meat::List>(self).back();
 }
 
 // method pop
 static meat::Reference List_cm_pop(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
 
-	meat::cast<meat::List>(self).pop_back();
-	return null;
+  meat::cast<meat::List>(self).pop_back();
+  return null;
 }
 
 // method push:
@@ -1818,7 +1840,7 @@ static meat::Reference List_cm_removeFrom_to_(meat::Reference context) {
   meat::Reference end = meat::cast<meat::Context>(context).parameter(1);
 
   meat::cast<meat::List>(self).erase(meat::cast<meat::List>(self).begin() + (INTEGER(start) - 1),
-									 meat::cast<meat::List>(self).begin() + (INTEGER(end) - 1));
+                   meat::cast<meat::List>(self).begin() + (INTEGER(end) - 1));
   return null;
 }
 
@@ -1861,10 +1883,10 @@ static meat::Reference List_cm_swap_with_(meat::Reference context) {
 }
 
 static meat::vtable_entry_t ListMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x0001b251, 0x002424be, VTM_NATIVE  , 0, List_cm_pop},
-	{0x002eaf75, 0x002424be, VTM_NATIVE  , 0, List_om_copy},
+  {0x002eaf75, 0x002424be, VTM_NATIVE  , 0, List_om_copy},
   {0x00305ba4, 0x002424be, VTM_NATIVE  , 1, List_cm_get_},
   {0x00329296, 0x002424be, VTM_NATIVE  , 0, List_cm_last},
   {0x0035e001, 0x002424be, VTM_NATIVE  , 0, List_cm_size},
@@ -1886,7 +1908,7 @@ static meat::vtable_entry_t ListMethods[] = {
 };
 
 static meat::vtable_entry_t ListCMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x0001a9a0, 0x002424be, VTM_BYTECODE, 4, {(meat::method_ptr_t)0}},
@@ -1910,9 +1932,9 @@ static meat::uint8_t ListBytecode[] = {
  */
 
 static meat::Reference Set_constructor(meat::Reference &klass,
-																			 meat::uint8_t properties) {
+                                       meat::uint8_t properties) {
 
-	return new meat::Set(klass, properties);
+  return new meat::Set(klass, properties);
 }
 
 // method clear
@@ -1920,8 +1942,8 @@ static meat::Reference Set_om_clear(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	meat::cast<meat::Set>(self).clear();
-	return null;
+  meat::cast<meat::Set>(self).clear();
+  return null;
 }
 
 // method copy
@@ -1929,9 +1951,9 @@ static meat::Reference Set_om_copy(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	meat::Reference new_set = new meat::Set();
-	meat::cast<meat::Set>(new_set) = meat::cast<meat::Set>(self);
-	return new_set;
+  meat::Reference new_set = new meat::Set();
+  meat::cast<meat::Set>(new_set) = meat::cast<meat::Set>(self);
+  return new_set;
 }
 
 // method entries
@@ -1939,7 +1961,7 @@ static meat::Reference Set_om_entries(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	return new meat::Value((meat::int32_t)meat::cast<meat::Set>(self).size());
+  return new meat::Value((meat::int32_t)meat::cast<meat::Set>(self).size());
 }
 
 // method forEach:do:
@@ -1949,24 +1971,24 @@ static meat::Reference Set_om_forEach_do_(meat::Reference context) {
   meat::Reference item = meat::cast<meat::Context>(context).parameter(0);
   meat::Reference block = meat::cast<meat::Context>(context).parameter(1);
 
-	meat::uint8_t local_id = INTEGER(item);
+  meat::uint8_t local_id = INTEGER(item);
 
-	meat::cast<meat::Context>(block).messenger(context);
+  meat::cast<meat::Context>(block).messenger(context);
 
-	meat::Set::iterator it = meat::cast<meat::Set>(self).begin();
-	for (; it != meat::cast<meat::Set>(self).end(); it++) {
-		meat::cast<meat::BlockContext>(block).local(local_id) = *it;
-		execute(block);
+  meat::Set::iterator it = meat::cast<meat::Set>(self).begin();
+  for (; it != meat::cast<meat::Set>(self).end(); it++) {
+    meat::cast<meat::BlockContext>(block).local(local_id) = *it;
+    execute(block);
 
-		if (meat::cast<meat::BlockContext>(block).break_called() or
-				meat::cast<meat::Context>(block).is_done())
-			break;
+    if (meat::cast<meat::BlockContext>(block).break_called() or
+        meat::cast<meat::Context>(block).is_done())
+      break;
 
-		meat::cast<meat::BlockContext>(block).reset();
-	}
-	meat::cast<meat::BlockContext>(block).reset();
+    meat::cast<meat::BlockContext>(block).reset();
+  }
+  meat::cast<meat::BlockContext>(block).reset();
 
-	return null;
+  return null;
 }
 
 // method hasEntry:
@@ -1975,8 +1997,8 @@ static meat::Reference Set_om_hasEntry_(meat::Reference context) {
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
   meat::Reference value = meat::cast<meat::Context>(context).parameter(0);
 
-	return Boolean(meat::cast<meat::Set>(self).find(value) !=
-								 meat::cast<meat::Set>(self).end());
+  return Boolean(meat::cast<meat::Set>(self).find(value) !=
+                 meat::cast<meat::Set>(self).end());
 }
 
 // method insert:
@@ -1985,8 +2007,8 @@ static meat::Reference Set_om_insert_(meat::Reference context) {
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
   meat::Reference value = meat::cast<meat::Context>(context).parameter(0);
 
-	meat::cast<meat::Set>(self).insert(value);
-	return null;
+  meat::cast<meat::Set>(self).insert(value);
+  return null;
 }
 
 // method isEmpty
@@ -1994,7 +2016,7 @@ static meat::Reference Set_om_isEmpty(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
 
-	return Boolean(meat::cast<meat::Set>(self).empty());
+  return Boolean(meat::cast<meat::Set>(self).empty());
 }
 
 // method remove:
@@ -2003,14 +2025,14 @@ static meat::Reference Set_om_remove_(meat::Reference context) {
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
   meat::Reference value = meat::cast<meat::Context>(context).parameter(0);
 
-	meat::Set::iterator it = meat::cast<meat::Set>(self).begin();
-	while (it != meat::cast<meat::Set>(self).end()) {
-		if (*it == value)
-			meat::cast<meat::Set>(self).erase(it);
-		it++;
-	}
+  meat::Set::iterator it = meat::cast<meat::Set>(self).begin();
+  while (it != meat::cast<meat::Set>(self).end()) {
+    if (*it == value)
+      meat::cast<meat::Set>(self).erase(it);
+    it++;
+  }
 
-	return null;
+  return null;
 }
 
 // method swap:
@@ -2019,8 +2041,8 @@ static meat::Reference Set_om_swap_(meat::Reference context) {
   meat::Reference klass = meat::cast<meat::Context>(context).klass();
   meat::Reference other = meat::cast<meat::Context>(context).parameter(0);
 
-	meat::cast<meat::Set>(self).swap(meat::cast<meat::Set>(other));
-	return null;
+  meat::cast<meat::Set>(self).swap(meat::cast<meat::Set>(other));
+  return null;
 }
 
 static meat::vtable_entry_t SetMethods[] = {
@@ -2072,7 +2094,7 @@ static meat::uint8_t SetBytecode[] = {
  */
 
 static meat::Reference index_constructor(meat::Reference &cls,
-																				 meat::uint8_t properties) {
+                                         meat::uint8_t properties) {
   return new meat::Index(cls, properties);
 }
 
@@ -2082,7 +2104,7 @@ static meat::Reference Index_om_get_(meat::Reference context) {
   meat::Reference key = meat::cast<meat::Context>(context).parameter(0);
 
   if (meat::cast<meat::Index>(self).find(key) !=
-			meat::cast<meat::Index>(self).end())
+      meat::cast<meat::Index>(self).end())
     return meat::cast<meat::Index>(self)[key];
   throw meat::Exception("Invalid key in index");
 }
@@ -2092,8 +2114,8 @@ static meat::Reference Index_om_has_(meat::Reference context) {
   meat::Reference self = meat::cast<meat::Context>(context).self();
   meat::Reference key = meat::cast<meat::Context>(context).parameter(0);
 
-	return meat::Boolean(meat::cast<meat::Index>(self).find(key) !=
-											 meat::cast<meat::Index>(self).end());
+  return meat::Boolean(meat::cast<meat::Index>(self).find(key) !=
+                       meat::cast<meat::Index>(self).end());
 }
 
 // method remove:
@@ -2124,12 +2146,12 @@ static meat::Reference Index_om_size(meat::Reference context) {
 }
 
 static meat::vtable_entry_t IndexMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x00305ba4, 0x043838b2, VTM_NATIVE, 1, Index_om_get_},
   {0x0030c0e0, 0x043838b2, VTM_NATIVE, 1, Index_om_has_},
   {0x0035e001, 0x043838b2, VTM_NATIVE, 0, Index_om_size},
-	{0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x34003578, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
@@ -2143,10 +2165,10 @@ static meat::Reference Index_cm_new(meat::Reference context) {
 }
 
 static meat::vtable_entry_t IndexCMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x0001a9a0, 0x043838b2, VTM_NATIVE, 0, Index_cm_new},
-	{0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x2c296348, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
@@ -2172,12 +2194,12 @@ static const char **args(const char *argv[] = (const char **)0) {
 }
 
 static meat::vtable_entry_t ApplicationMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
+  {0x0000043c, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
   {0x05c30872, 0x419df72b, VTM_BYTECODE, 6, {(meat::method_ptr_t)0}},
-	{0x34003578, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER,    0, {(meat::method_ptr_t)0}}
 };
 
@@ -2237,7 +2259,7 @@ static meat::Reference Application_cm_setEnviron_to_(meat::Reference context) {
                          meat::cast<meat::Text>(value).c_str());
 #elif defined(__linux__)
   setenv(meat::cast<meat::Text>(key).c_str(),
-				 meat::cast<meat::Text>(value).c_str(), 1);
+         meat::cast<meat::Text>(value).c_str(), 1);
 #else
 #  error("Don't know how to set the system environment")
 #endif
@@ -2245,17 +2267,17 @@ static meat::Reference Application_cm_setEnviron_to_(meat::Reference context) {
 }
 
 static meat::vtable_entry_t ApplicationCMethods[] = {
-	{0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x0000043c, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x0462f057, 0x419df72b, VTM_NATIVE, 1, Application_cm_getEnviron_},
-	{0x068b6f7b, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x1b6d6881, 0x419df72b, VTM_NATIVE, 1, Application_cm_parameter_},
   {0x1b6d68ba, 0x419df72b, VTM_NATIVE, 0, Application_cm_parameters},
-	{0x2c296348, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x2c296348, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x50b30a5d, 0x419df72b, VTM_NATIVE, 1, Application_cm_setEnviron_to_},
-	{0x54aa30e6, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER,  0, {(meat::method_ptr_t)0}}
 };
@@ -2296,15 +2318,15 @@ void meat::initialize(int argc, const char *argv[]) {
 
   /* Create the Class base class. */
   Class *class_cls = new Class(Null());
-	class_cls->set_vtable(11, ClassMethods, meat::STATIC);
+  class_cls->set_vtable(11, ClassMethods, meat::STATIC);
   class_cls->set_class_vtable(14, ClassCMethods, STATIC);
-	class_cls->bytecode(1, ClassBytecode, meat::STATIC);
-	Class::record(class_cls, "Class");
+  class_cls->bytecode(1, ClassBytecode, meat::STATIC);
+  Class::record(class_cls, "Class");
 
   /* Create the Object base class. */
   Class *object_cls = new Class("Class");
   object_cls->set_constructor(Object_constructor);
-  object_cls->set_vtable(12, ObjectMethods, STATIC);
+  object_cls->set_vtable(14, ObjectMethods, STATIC);
   object_cls->set_class_vtable(10, ObjectCMethods, STATIC);
   object_cls->bytecode(227, ObjectBytecode, STATIC);
   Class::record(object_cls, "Object");
@@ -2315,24 +2337,24 @@ void meat::initialize(int argc, const char *argv[]) {
   object_cls->_type = Class::resolve("Class");
   class_cls->_type = Class::resolve("Class").weak();
 
-	/* Create the Context class. */
+  /* Create the Context class. */
   Class *context_cls = new Class("Object");
   context_cls->set_constructor(Context_constructor);
-  context_cls->set_vtable(20, ContextMethods, STATIC);
+  context_cls->set_vtable(23, ContextMethods, STATIC);
   context_cls->set_class_vtable(11, ContextCMethods, STATIC);
   context_cls->bytecode(131, ContextBytecode, STATIC);
   Class::record(context_cls, "Context");
 
   /* Create the BlockContext class. */
   Class *block_cls = new Class("Context");
-  block_cls->set_vtable(20, BlockContextMethods, STATIC);
-	block_cls->set_class_vtable(11, BlockContextCMethods, STATIC);
+  block_cls->set_vtable(22, BlockContextMethods, STATIC);
+  block_cls->set_class_vtable(10, BlockContextCMethods, STATIC);
   Class::record(block_cls, "BlockContext");
 
   /* Create the Null class. */
   Class *null_cls = new Class("Object", 1, 0);
-  null_cls->set_vtable(12, NullMethods, STATIC);
-  null_cls->set_class_vtable(12, NullCMethods, STATIC);
+  null_cls->set_vtable(15, NullMethods, STATIC);
+  null_cls->set_class_vtable(11, NullCMethods, STATIC);
   null_cls->bytecode(167, NullBytecode, STATIC);
   Class::record(null_cls, "Null");
   null_cls->property(0) = new Object(Class::resolve("Null"));
@@ -2340,15 +2362,15 @@ void meat::initialize(int argc, const char *argv[]) {
   /* Create the Exception class. */
   Class *except_cls = new meat::Class("Object", 2);
   except_cls->set_constructor(Exception_constructor);
-  except_cls->set_vtable(14, ExceptionMethods, STATIC);
-  except_cls->set_class_vtable(17, ExceptionCMethods, STATIC);
+  except_cls->set_vtable(16, ExceptionMethods, STATIC);
+  except_cls->set_class_vtable(16, ExceptionCMethods, STATIC);
   except_cls->bytecode(24, ExceptionBytecode, STATIC);
   Class::record(except_cls, "Exception");
 
-	/* Create the Boolean class and objects. */
+  /* Create the Boolean class and objects. */
   Class *bool_cls = new meat::Class("Object", 2, 0);
-  bool_cls->set_vtable(21, BooleanMethods, meat::STATIC);
-  bool_cls->set_class_vtable(13, BooleanCMethods, meat::STATIC);
+  bool_cls->set_vtable(23, BooleanMethods, meat::STATIC);
+  bool_cls->set_class_vtable(12, BooleanCMethods, meat::STATIC);
   bool_cls->bytecode(145, BooleanBytecode, meat::STATIC);
   Class::record(bool_cls, "Boolean");
   bool_cls->property(0) = new Value(true);
@@ -2356,31 +2378,31 @@ void meat::initialize(int argc, const char *argv[]) {
 
   /* Create the Numeric class. */
   Class *numeric_cls = new Class("Object");
-  numeric_cls->set_vtable(25, NumericMethods, STATIC);
-  numeric_cls->set_class_vtable(13, NumericCMethods, STATIC);
+  numeric_cls->set_vtable(27, NumericMethods, STATIC);
+  numeric_cls->set_class_vtable(12, NumericCMethods, STATIC);
   numeric_cls->bytecode(683, NumericBytecode, STATIC);
   Class::record(numeric_cls, "Numeric");
 
-	/* Create the Integer class. */
+  /* Create the Integer class. */
   Class *integer_cls = new Class("Numeric");
-	integer_cls->set_constructor(Integer_constructor);
+  integer_cls->set_constructor(Integer_constructor);
   integer_cls->set_vtable(33, IntegerMethods, STATIC);
-	integer_cls->set_class_vtable(13, IntegerCMethods, STATIC);
+  integer_cls->set_class_vtable(13, IntegerCMethods, STATIC);
   Class::record(integer_cls, "Integer");
 
-	/* Create the Number class. */
+  /* Create the Number class. */
   Class *number_cls = new Class("Numeric");
-	number_cls->set_constructor(Number_constructor);
+  number_cls->set_constructor(Number_constructor);
   number_cls->set_vtable(25, NumberMethods, STATIC);
-	number_cls->set_class_vtable(13, NumberCMethods, STATIC);
+  number_cls->set_class_vtable(13, NumberCMethods, STATIC);
   Class::record(number_cls, "Number");
 
   /* Create the Text class. */
   Class *text_cls = new Class("Object");
-	text_cls->set_constructor(Text_constructor);
+  text_cls->set_constructor(Text_constructor);
   text_cls->set_vtable(22, TextMethods, STATIC);
-	text_cls->set_class_vtable(11, TextCMethods, STATIC);
-	text_cls->bytecode(9, TextBytecode, meat::STATIC);
+  text_cls->set_class_vtable(11, TextCMethods, STATIC);
+  text_cls->bytecode(9, TextBytecode, meat::STATIC);
   Class::record(text_cls, "Text");
 
   /* Create the List class. */
@@ -2388,16 +2410,16 @@ void meat::initialize(int argc, const char *argv[]) {
   list_cls->set_constructor(list_constructor);
   list_cls->set_vtable(22, ListMethods, STATIC);
   list_cls->set_class_vtable(12, ListCMethods, STATIC);
-	list_cls->bytecode(16, ListBytecode, meat::STATIC);
+  list_cls->bytecode(16, ListBytecode, meat::STATIC);
   Class::record(list_cls, "List");
 
-	/* Create the Set class. */
-	Class *set_cls = new meat::Class("Object");
+  /* Create the Set class. */
+  Class *set_cls = new meat::Class("Object");
   set_cls->set_constructor(Set_constructor);
   set_cls->set_vtable(21, SetMethods, meat::STATIC);
   set_cls->set_class_vtable(12, SetCMethods, meat::STATIC);
   set_cls->bytecode(16, SetBytecode, meat::STATIC);
-	Class::record(set_cls, "Set");
+  Class::record(set_cls, "Set");
 
   /* Create the Index class. */
   Class *index_cls = new Class("Object");
@@ -2413,7 +2435,7 @@ void meat::initialize(int argc, const char *argv[]) {
   app_cls->bytecode(61, ApplicationBytecode, STATIC);
   Class::record(app_cls, "Application");
 
-	//class_compiler() = compiler;
+  //class_compiler() = compiler;
   meat::data::initialize();
 
 #if defined(__WIN32__)
@@ -2422,22 +2444,22 @@ void meat::initialize(int argc, const char *argv[]) {
   meat::data::Library::add_path("/usr/lib/meat/");
 #endif
 
-	data::Library *library = data::Library::create("__builtin__");
-	library->add(class_cls, "Class");
-	library->add(object_cls, "Object");
-	library->add(null_cls, "Null");
-	library->add(except_cls, "Exception");
-	library->add(context_cls, "Context");
-	library->add(block_cls, "BlockContext");
-	library->add(numeric_cls, "Numeric");
-	library->add(integer_cls, "Integer");
-	library->add(number_cls, "Number");
-	library->add(text_cls, "Text");
-	library->add(bool_cls, "Boolean");
-	library->add(list_cls, "List");
-	library->add(set_cls, "Set");
-	library->add(index_cls, "Index");
-	library->add(app_cls, "Application");
+  data::Library *library = data::Library::create("__builtin__");
+  library->add(class_cls, "Class");
+  library->add(object_cls, "Object");
+  library->add(null_cls, "Null");
+  library->add(except_cls, "Exception");
+  library->add(context_cls, "Context");
+  library->add(block_cls, "BlockContext");
+  library->add(numeric_cls, "Numeric");
+  library->add(integer_cls, "Integer");
+  library->add(number_cls, "Number");
+  library->add(text_cls, "Text");
+  library->add(bool_cls, "Boolean");
+  library->add(list_cls, "List");
+  library->add(set_cls, "Set");
+  library->add(index_cls, "Index");
+  library->add(app_cls, "Application");
 
-	library->set_symbols(Symbols, meat::STATIC);
+  library->set_symbols(Symbols, meat::STATIC);
 }

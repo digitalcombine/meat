@@ -19,7 +19,7 @@
 
 Library import: UnitTest
 
-Test subClass: Test.Index as: {
+Test subclass: Test.Index as: {
 
 	method initialize {
 		super initialize

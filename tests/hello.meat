@@ -24,9 +24,9 @@
 #   The generate cpp file is still not valid because all the hash values are
 #  included in the name hashing...
 
-Library import: "Console"
+Library requires: "Console"
 
-Application subClass: Hello as: {
+Application subclass: Hello as: {
 
   class method Hello {
     Console writeLn: "Hello"

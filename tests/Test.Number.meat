@@ -20,7 +20,7 @@
 Library import: UnitTest
 Library import: Console
 
-Test subClass: Test.NumberBadness as: {
+Test subclass: Test.NumberBadness as: {
 
 	method initialize {
 		super initialize

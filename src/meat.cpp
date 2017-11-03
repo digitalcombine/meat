@@ -1565,7 +1565,9 @@ meat::Reference meat::message(meat::Reference object,
   if (m_entry == 0)
     throw Exception(std::string("Message ") +
                     cast<Class>(obj_cls).lookup(hash_id) +
-                    " is unresolved", context);
+                    " is unresolved for class " +
+										cast<Class>(obj_cls).name(),
+										context);
 
   // Now create the new context.
   Context *ctx = new Context(context, m_entry->locals);
@@ -1604,12 +1606,12 @@ meat::Reference meat::message_super(meat::Reference object,
                                     meat::uint32_t hash_id,
                                     meat::Reference context) {
 
-  Reference cls;
+  Reference cls, obj_cls;
   const vtable_entry_t *m_entry = 0;
 
   // Resolve the message with the hash_id.
   if (object->is_class()) {
-    cls = cast<Context>(context).super();
+    obj_cls = cls = cast<Context>(context).super();
 
     /*  If the method is inherited then start looking through the parent
      * classes to find the actual method entry.
@@ -1620,7 +1622,7 @@ meat::Reference meat::message_super(meat::Reference object,
     }
 
   } else {
-    cls = cast<Context>(context).super();
+    obj_cls = cls = cast<Context>(context).super();
 
     /*  If the method is inherited then start looking through the parent
      * classes to find the actual method entry.
@@ -1633,7 +1635,12 @@ meat::Reference meat::message_super(meat::Reference object,
 
   // Raise an error if we couldn't resolve the method name.
   if (m_entry == 0)
-    throw Exception(std::string("Message is unresolved"), context);
+		throw Exception(std::string("Message ") +
+                    cast<Class>(obj_cls).lookup(hash_id) +
+                    " is unresolved for class " +
+										cast<Class>(obj_cls).name(),
+										context);
+	//throw Exception(std::string("Message is unresolved"), context);
 
   // Now create the new context.
   Context *ctx = new Context(context, m_entry->locals);
@@ -1664,23 +1671,23 @@ std::ostream &meat::operator <<(std::ostream &out, Class &cls) {
 }
 #endif
 
-/**********************
- * meat::grinder_impl *
- **********************/
+/******************
+ * meat::compiler *
+ ******************/
 
 /** Contains the library search path.
  */
-static meat::GrinderImplementation *&_grinder() {
-  static meat::GrinderImplementation *impl;
+static meat::CompilerInterface *&_compiler() {
+  static meat::CompilerInterface *impl;
   return impl;
 }
 
-void meat::grinder_impl(GrinderImplementation *impl) {
-	_grinder() = impl;
+void meat::compiler(CompilerInterface *impl) {
+	_compiler() = impl;
 }
 
-meat::GrinderImplementation *meat::grinder_impl() {
-	return _grinder();
+meat::CompilerInterface *meat::compiler() {
+	return _compiler();
 }
 
 /*****************

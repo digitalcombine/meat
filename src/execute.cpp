@@ -351,9 +351,9 @@ meat::Reference meat::execute(Reference context) {
 #ifdef DEBUG
         std::cout << "BC" << BCLOC;
         switch (bc->code) {
-        case bytecode::ASSIGN_PROP:
+        case bytecode::SET_PROP:
           std::cout << ": SET PROPERTY "; break;
-        case bytecode::ASSIGN_CLASS_PROP:
+        case bytecode::SET_CLASS_PROP:
           std::cout << ": SET CLASS PROPERTY "; break;
         default: break;
         }

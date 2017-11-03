@@ -20,7 +20,7 @@
 Library import: UnitTest
 Library import: Grinder
 
-Test subClass: Test.Compiler as: {
+Test subclass: Test.Compiler as: {
 
 	method initialize {
 		super initialize

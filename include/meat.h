@@ -733,7 +733,7 @@ namespace meat {
 		virtual void unserialize(data::Archive &store, std::istream &data_stream);
 	};
 
-	class DECLSPEC GrinderImplementation {
+	class DECLSPEC CompilerInterface {
 	public:
 		virtual void import(const std::string &library,
 												meat::Reference context) = 0;
@@ -742,10 +742,11 @@ namespace meat {
 															const std::string &cls_name,
 															const std::string &cls_body,
 															meat::Reference context) = 0;
+    virtual void set_application_class(meat::Reference klass) = 0;
 	};
 
-	void DECLSPEC grinder_impl(GrinderImplementation *impl);
-	GrinderImplementation DECLSPEC *grinder_impl();
+	void DECLSPEC compiler(CompilerInterface *impl);
+	CompilerInterface DECLSPEC *compiler();
 
 	Reference DECLSPEC Boolean(bool value);
 

@@ -17,19 +17,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: "UnitTest"
-Library import: "Test.Characters"
-Library import: "Test.Object"
-Library import: "Test.Class"
-Library import: "Test.BlockContext"
-Library import: "Test.Null"
-Library import: "Test.Exception"
-Library import: "Test.Boolean"
-Library import: "Test.Numeric"
-Library import: "Test.Integer"
-Library import: "Test.List"
+Library requires: "UnitTest"
+Library requires: "Test.Characters"
+Library requires: "Test.Object"
+Library requires: "Test.Class"
+Library requires: "Test.BlockContext"
+Library requires: "Test.Null"
+Library requires: "Test.Exception"
+Library requires: "Test.Boolean"
+Library requires: "Test.Numeric"
+Library requires: "Test.Integer"
+Library requires: "Test.List"
+Library requires: "Test.Application"
 
-Application subClass: Tests as: {
+Application subclass: Tests as: {
 
 	class method entry {
 		summary = [Test.Summary new]
@@ -44,6 +45,7 @@ Application subClass: Tests as: {
 		summary addSuite: [Test.Integer new]
 		summary addSuite: [Test.List new]
 		summary addSuite: [Test.Characters new]
+		summary addSuite: [Test.Application new]
 
 		context return: [summary runAndSummarize]
 	}
@@ -51,4 +53,4 @@ Application subClass: Tests as: {
 }
 
 # This currently doesn't work.
-Library setApplication: Tests
+Library setApplicationClass: Tests

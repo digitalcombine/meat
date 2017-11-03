@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: UnitTest
+Library requires: UnitTest
 
-Test.Suite subClass: Test.Object as: {
+Test.Suite subclass: Test.Object as: {
 
   method setup {
     self title: "3.1 The Object Class"
@@ -134,11 +134,19 @@ Test.Suite subClass: Test.Object as: {
       self pass
     }
 
-    self title: "3.1.9 Method initialize" test: {
+    self title: "3.1.9 The type isWeakReference" test: {
       self pass
     }
 
-    self title: "3.1.10 Method weak" test: {
+    self title: "3.1.10 Method initialize" test: {
+      self pass
+    }
+
+    self title: "3.1.11 Method weakReference" test: {
+      self pass
+    }
+    
+    self title: "3.1.12 Method reference" test: {
       self pass
     }
   }

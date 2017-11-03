@@ -189,6 +189,16 @@ namespace memory {
       return result;
     }
 
+		/** Creates a new normal reference.
+     */
+    reference normal(void) {
+      reference result;
+      result.obj = obj;
+      result.weak_ref = false;
+      result.inc_reference();
+      return result;
+    }
+
     /** Tests if the reference is a weak reference.
      * @return True if the reference is a weak reference otherwise false.
      */
@@ -258,15 +268,20 @@ namespace memory {
       return (obj == other.obj);
     }
 
-    /** Check if the reference is referencing @c other.
+    /** Check if the reference is referencing the same object as @c other.
      */
     bool operator ==(const Ty *other) const {
       return ((Ty *)(obj) == other);
     }
 
-    bool operator !=(const reference<Ty> &obj) const {
-      return (this->obj != obj.obj);
+    /** Check if the reference is referencing a different object as @c other.
+     */
+    bool operator !=(const reference<Ty> &other) const {
+      return (this->obj != other.obj);
     }
+
+    reference &operator ++(void) { inc_reference(); return *this; }
+    reference &operator --(void) { dec_reference(); return *this; }
 
     /** Dereference the reference.
      */

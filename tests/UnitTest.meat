@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: Console
+Library requires: Console
 
 #==============================================================================
 # Test Class
 
-Object subClass: Test as: {
+Object subclass: Test as: {
 
   # The title for the test.
   property title
@@ -105,7 +105,7 @@ Object subClass: Test as: {
 #==============================================================================
 # TestSuite Class
 
-Console subClass: TestSuite as: {
+Console subclass: TestSuite as: {
 
   # A list for all the tests added to the TestSuite.
   property testList
@@ -186,7 +186,7 @@ Console subClass: TestSuite as: {
 #==============================================================================
 # Test.Test Class
 
-Object subClass: Test.Test as: {
+Object subclass: Test.Test as: {
 
   property title
   property test
@@ -247,7 +247,7 @@ Object subClass: Test.Test as: {
 #==============================================================================
 # Test.Suite Class
 
-Object subClass: Test.Suite as: {
+Object subclass: Test.Suite as: {
 
   property tests
   property currentTest
@@ -329,7 +329,7 @@ Object subClass: Test.Suite as: {
 #==============================================================================
 # Test.Summary Class
 
-Object subClass: Test.Summary as: {
+Object subclass: Test.Summary as: {
 
   property testSuites
 
