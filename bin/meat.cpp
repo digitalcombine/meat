@@ -35,11 +35,13 @@
  ********/
 
 static void help() {
-	std::cout << "Meat v" << VERSION << "\n\n";
-	std::cout << "meat [-i path] archive ...\n";
-	std::cout << "meatc -h\n";
-	std::cout << "  -i path      Include path to the library search\n";
-	std::cout << "  -h           Displays this help" << std::endl;
+  std::cout << "Meat v" << VERSION << "\n\n"
+            << "meat [-i path] archive ...\n"
+            << "meatc -h\n"
+            << "  -i path      Include path to the library search\n"
+            << "  -V           Display the version\n"
+            << "  -h           Displays this help"
+            << std::endl;
 }
 
 /***********
@@ -47,14 +49,14 @@ static void help() {
  ***********/
 
 static void version() {
-	std::cout << "Meat v" << VERSION << "\n\n";
-  std::cout << "Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>\n";
-	std::cout << "License GPLv3+: GNU GPL version 3 or later "
-						<< "<http://gnu.org/licenses/gpl.html>\n";
-	std::cout << "This is free software: you are free to change and "
-						<< "redistribute it.\n";
-	std::cout << "There is NO WARRANTY, to the extent permitted by law."
-						<< std::endl;
+  std::cout << "Meat v" << VERSION << "\n\n"
+            << "Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>\n"
+            << "License GPLv3+: GNU GPL version 3 or later "
+            << "<http://gnu.org/licenses/gpl.html>\n"
+            << "This is free software: you are free to change and "
+            << "redistribute it.\n"
+            << "There is NO WARRANTY, to the extent permitted by law."
+            << std::endl;
 }
 
 /******************************************************************************
@@ -63,117 +65,120 @@ static void version() {
 int main(int argc, const char *argv[]) {
 
 #ifdef DEBUG
-	std::cout << "Meat " << VERSION << std::endl;
-	std::cout << "  Debugging enabled" << std::endl;
+  std::cout << "Meat " << VERSION << std::endl;
+  std::cout << "  Debugging enabled" << std::endl;
 #ifdef TESTING
-	std::cout << "  Testing Build" << std::endl;
+  std::cout << "  Testing Build" << std::endl;
 #endif
 #endif
 
-	const char *filename = NULL;
+  const char *filename = NULL;
 
-	meat::initialize(argc, argv); // Initialize the runtime environment.
+  meat::initialize(argc, argv); // Initialize the runtime environment.
 
 #ifdef TESTING
-	meat::test::run_tests();
+  meat::test::run_tests();
 #endif
 
-	/*********************************
-	 * Parse the command line options.
-	 */
-	int opt;
-	while ((opt = getopt(argc, argv, "i:hV")) != -1) {
-		switch (opt) {
-		case 'i':
-			meat::data::Library::add_path(optarg);
-			break;
-		case 'h': // Help option
-			help();
+  /*********************************
+   * Parse the command line options.
+   */
+  int opt;
+  while ((opt = getopt(argc, argv, "i:hV")) != -1) {
+    switch (opt) {
+    case 'i':
+      meat::data::Library::add_path(optarg);
+      break;
+    case 'h': // Help option
+      help();
 #ifdef TESTING
-			meat::test::summary();
+      meat::test::summary();
 #endif
-			return 0;
-		case 'V':
-			version();
+      return 0;
+    case 'V':
+      version();
 #ifdef TESTING
-			meat::test::summary();
+      meat::test::summary();
 #endif
-			return 0;
-		default: { // Unknown option
-			std::cerr << "FATAL: unknown option -" << opt << std::endl;
-			return 1;
-		}
-		}
-	}
+      return 0;
+    default: // Unknown option
+      std::cerr << "FATAL: unknown option" << std::endl;
+      return 1;
+    }
+  }
 
-	if (optind >= argc) {
-		std::cerr << "FATAL: expected a file to execute" << std::endl;
-		return 1;
-	}
-	filename = argv[optind];
+  if (optind >= argc) {
+    std::cerr << "FATAL: expected a file to execute" << std::endl;
+    return 1;
+  }
+  filename = argv[optind];
 
-	try {
-		int fl_type = meat::data::fl_type(filename);
+  try {
+    // Read the file magic to get the meat file type if possible.
+    int fl_type = meat::data::fl_type(filename);
 
-		meat::Reference result;
+    meat::Reference result;
 
-		if (fl_type == meat::data::FL_ARCHIVE) {
-			/* Open the archive and get the object from it. */
-			meat::data::Archive archive(filename);
-			meat::Reference app = archive.get_object();
+    if (fl_type == meat::data::FL_ARCHIVE) {
+      /* Open the archive and get the object from it. */
+      meat::data::Archive archive(filename);
+      meat::Reference app = archive.get_object();
 
-			/* Make sure the object is an application. */
-			if (!app->is_type("Application")) {
-				throw meat::Exception("Store does not contain an Application");
-			}
+      /* Make sure the object is an application. */
+      if (!app->is_type("Application")) {
+        throw meat::Exception("Store does not contain an Application");
+      }
 
 #ifdef DEBUG
-			std::cout << "DEBUG: Entering application..." << std::endl;
+      std::cout << "DEBUG: Entering application..." << std::endl;
 #endif /* DEBUG */
 
-			/* Message the application and get things rolling. */
-			meat::Reference context = meat::message(app, "entry",
-																							meat::Null());
-			result = meat::execute(context);
+      /* Message the application and get things rolling. */
+      meat::Reference context = meat::message(app, "entry",
+                                              meat::Null());
+      result = meat::execute(context);
 
-		} else if (fl_type == meat::data::FL_LIBRARY) {
+    } else if (fl_type == meat::data::FL_LIBRARY) {
 #ifdef DEBUG
-			std::cout << "DEBUG: Entering application..." << std::endl;
+      std::cout << "DEBUG: Entering application..." << std::endl;
 #endif /* DEBUG */
-			result = meat::data::Library::execute(filename);
-		}
+      result = meat::data::Library::execute(filename);
+    } else {
+      std::cerr << "FATAL: Unable to execute file " << filename << std::endl;
+      return 1;
+    }
 
-		/*  Attempt to return the return value from the entry method. If the
-		 * value return from entry is not an integer then we return 1 (error).
-		 * If no value was returned then we return 0 (success).
-		 */
-		if (not result.is_null() and not (result == meat::Null())) {
+    /*  Attempt to return the return value from the entry method. If the
+     * value return from entry is not an integer then we return 1 (error).
+     * If no value was returned then we return 0 (success).
+     */
+    if (not result.is_null() and not (result == meat::Null())) {
 #ifdef TESTING
-			meat::test::summary();
+      meat::test::summary();
 #endif
 
-			try {
-				int res = INTEGER(result);
-				meat::cleanup();
-				return res;
-			}
-			catch (...) { return 1; }
-		}
+      try {
+        int res = INTEGER(result);
+        meat::cleanup();
+        return res;
+      }
+      catch (...) { return 1; }
+    }
 
-	} catch (std::exception &err) {
-		/* Opps an uncaught exception. */
-		std::cerr << "UNCAUGHT EXCEPTION: " << err.what() << std::endl;
+  } catch (std::exception &err) {
+    /* Opps an uncaught exception. */
+    std::cerr << "UNCAUGHT EXCEPTION: " << err.what() << std::endl;
 
 #ifdef TESTING
-		meat::test::summary();
+    meat::test::summary();
 #endif
-		meat::cleanup();
-		return 1;
-	}
+    meat::cleanup();
+    return 1;
+  }
 
-	/* We should never really get here, but incase we do... */
+  /* We should never get here, but incase we do... */
 #ifdef TESTING
-	meat::test::summary();
+  meat::test::summary();
 #endif
-	return 0;
+  return 0;
 }

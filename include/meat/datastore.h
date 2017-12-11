@@ -64,69 +64,69 @@ namespace meat {
        */
       static Reference execute(const std::string &name);
 
-			static Library *get(const std::string &name);
-			static void unload(const std::string &name);
+      static Library *get(const std::string &name);
+      static void unload(const std::string &name);
 
-			/** Unload all libraries.
-			 */
-			static void unload();
+      /** Unload all libraries.
+       */
+      static void unload();
 
       virtual ~Library() throw();
 
-			/** Adds a directory path to the list of library paths.
-			 */
+      /** Adds a directory path to the list of library paths.
+       */
       static void add_path(const std::string &path);
 
-			/** Manually trigger all the initialize class methods for all the
-			 * classes in the library.
-			 *
-			 * @see create
-			 */
-			void init_classes();
+      /** Manually trigger all the initialize class methods for all the
+       * classes in the library.
+       *
+       * @see create
+       */
+      void init_classes();
 
-			/**
-			 */
+      /**
+       */
       void add(Class *cls, const std::string &id);
 
-			/** Clears the library of all it's classes and symbols.
-			 */
-			void clear();
+      /** Clears the library of all it's classes and symbols.
+       */
+      void clear();
 
       void set_application(const std::string &name);
 
-			/** Get a native dynamic symbol from the library, if it was a native
-			 * library.
-			 */
-			void *dlsymbol(const std::string &name);
+      /** Get a native dynamic symbol from the library, if it was a native
+       * library.
+       */
+      void *dlsymbol(const std::string &name);
 
       const std::string &name() { return _name; }
 
-			void set_symbols(meat::uint8_t *symbols,
-											 meat::alloc_t sym_alloc);
-			void clear_symbols();
-			std::string lookup(meat::uint32_t hash_id) const;
+      void set_symbols(std::uint8_t *symbols,
+                       meat::alloc_t sym_alloc);
+      void clear_symbols();
+      std::string lookup(std::uint32_t hash_id) const;
 
       const std::deque<Reference> &get_classes() const { return classes; }
 
     protected:
       /**
-			 * @todo Imports and includes should be moved to the Grinder.Library
-			 *       class.
-			 */
+       * @todo Imports and includes should be moved to the Grinder.Library
+       *       class.
+       */
       std::deque<Reference> classes;
 
-			/**
-			 */
+      /**
+       */
       void import();
 
     private:
       std::string _name;
       bool is_new;
 
-			std::map<meat::uint32_t, const char *> syms_table;
-			bool syms_free;
-			meat::uint32_t syms_size;
-			meat::uint8_t *symbols;
+      std::map<std::uint32_t, const char *> syms_table;
+      bool syms_free;
+      std::uint32_t syms_size;
+      std::uint8_t *symbols;
 
       bool is_native;
       nativelib_t dlhandle;
@@ -136,7 +136,7 @@ namespace meat {
 
       void import_from_archive(const std::string &name);
       void import_from_native(const std::string &filename,
-															const std::string &name);
+                              const std::string &name);
     };
 
     /** The meat object store.
@@ -157,7 +157,7 @@ namespace meat {
       /** Retrieves an Object from the data store.
        */
       Reference get_object();
-      Reference get_object(uint32_t index);
+      Reference get_object(std::uint32_t index);
 
       void sync();
 
@@ -165,21 +165,21 @@ namespace meat {
        * @param property reference to the parameter to add to the file.
        * @return The index offset of the object with the file.
        */
-      uint32_t add_property(Reference property);
+      std::uint32_t add_property(Reference property);
 
-      Archive &operator>>(meat::uint8_t &value);
-      Archive &operator>>(meat::int8_t &value);
-      Archive &operator>>(meat::uint32_t &value);
-      Archive &operator>>(meat::int32_t &value);
-      Archive &operator>>(meat::float_t &value);
+      Archive &operator>>(std::uint8_t &value);
+      Archive &operator>>(std::int8_t &value);
+      Archive &operator>>(std::uint32_t &value);
+      Archive &operator>>(std::int32_t &value);
+      Archive &operator>>(double &value);
 
-      friend Archive &operator<<(Archive &archive, meat::uint8_t value);
-      friend Archive &operator<<(Archive &archive, meat::int8_t value);
-      friend Archive &operator<<(Archive &archive, meat::uint16_t value);
-      friend Archive &operator<<(Archive &archive, meat::int16_t value);
-      friend Archive &operator<<(Archive &archive, meat::uint32_t value);
-      friend Archive &operator<<(Archive &archive, meat::int32_t value);
-      friend Archive &operator<<(Archive &archive, meat::float_t value);
+      friend Archive &operator<<(Archive &archive, std::uint8_t value);
+      friend Archive &operator<<(Archive &archive, std::int8_t value);
+      friend Archive &operator<<(Archive &archive, std::uint16_t value);
+      friend Archive &operator<<(Archive &archive, std::int16_t value);
+      friend Archive &operator<<(Archive &archive, std::uint32_t value);
+      friend Archive &operator<<(Archive &archive, std::int32_t value);
+      friend Archive &operator<<(Archive &archive, double value);
 
     private:
       /* Within the file
@@ -197,8 +197,8 @@ namespace meat {
         Index() : obj_offset(0) {};
 
         Reference object; /** Cached object. */
-        uint32_t cls_id;
-        uint32_t obj_offset;
+        std::uint32_t cls_id;
+        std::uint32_t obj_offset;
       };
 
       std::fstream data_stream;
@@ -213,13 +213,13 @@ namespace meat {
       bool synced;
     };
 
-    Archive &operator<<(Archive &archive, meat::uint8_t value);
-    Archive &operator<<(Archive &archive, meat::int8_t value);
-    Archive &operator<<(Archive &archive, meat::uint16_t value);
-    Archive &operator<<(Archive &archive, meat::int16_t value);
-    Archive &operator<<(Archive &archive, meat::uint32_t value);
-    Archive &operator<<(Archive &archive, meat::int32_t value);
-    Archive &operator<<(Archive &archive, meat::float_t value);
+    Archive &operator<<(Archive &archive, std::uint8_t value);
+    Archive &operator<<(Archive &archive, std::int8_t value);
+    Archive &operator<<(Archive &archive, std::uint16_t value);
+    Archive &operator<<(Archive &archive, std::int16_t value);
+    Archive &operator<<(Archive &archive, std::uint32_t value);
+    Archive &operator<<(Archive &archive, std::int32_t value);
+    Archive &operator<<(Archive &archive, double value);
   }
 }
 

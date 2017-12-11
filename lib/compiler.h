@@ -21,6 +21,7 @@
 
 #include <meat/types.h>
 #include <meat/datastore.h>
+#include "ast.h"
 
 #include <fstream>
 #include <sstream>
@@ -28,6 +29,7 @@
 #include <vector>
 #include <deque>
 #include <set>
+#include <stack>
 
 #ifndef _MEAT_COMPILER_H
 #define _MEAT_COMPILER_H
@@ -54,19 +56,24 @@ namespace meat {
       Location(const Location &other);
       virtual ~Location() throw();
 
-      void set_source(std::string &source_name);
       void inc_line();
-      void inc_offset(uint32_t amount = 1);
-      void set_offset(uint32_t position);
+      void inc_offset(std::uint32_t amount = 1);
+      void offset(std::uint32_t position);
+      void reset();
 
       Location &operator =(const Location &other);
 
-    private:
-      std::string source;
+      operator std::string() const;
 
-      uint32_t line;
-      uint32_t offset;
+      friend
+        std::ostream &operator << (std::ostream &out, const Location &value);
+
+    private:
+      unsigned int _line;
+      unsigned int _offset;
     };
+
+    std::ostream &operator << (std::ostream &out, const Location &value);
 
     /** Class for a single token used for parsing during compiling.
      */
@@ -80,11 +87,11 @@ namespace meat {
         LITRL_STRING = 0x02,
         COMMAND      = 0x03,
         BLOCK        = 0x04,
-        TEOF         = 0xff
+        EOL          = 0xff
       } token_t;
 
       Token(const std::string &token, token_t value_type,
-            Location &start, Location &end);
+            const Location &position);
 
       /** Default copy constructor.
        */
@@ -110,7 +117,7 @@ namespace meat {
         return (this->value_type == value_type);
       };
 
-      const Location &get_start_location() const { return start; };
+      const Location &position() const { return _position; };
 
       /** Assign the values of another token to this token.
        */
@@ -120,25 +127,23 @@ namespace meat {
        * @param value The constant string to compare the token to.
        * @return True if the token is equal to value, otherwise return false.
        */
-      bool operator == (const char *value) const;
+      bool operator == (const std::string &value) const;
 
       /** Cast the token as a constant string.
        */
-      operator const std::string &() const { return value; };
+      //operator std::string() const;
 
-      /** Cast the token as a string.
-       */
-      operator std::string &() { return value; };
+      operator const std::string &() const { return value; };
 
       /** Convert the token to a float_t if possible. If the token could not
        * be converted then 0.0f is returned.
        */
-      operator float_t ();
+      operator double ();
 
     private:
       token_t value_type;  /**< The type of token parsed */
       std::string value;   /**< The value of the token. */
-      Location start, end; /**< Location of the token in the original text. */
+      Location _position; /**< Location of the token in the original text. */
     };
 
     /** Collection of tokens parsed from a given command or text.
@@ -154,13 +159,13 @@ namespace meat {
 
       void parse(const std::string &code);
 
-      void parse(const Location &location, const std::string &command,
-                 bool more = false);
-
-      /** Further parse a token, in cases of subcommands or code blocks.
+      /** Push the current token for futher parsing, in cases of subcommands or
+       * code blocks.
        * @param token The token to continue parsing.
        */
-      void parse(const Token &token);
+      void push();
+
+      void pop();
 
       /** Return the number of tokens that have been currently parsed.
        * @return The number of tokens currently parsed.
@@ -179,11 +184,15 @@ namespace meat {
 
       bool expect(Token::token_t id);
 
-      bool expect(Token::token_t id, const char *value);
+      bool expect(Token::token_t id, const std::string &value);
+
+      bool expect(size_t index, Token::token_t id);
+
+      bool expect(size_t index, Token::token_t id, const std::string &value);
 
       void permit(Token::token_t id);
 
-      void permit(Token::token_t id, const char *value);
+      void permit(Token::token_t id, const std::string &value);
 
       void next();
 
@@ -205,31 +214,47 @@ namespace meat {
     protected:
       void get_next_line();
 
-    private:
-      bool complete;
       std::string remaining;
-
-      std::istringstream strs;
-      std::istream *code;
-
-      Location start;
-      Location position;
-      bool cook_lines;
+      std::istream *stream;
 
       std::deque<Token> tokens;
+
+      void parse_line(const std::string &command, bool more = false);
+
+    private:
+      bool complete;
+
+      std::istringstream strs;
+
+      //Location start;
+      Location position;
+
+      /** Flags get_next_line to do some of its own parsing, dropping comments
+       * and trimming white space, otherwise it returns the next line as is.
+       */
+      bool cook_lines;
+      bool cont_line;
+
+      struct stack_s {
+        std::deque<Token> tokens;
+        std::string remaining;
+        std::istream *stream;
+        Location position;
+      };
+      std::stack<stack_s> states;
     };
 
     /** Base class for creating language structures.
      */
-    class DECLSPEC Language {
+    class DECLSPEC Grammer {
     public:
       /** Initialize a new Language object.
        */
-      Language();
+      Grammer();
 
       /** Cleanup a Language object.
        */
-      virtual ~Language() throw();
+      virtual ~Grammer() throw();
 
       /** Parse the code into tokens passing each command to Language::command.
        */
@@ -241,9 +266,11 @@ namespace meat {
        */
       void execute(const Token &token);
 
-      virtual void command(Tokenizer &tokens);
+      virtual void command();
 
     protected:
+      Tokenizer tokens;
+
       void reset();
 
     private:
@@ -254,15 +281,18 @@ namespace meat {
     /**************************************************************************
      */
 
-    class DECLSPEC Interpreter : public Language {
+    class DECLSPEC Interpreter : public Grammer {
     public:
       Interpreter();
       virtual ~Interpreter() throw();
 
-      virtual void command(Tokenizer &tokens);
+      virtual void command();
 
     protected:
       Reference resolve_object(Token &token);
+
+      void assignment();
+      Reference message();
 
     private:
       std::map<std::string, Reference> variables;
@@ -277,8 +307,8 @@ namespace meat {
 
     /** Language parser for compiling library files.
      */
-    class DECLSPEC Library : public Language, public Object,
-														 public meat::CompilerInterface {
+    class DECLSPEC Library : public Grammer, public Object,
+                             public meat::CompilerInterface {
     public:
       /** Construct a new Library object.
        */
@@ -294,21 +324,17 @@ namespace meat {
 
       /** Interpret a parsed command already tokenized.
        */
-      virtual void command(Tokenizer &tokens);
-
-      //Reference get_imports() const;
-
-      //void set_application(const std::string &name);
+      virtual void command();
 
       void add_symbol(const std::string &symbol);
       void clear_symbols();
 
-			virtual void import(const std::string &library, meat::Reference context);
-			virtual void include(const std::string &code);
-			virtual void create_class(meat::Reference super,
-																const std::string &cls_name,
-																const std::string &cls_body,
-																meat::Reference context);
+      virtual void import(const std::string &library, meat::Reference context);
+      virtual void include(const std::string &code);
+      virtual void create_class(meat::Reference super,
+                                const std::string &cls_name,
+                                const std::string &cls_body,
+                                meat::Reference context);
       virtual void set_application_class(meat::Reference klass);
 
       void compile();
@@ -325,6 +351,8 @@ namespace meat {
     protected:
       bool is_cpp() const;
 
+      meat::Reference message();
+
     private:
       data::Library *library;
       std::set<std::string> symbols;
@@ -333,8 +361,8 @@ namespace meat {
       Reference context;
       Reference result;
 
-			void write_mlib(std::ostream &out);
-			void write_cpp(std::ostream &out);
+      void write_mlib(std::ostream &out);
+      void write_cpp(std::ostream &out);
     };
 
     /**************************************************************************
@@ -346,15 +374,15 @@ namespace meat {
      * Property 5 Constructor
      */
 
-    class DECLSPEC Class : public Language, public Object {
+    class DECLSPEC Class : public Grammer, public Object {
     public:
-      Class(Reference klass, uint8_t properties);
+      Class(Reference klass, std::uint8_t properties);
       virtual ~Class() throw() {};
 
       void add_method(Reference method);
       void add_class_method(Reference method);
 
-			Reference super() const {
+      Reference super() const {
         return meat::Class::resolve(cast<const Text>(property(1)));
       }
 
@@ -369,15 +397,17 @@ namespace meat {
       void cpp_new_class(std::ostream &out) const;
 
 
-      virtual void command(Tokenizer &tokens);
+      virtual void command();
 
       virtual void unserialize(data::Archive &store,
                                std::istream &data_stream);
 
       friend class Library;
 
-		protected:
+    protected:
 
+      void property_def();
+      void method_def(bool is_native = false);
 
     private:
       Library *library;
@@ -387,13 +417,13 @@ namespace meat {
 
       uint8_t method_count() const;
       uint8_t class_method_count() const;
-			uint8_t obj_property(const std::string &name);
+      uint8_t obj_property(const std::string &name);
       uint8_t cls_property(const std::string &name);
       int16_t have_obj_property(const std::string &name) const;
       int16_t have_cls_property(const std::string &name) const;
-			uint8_t constant(const std::string name);
-			void update_symbols(std::set<std::string> &symbols) const;
-			std::string cpp_hash_id() const;
+      uint8_t constant(const std::string name);
+      void update_symbols(std::set<std::string> &symbols) const;
+      std::string cpp_hash_id() const;
     };
 
     /**************************************************************************
@@ -402,13 +432,13 @@ namespace meat {
      * Property 2 Body
      */
 
-    class DECLSPEC Method : public Language, public Object {
+    class DECLSPEC Method : public Grammer, public Object {
     public:
-      Method(Reference klass, uint8_t properties);
+      Method(Reference klass, std::uint8_t properties);
       Method(Class &cb, bool is_cpp = false);
       virtual ~Method() throw() {};
 
-      virtual void command(Tokenizer &tokens);
+      virtual void command();
 
       /** Compile the method into bytecode.
        */
@@ -427,29 +457,32 @@ namespace meat {
       friend class Class;
 
     protected:
-      void *parse_message(Tokenizer &tokens);
+      ast::Message *message();
+      ast::Assignment *assignment();
+      ast::ContextBlock *block();
+      ast::Value *text_constant();
 
     private:
       /** Reference to the class that contains the method */
       Class *cb;
-      void *astree;
+      ast::Block *astree;
 
       bool _is_cpp;
-      std::vector<uint8_t> bytecode;
+      std::vector<std::uint8_t> bytecode;
       uint8_t _locals;
 
       std::set<std::string> symbols;
 
-			std::string cpp_hash_id();
-			void update_symbols(std::set<std::string> &symbols) const;
-			std::string cpp_name(const std::string &prelim);
-			void add_parameter(const std::string &name);
+      std::string cpp_hash_id();
+      void update_symbols(std::set<std::string> &symbols) const;
+      std::string cpp_name(const std::string &prelim);
+      void add_parameter(const std::string &name);
       void add_body(const std::string &body);
     };
 
     namespace Utils {
-      DECLSPEC bool is_integer(const std::string &value, int32_t *res);
-      DECLSPEC bool is_float(const std::string &value, float_t *res);
+      DECLSPEC bool is_integer(const std::string &value, std::int32_t &res);
+      DECLSPEC bool is_float(const std::string &value, double &res);
     }
 
   } /* namespace compiler */

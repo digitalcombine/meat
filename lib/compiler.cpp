@@ -28,42 +28,90 @@
  * Location Class
  */
 
+/*************************************
+ * meat::grinder::Location::Location *
+ *************************************/
+
 meat::grinder::Location::Location()
-	: source(""), line(1), offset(0) {
+  : _line(0), _offset(0) {
 }
 
 meat::grinder::Location::Location(const Location &other)
-	: source(other.source), line(other.line), offset(other.offset) {
+  : _line(other._line), _offset(other._offset) {
 }
+
+/**************************************
+ * meat::grinder::Location::~Location *
+ **************************************/
 
 meat::grinder::Location::~Location() throw() {
 }
 
-void meat::grinder::Location::set_source(std::string &source_name) {
-	source = source_name;
-}
+/*************************************
+ * meat::grinder::Location::inc_line *
+ *************************************/
 
 void meat::grinder::Location::inc_line() {
-	line++;
+  ++_line;
+  _offset = 0;
 }
+
+/***************************************
+ * meat::grinder::Location::inc_offset *
+ ***************************************/
 
 void meat::grinder::Location::inc_offset(uint32_t amount) {
-	offset += amount;
+  _offset += amount;
 }
 
-void meat::grinder::Location::set_offset(uint32_t position) {
-	offset = position;
+/*************************************
+ * meat::grinder::Location::inc_line *
+ *************************************/
+
+void meat::grinder::Location::offset(uint32_t position) {
+  _offset = position;
 }
+
+/*************************************
+ * meat::grinder::Location::inc_line *
+ *************************************/
+
+void meat::grinder::Location::reset() {
+  _line = 0;
+  _offset = 0;
+}
+
+/***************************************
+ * meat::grinder::Location::operator = *
+ ***************************************/
 
 meat::grinder::Location &
 meat::grinder::Location::operator =(const Location &other) {
-	if (&other != this) {
-		source = other.source;
-		line = other.line;
-		offset = other.offset;
-	}
+  if (&other != this) {
+    _line = other._line;
+    _offset = other._offset;
+  }
 
-	return *this;
+  return *this;
+}
+
+/***************************************
+ * meat::grinder::operator std::string *
+ ***************************************/
+
+meat::grinder::Location::operator std::string() const {
+  std::stringstream result;
+  result << (unsigned int)_line << ":" << (unsigned int)_offset;
+  return result.str();
+}
+
+/******************************
+ * meat::grinder::operator << *
+ ******************************/
+
+std::ostream &meat::grinder::operator << (std::ostream &out,
+                                          const Location &value) {
+  return (out << (std::string)value);
 }
 
 /******************************************************************************
@@ -75,15 +123,15 @@ meat::grinder::Location::operator =(const Location &other) {
  ********************************/
 
 meat::grinder::Token::Token(const std::string &value,
-														meat::grinder::Token::token_t value_type,
-														Location &start, Location &end)
-	: value_type(value_type), value(value), start(start), end(end) {
-	subst();
+                            meat::grinder::Token::token_t value_type,
+                            const Location &position)
+  : value_type(value_type), value(value), _position(position) {
+  subst();
 }
 
 meat::grinder::Token::Token(const Token &other)
-	: value_type(other.value_type), value(other.value), start(other.start),
-		end(other.end) {
+  : value_type(other.value_type), value(other.value),
+    _position(other._position) {
 }
 
 /*********************************
@@ -93,80 +141,107 @@ meat::grinder::Token::Token(const Token &other)
 meat::grinder::Token::~Token() throw() {
 }
 
-/********************************
+/*******************************
  * meat::grinder::Token::subst *
- ********************************/
+ *******************************/
 
 void meat::grinder::Token::subst() {
 #ifdef DEBUG
-	//std::cout << "DEBUG: subst " << value << std::endl;
+  //std::cout << "DEBUG: subst " << value << std::endl;
 #endif
-	switch (value_type) {
-	case LITRL_STRING:
-		for (size_t offset = value.find("\\'");
-				 offset != value.npos;
-				 offset = value.find("\\'", offset)) {
-			value.replace(offset, 2, "'");
-		}
+  switch (value_type) {
+  case LITRL_STRING:
+    for (size_t offset = value.find("\\'");
+         offset != value.npos;
+         offset = value.find("\\'", offset)) {
+      value.replace(offset, 2, "'");
+    }
 #ifdef DEBUG
-		//std::cout << "DEBUG:  -> " << value << std::endl;
+    //std::cout << "DEBUG:  -> " << value << std::endl;
 #endif
-	case SUBST_STRING:
-		// XXX Command substitution here!!!
-
-		for (size_t offset = value.find("\\");
-				 offset != value.npos;
-				 offset = value.find("\\", offset)) {
-			switch (value[offset + 1]) {
-			case '"':
-			case '\\':
-			case '\'':
-			case '[':
-			case ']':
-			case '?':
-				value.replace(offset, 2, &value[offset + 1]);
-				break;
-			case 'b':
-				value.replace(offset, 2, "\b");
-				break;
-			case 'f':
-				value.replace(offset, 2, "\f");
-				break;
-			case 'n':
-				value.replace(offset, 2, "\n");
-				break;
-			case 'r':
-				value.replace(offset, 2, "\r");
-				break;
-			case 't':
-				value.replace(offset, 2, "\t");
-				break;
-			case 'v':
-				value.replace(offset, 2, "\v");
-				break;
-			}
-		}
-		break;
-	default:
-		break;
-	}
+  case SUBST_STRING:
+    for (size_t offset = value.find("\\");
+         offset != value.npos;
+         offset = value.find("\\", offset)) {
+      switch (value[offset + 1]) {
+      case '"':
+      case '\\':
+      case '\'':
+      case '[':
+      case ']':
+      case '?':
+        value.replace(offset, 2, &value[offset + 1]);
+        break;
+      case 'b':
+        value.replace(offset, 2, "\b");
+        break;
+      case 'f':
+        value.replace(offset, 2, "\f");
+        break;
+      case 'n':
+        value.replace(offset, 2, "\n");
+        break;
+      case 'r':
+        value.replace(offset, 2, "\r");
+        break;
+      case 't':
+        value.replace(offset, 2, "\t");
+        break;
+      case 'v':
+        value.replace(offset, 2, "\v");
+        break;
+      }
+    }
+    break;
+  default:
+    break;
+  }
 }
+
+/************************************
+ * meat::grinder::Token::operator = *
+ ************************************/
 
 meat::grinder::Token &
 meat::grinder::Token::operator =(const Token &other) {
-	if (this != &other) {
-		value_type = other.value_type;
-		value = other.value;
-	}
-	return *this;
+  if (this != &other) {
+    value_type = other.value_type;
+    value = other.value;
+  }
+  return *this;
 }
 
-bool meat::grinder::Token::operator ==(const char *value) const {
-	return (this->value == value);
+/*************************************
+ * meat::grinder::Token::operator == *
+ *************************************/
+
+bool meat::grinder::Token::operator ==(const std::string &value) const {
+  return (this->value == value);
 }
 
-meat::grinder::Token::operator float_t () {
-	return std::atof(value.c_str());
+/*meat::grinder::Token::operator std::string () const {
+  switch (value_type) {
+  case WORD:
+    return value;
+  case SUBST_STRING:
+  case LITRL_STRING:
+    return std::string("'") + value + "'";
+  case COMMAND:
+    return std::string("[") + value + "]";
+  case BLOCK:
+    return std::string("{") + value + "}";
+  case EOL:
+    return "0x210xb5";
+  };
+  return value;
+}*/
+
+/*****************************************
+ * meat::grinder::Token::operator double *
+ *****************************************/
+
+meat::grinder::Token::operator double () {
+  return std::atof(value.c_str());
 }
 
 /******************************************************************************
@@ -177,9 +252,10 @@ meat::grinder::Token::operator float_t () {
  * Tokenizer::Tokenizer *
  ************************/
 
-meat::grinder::Tokenizer::Tokenizer() : code(0) {
-	complete = false;
+meat::grinder::Tokenizer::Tokenizer() : stream(NULL) {
+  complete = false;
   cook_lines = true;
+  cont_line = false;
 }
 
 /*************************
@@ -194,231 +270,332 @@ meat::grinder::Tokenizer::~Tokenizer() throw() {
  ********************/
 
 void meat::grinder::Tokenizer::parse(std::istream &code) {
-	this->code = &code;
+  stream = &code;
   remaining = "";
-  //position.reset();
+  position.reset();
+  get_next_line();
 }
 
 void meat::grinder::Tokenizer::parse(const std::string &code) {
   strs.str(code);
-  this->code = &strs;
+  stream = &strs;
   remaining = "";
+  position.reset();
   get_next_line();
 }
 
-void meat::grinder::Tokenizer::parse(const Location &position,
-																		 const std::string &line,
-																		 bool more) {
-	size_t t_begin = 0;
-	size_t t_end = 0;
-	bool command_done = false;
-	std::string command = remaining + line;
-	Location end;
-
-	if (remaining.empty()) start = position;
-	end = start;
+void meat::grinder::Tokenizer::parse_line(const std::string &line,
+                                          bool more) {
+  size_t t_begin = 0;
+  size_t t_end = 0;
+  bool command_done = false;
+  std::string command = remaining + line;
 
 #ifdef DEBUG
-	//std::cout << "DEBUG: parsing \"" << command << "\"" << std::endl;
+  //std::cout << "PARSING: \"" << command << "\"" << std::endl;
 #endif
 
-	complete = true;
+  complete = true;
 
-	while (!command_done) {
-		t_begin = command.find_first_not_of(" \t\n", t_begin);
+  while (!command_done) {
+    t_begin = command.find_first_not_of(" \t", t_begin);
 
-		if (t_begin == command.npos) {
-			command_done = true;
-		} else {
-			unsigned int count = 1; // Flag for matching up brackets.
-			//start.inc_offset(t_begin - ???);
+    if (t_begin == command.npos) {
+      command_done = true;
+    } else {
+      unsigned int count = 1; // Flag for matching up brackets.
 
 #ifdef DEBUG
-			//std::cout << "DEBUG:  found token at " << t_begin << std::endl;
+      //std::cout << "DEBUG:  found token at " << t_begin << std::endl;
 #endif
+      position.offset(t_begin);
 
-			switch (command[t_begin]) {
+      switch (command[t_begin]) {
 
-			case '"': // Parse a substitutable string
-				t_end = t_begin + 1;
-				while (command[t_end] != '"') {
-					t_end += 1;
+      case '\n': // \n
+        t_end = t_begin;
+        if (cont_line)
+          cont_line = false;
+        else
+          tokens.push_back(Token("\n", Token::EOL, position));
 
-					// Found a new line.
-					if (command[t_end] == '\n')
-						throw meat::Exception("Syntax error: Multiline text constant not"
-																	 " allowed");
+        t_end += 1;
+        break;
 
-					// Incomplete string, but not a syntax error yet.
-					if (t_end >= command.length()) {
-						command_done = true;
-						complete = false;
-						break;
-					}
+      case '[': // Parse a command token
+        t_end = t_begin + 1;
 
-					// An escaped double quote.
-					if (command[t_end] == '\\' && command[t_end + 1] == '"')
-						t_end += 2;
-				}
+        //if (command[t_end] == '[') ++count;
+        count = 0;
+        while (command[t_end] != ']' or count > 0) {
+          if (command[t_end] == '\n') {
+            if (cont_line) {
+              remaining = command.substr(t_begin, t_end - t_begin);
+              complete = false;
+              command_done = true;
+              return;
+            } else
+              throw meat::Exception(
+                std::string("Syntax error: Missing closing bracket "
+                            "\"]\""));
+          }
 
-				tokens.push_back(Token(command.substr(t_begin + 1,
-																							t_end - t_begin - 1),
-															 Token::SUBST_STRING,
-															 start, end));
-				t_end += 1;
-				start.inc_offset(t_end - t_begin);
-				break;
+          if (command[t_end] == '[') {
+            ++count;
+          } else if (command[t_end] == ']') {
+            --count;
+          }
 
-			case '\'': // Parse a literal string
-				t_end = t_begin + 1;
-				while (command[t_end] != '\'') {
-					t_end += 1;
+          t_end += 1;
+        }
 
-					if (command[t_end] == '\n')
-						throw meat::Exception("Syntax error: Multiline text constant not"
-																	 " allowed");
+        complete = true;
+        //cont_line = false;
+        tokens.push_back(Token(command.substr(t_begin + 1,
+                                              t_end - t_begin - 1),
+                               Token::COMMAND,
+                               position));
+        t_end += 1;
+        break;
 
-					if (t_end >= command.length()) {
-						command_done = true;
-						complete = false;
-						break;
-					}
-
-					if (command[t_end] == '\\' && command[t_end + 1] == '\'')
-						t_end += 2;
-				}
-
-				tokens.push_back(Token(command.substr(t_begin + 1,
-																							t_end - t_begin - 1),
-															 Token::LITRL_STRING,
-															 start, end));
-				t_end += 1;
-				break;
-
-			case '[': // Parse a command token
-				t_end = t_begin + 1;
-
-				if (command[t_end] == '[') count++;
-
-				while (command[t_end] != ']' || count > 0) {
-					t_end += 1;
-
-					if (command[t_end] == '\n')
-						throw meat::Exception(
-							std::string("Syntax error: Missing closing bracket "
-													"\"]\""));
-
-					if (command[t_end] == '[') {
-						count += 1;
-					} else if (command[t_end] == ']') {
-						count -= 1;
-					}
-				}
-
-				tokens.push_back(Token(command.substr(t_begin + 1,
-																							t_end - t_begin - 1),
-															 Token::COMMAND,
-															 start, end));
-				t_end += 1;
-				break;
-
-			case '{': { // Parse a block token
-				t_end = t_begin;
+      case '{': { // Parse a block token
+        /*  Here we read the block punction {} tokens as an unmodified
+         * string. This will later be parsed by the library compiler or the
+         * interpreter.
+         */
+        t_end = t_begin;
         cook_lines = false;
-				while (command[t_end] != '}' or count > 0) {
-					t_end += 1;
-					if (command[t_end] == '{') {
-						count += 1;
-					} else if (command[t_end] == '}') {
-						count -= 1;
-					} else if (command[t_end] == '\0') {
-						remaining = command.substr(t_begin, t_end - t_begin) + '\n';
-						complete = false;
-						command_done = true;
-						return;
-					}
-				}
+        while (command[t_end] != '}' or count > 0) {
+          t_end += 1;
+          if (command[t_end] == '{') {
+            count += 1;
+          } else if (command[t_end] == '}') {
+            count -= 1;
+          } else if (command[t_end] == '\0') {
+            remaining = command.substr(t_begin, t_end - t_begin);
+            complete = false;
+            command_done = true;
+            return;
+          }
+        }
 
         cook_lines = true;
-				tokens.push_back(Token(command.substr(t_begin + 1,
-																							t_end - t_begin - 1),
-															 Token::BLOCK,
-															 start, end));
-				t_end += 1;
-				break;
-			}
-			default: // Parse a word token
+        tokens.push_back(Token(command.substr(t_begin + 1,
+                                              t_end - t_begin - 1),
+                               Token::BLOCK,
+                               position));
+        t_end += 1;
 
-				t_end = command.find_first_of(" \t\n", t_begin);
-				if (t_end == command.npos) {
-					command_done = true;
-					complete = true;
-				}
+        break;
+      }
 
-				tokens.push_back(Token(command.substr(t_begin,
-																							t_end - t_begin),
-															 Token::WORD,
-															 start, end));
+      case '"': // Parse a substitutable string
+        t_end = t_begin + 1;
+        while (command[t_end] != '"') {
+          t_end += 1;
 
-				break;
-			}
+          // Found a new line.
+          if (command[t_end] == '\n')
+            throw meat::Exception("Syntax error: Multiline text constant not"
+                                   " allowed");
 
-			t_begin = t_end;
-		}
-		if (complete) remaining = "";
-	}
+          // Incomplete string, but not a syntax error yet.
+          if (t_end >= command.length()) {
+            command_done = true;
+            complete = false;
+            break;
+          }
+
+          // An escaped double quote.
+          if (command[t_end] == '\\' && command[t_end + 1] == '"')
+            t_end += 2;
+        }
+
+        tokens.push_back(Token(command.substr(t_begin + 1,
+                                              t_end - t_begin - 1),
+                               Token::SUBST_STRING,
+                               position));
+        t_end += 1;
+        //start.inc_offset(t_end - t_begin);
+        break;
+
+      case '\'': // Parse a literal string
+        t_end = t_begin + 1;
+        while (command[t_end] != '\'') {
+          t_end += 1;
+
+          if (command[t_end] == '\n')
+            throw meat::Exception("Syntax error: Multiline text constant not"
+                                   " allowed");
+
+          if (t_end >= command.length()) {
+            command_done = true;
+            complete = false;
+            break;
+          }
+
+          if (command[t_end] == '\\' && command[t_end + 1] == '\'')
+            t_end += 2;
+        }
+
+        tokens.push_back(Token(command.substr(t_begin + 1,
+                                              t_end - t_begin - 1),
+                               Token::LITRL_STRING,
+                               position));
+        t_end += 1;
+        break;
+
+      default: // Parse a word token
+
+        t_end = command.find_first_of(" \t\n]", t_begin);
+        if (t_end == command.npos) {
+          command_done = true;
+          complete = true;
+        }
+
+        tokens.push_back(Token(command.substr(t_begin,
+                                              t_end - t_begin),
+                               Token::WORD,
+                               position));
+
+        break;
+      }
+
+      t_begin = t_end;
+    }
+
+    if (complete) remaining = "";
+  }
 }
 
-void meat::grinder::Tokenizer::parse(const Token &token) {
-  strs.str((const std::string &)token);
-  this->code = &strs;
+/**********************************
+ * meat::grinder::Tokenizer::push *
+ **********************************/
+
+void meat::grinder::Tokenizer::push() {
+  Token current = tokens.front();
+
+  if (not current.is_type(Token::COMMAND) and
+      not current.is_type(Token::BLOCK)) {
+    throw Exception("Internal error reparsing token");
+  }
+
+  tokens.pop_front();
+  states.push({tokens, remaining, stream, position});
+
+  stream = new std::stringstream((const std::string &)current);
   remaining = "";
+  position = current.position();
+  tokens.clear();
+
   get_next_line();
 }
 
-size_t meat::grinder::Tokenizer::count() {
-	return tokens.size();
+/*********************************
+ * meat::grinder::Tokenizer::pop *
+ *********************************/
+
+void meat::grinder::Tokenizer::pop() {
+  if (not states.empty()) {
+    delete stream;
+
+    tokens = states.top().tokens;
+    remaining = states.top().remaining;
+    stream = states.top().stream;
+    position = states.top().position;
+
+    states.pop();
+  }
 }
+
+/***********************************
+ * meat::grinder::Tokenizer::count *
+ ***********************************/
+
+size_t meat::grinder::Tokenizer::count() {
+  return tokens.size();
+}
+
+/*****************************************
+ * meat::grinder::Tokenizer::is_complete *
+ *****************************************/
 
 bool meat::grinder::Tokenizer::is_complete() {
-	return complete;
+  return complete;
 }
 
+/***********************************
+ * meat::grinder::Tokenizer::clear *
+ ***********************************/
+
 void meat::grinder::Tokenizer::clear() {
-	tokens.clear();
+  tokens.clear(); // Clear all the tokens.
 }
+
+/************************************
+ * meat::grinder::Tokenizer::expect *
+ ************************************/
 
 bool meat::grinder::Tokenizer::expect(Token::token_t id) {
   if (is_more() && tokens.front().is_type(id))
-      return true;
+    return true;
   return false;
 }
 
-bool meat::grinder::Tokenizer::expect(Token::token_t id, const char *value) {
+bool meat::grinder::Tokenizer::expect(Token::token_t id,
+                                      const std::string &value) {
+  // Same type and value
   if (is_more() && tokens.front().is_type(id))
-      return tokens.front() == value;
+    return (tokens.front() == value);
   return false;
 }
+
+bool meat::grinder::Tokenizer::expect(size_t index, Token::token_t id) {
+  if (is_more() && tokens.at(index).is_type(id))
+    return true;
+  return false;
+}
+
+bool meat::grinder::Tokenizer::expect(size_t index, Token::token_t id,
+                                      const std::string &value) {
+  // Same type and value
+  if (is_more() && tokens.at(index).is_type(id))
+    return (tokens.at(index) == value);
+  return false;
+}
+
+/************************************
+ * meat::grinder::Tokenizer::permit *
+ ************************************/
 
 void meat::grinder::Tokenizer::permit(Token::token_t id) {
-  if (expect(id))
-    tokens.pop_front();
+  if (expect(id)) next();
   else
-    throw Exception(std::string("Got unexpected value of ") +
+    throw Exception((const std::string &)tokens.front().position() +
+                    ": Got unexpected value of " +
                     (std::string &)tokens.front());
 }
 
-void meat::grinder::Tokenizer::permit(Token::token_t id, const char *value) {
-  if (expect(id, value))
-    tokens.pop_front();
+void meat::grinder::Tokenizer::permit(Token::token_t id,
+                                      const std::string &value) {
+  if (expect(id, value)) next();
   else
-    throw Exception(std::string("Got unexpected value of ") +
+    throw Exception((const std::string &)tokens.front().position() +
+                    ": Got unexpected value of " +
                     (std::string &)tokens.front());
 }
+
+/**********************************
+ * meat::grinder::Tokenizer::next *
+ **********************************/
 
 void meat::grinder::Tokenizer::next() {
-  if (!tokens.empty()) tokens.pop_front();
+  if (is_more()) tokens.pop_front();
 }
+
+/*************************************
+ * meat::grinder::Tokenizer::is_more *
+ *************************************/
 
 bool meat::grinder::Tokenizer::is_more() {
   if (tokens.empty()) get_next_line();
@@ -427,37 +604,50 @@ bool meat::grinder::Tokenizer::is_more() {
 }
 
 std::string meat::grinder::Tokenizer::to_string() const {
-	std::string result;
+  std::string result;
 
-	std::deque<Token>::const_iterator it;
-	for (it = tokens.begin(); it != tokens.end(); it++) {
-		result += (const std::string &)(*it) + " ";
-	}
+  std::deque<Token>::const_iterator it;
+  for (it = tokens.begin(); it != tokens.end(); ++it) {
+    switch (it->type()) {
+    case Token::WORD:
+      result += (std::string)(*it) + " "; break;
+    case Token::SUBST_STRING:
+    case Token::LITRL_STRING:
+      result += std::string("'") + (std::string)(*it) + "' "; break;
+    case Token::COMMAND:
+      result += std::string("[") + (std::string)(*it) + "] "; break;
+    case Token::BLOCK:
+      result += std::string("{") + (std::string)(*it) + "} "; break;
+    case Token::EOL:
+      result += "\u21b5\n"; break;
+    };
+    //result += " ";
+  }
 
-	return result;
+  return result;
 }
 
 meat::grinder::Token &meat::grinder::Tokenizer::operator[] (size_t index) {
-	return tokens.at(index);
+  return tokens.at(index);
 }
 
 void meat::grinder::Tokenizer::get_next_line() {
 
 #ifdef TESTING
     meat::test::test("Null code stream", false);
-    if (code == (void *)0) {
+    if (stream == NULL) {
       throw Exception("Attempting to parse a null code stream");
     } else {
       meat::test::passed("Null code stream");
     }
 #endif // TESTING
 
-	while (!code->eof()) {
-		// Read a line from the file.
-		std::string line;
-		Location start = position;
+  while (!stream->eof()) {
+    // Read a line from the file.
+    std::string line;
 
-		std::getline(*code, line);
+    std::getline(*stream, line);
+    position.inc_line();
 
     if (cook_lines) {
       // Just skip over comments.
@@ -467,85 +657,73 @@ void meat::grinder::Tokenizer::get_next_line() {
       }
 
       // Trim any trailing white space
-      size_t first_char_offset = line.find_last_not_of(" \n\r\t");
-      line.erase(first_char_offset + 1);
-
-      // Record where out tokens start.
-      //start.set_offset(first_char_offset);
+      line.erase(line.find_last_not_of(" \t") + 1);
 
       // If the line ends with a "\", then we append the next line to it.
-      while (line[line.length() - 1] == '\\' && !code->eof()) {
-        position.inc_line();
-
-        std::string next_line;
-        std::getline(*code, next_line);
-
-        line.erase(line.length() - 2);
-        line += next_line;
-
-        line.erase(line.find_last_not_of(" \n\r\t") + 1);
-      }
+      if (line[line.length() - 1] == '\\') {
+        line.erase(line.length() - 1);
+        cont_line = true;
+      } else
+        cont_line = false;
 
       // If the line is not empty then parser the tokens and compile the command.
       if (!line.empty()) {
 #ifdef DEBUG
         //std::cout << "DEBUG: Read cooked line \"" << line << "\"" << std::endl;
 #endif /* DEBUG */
-        parse(start, line);
-      } else
+        parse_line(line + '\n');
+      } else {
+        position.inc_line();
         continue;
+      }
     } else { // not cook_lines
 #ifdef DEBUG
       //std::cout << "DEBUG: Read line \"" << line << "\"" << std::endl;
 #endif /* DEBUG */
-      parse(start, line);
+      parse_line(line + '\n');
     }
-    position.inc_line();
+
     if (complete) return;
-	}
+  }
 }
 
 /******************************************************************************
  * Language Class Implementation
  */
 
-meat::grinder::Language::Language() {
-	curr_line = 0;
+meat::grinder::Grammer::Grammer() {
+  curr_line = 0;
 }
 
-meat::grinder::Language::~Language() throw() {
+meat::grinder::Grammer::~Grammer() throw() {
 }
 
-void meat::grinder::Language::execute(std::istream &code) {
-	Tokenizer parser;
-  parser.parse(code);
-  while (parser.is_more()) {
-    if (parser.is_complete() && parser.count() > 0) {
-      command(parser);
+void meat::grinder::Grammer::execute(std::istream &code) {
+  tokens.parse(code);
+  while (tokens.is_more()) {
+    if (tokens.is_complete() and tokens.count() > 0) {
+      command();
     }
   }
 }
 
-void meat::grinder::Language::execute(const std::string &code) {
-	Tokenizer parser;
-  parser.parse(code);
-  while (parser.is_more()) {
-    if (parser.is_complete() && parser.count() > 0) {
-      command(parser);
+void meat::grinder::Grammer::execute(const std::string &code) {
+  tokens.parse(code);
+  while (tokens.is_more()) {
+    if (tokens.is_complete() and tokens.count() > 0) {
+      command();
     }
   }
 }
 
-void meat::grinder::Language::execute(const Token &token) {
-	Tokenizer parser;
-
-  parser.parse(token);
-  while (parser.is_more()) {
-    if (parser.is_complete() && parser.count() > 0) {
-      command(parser);
+void meat::grinder::Grammer::execute(const Token &token) {
+  tokens.parse(token);
+  while (tokens.is_more()) {
+    if (tokens.is_complete() and tokens.count() > 0) {
+      command();
     }
   }
 }
 
-void meat::grinder::Language::command(Tokenizer &tokens) {
+void meat::grinder::Grammer::command() {
 }

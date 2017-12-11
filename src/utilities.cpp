@@ -27,51 +27,79 @@
 
 using namespace meat;
 
-typedef union {
-  int32_t i;
-  float_t f;
-} conv_t;
+/**********
+ * swap64 *
+ **********/
 
-static inline uint32_t swap32(uint32_t value) {
+static inline std::uint64_t swap64(std::uint64_t value) {
+  std::uint64_t result = value;
+
+  result = (result & 0x00000000ffffffff) << 32 |
+    (result & 0xffffffff00000000) >> 32;
+  result = (result & 0x0000ffff0000ffff) << 16 |
+    (result & 0xffff0000ffff0000) >> 16;
+  result = (result & 0x00ff00ff00ff00ff) << 8  |
+    (result & 0xff00ff00ff00ff00) >> 8;
+
+  return result;
+}
+
+static inline std::uint32_t swap32(std::uint32_t value) {
   return ((value >> 24) & 0x000000ff) | ((value >> 8) & 0x0000ff00) |
     ((value << 24) & 0xff000000) | ((value << 8) & 0x00ff0000);
 }
 
-static inline uint16_t swap16(uint16_t value) {
+static inline std::uint16_t swap16(std::uint16_t value) {
   return ((value & 0x00ff) << 8) | ((value & 0xff00) >> 8);
 }
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
-int32_t endian::read_be(int32_t value) {
+std::int64_t endian::read_be(std::int64_t value) {
+  return swap64(value);
+}
+
+std::uint64_t endian::read_be(std::uint64_t value) {
+  return swap64(value);
+}
+
+std::int32_t endian::read_be(std::int32_t value) {
   return swap32(value);
 }
 
-uint32_t endian::read_be(uint32_t value) {
+std::uint32_t endian::read_be(std::uint32_t value) {
   return swap32(value);
 }
 
-int16_t endian::read_be(int16_t value) {
+std::int16_t endian::read_be(std::int16_t value) {
   return swap16(value);
 }
 
-uint16_t endian::read_be(uint16_t value) {
+std::uint16_t endian::read_be(std::uint16_t value) {
   return swap16(value);
 }
 
-int32_t endian::write_be(int32_t value) {
+std::int64_t endian::write_be(std::int64_t value) {
+  return swap64(value);
+}
+
+std::uint64_t endian::write_be(std::uint64_t value) {
+  return swap64(value);
+}
+
+std::int32_t endian::write_be(std::int32_t value) {
   return swap32(value);
 }
 
-uint32_t endian::write_be(uint32_t value) {
+std::uint32_t endian::write_be(std::uint32_t value) {
   return swap32(value);
 }
 
-int16_t endian::write_be(int16_t value) {
+std::int16_t endian::write_be(std::int16_t value) {
   return swap16(value);
 }
 
-uint16_t endian::write_be(uint16_t value) {
+std::uint16_t endian::write_be(std::uint16_t value) {
   return swap16(value);
 }
 
@@ -130,24 +158,6 @@ float_t endian::write_le(float_t value) {
 }
 #endif
 
-#if __FLOAT_WORD_ORDER__ == __ORDER_LITTLE_ENDIAN__
-
-float_t endian::read_be(float_t value) {
-  conv_t v;
-  v.f = value;
-  v.i = swap32(v.i);
-  return v.f;
-}
-
-float_t endian::write_be(float_t value) {
-  conv_t v;
-  v.f = value;
-  v.i = swap32(v.i);
-  return v.f;
-}
-
-#endif
-
 /********
  * hash *
  ********/
@@ -176,7 +186,7 @@ uint32_t hash(const std::string &word, size_t table_size) {
 
 std::string itohex(unsigned int value, size_t width) {
   std::ostringstream convert;
-	convert << std::setw(width) << std::setfill('0') << std::setbase(16);
+  convert << std::setw(width) << std::setfill('0') << std::setbase(16);
   convert << value;
-	return ("0x" + convert.str());
+  return ("0x" + convert.str());
 }

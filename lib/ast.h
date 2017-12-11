@@ -30,259 +30,329 @@ namespace meat {
   /** @ns */
   namespace grinder {
 
-		namespace ast {
+    namespace ast {
 
-			class LocalVariable;
-			class Method;
-			class Block;
+      class Block;
 
-			/**
-			 */
-			class LocalVariable {
-			public:
-				LocalVariable();
-				LocalVariable(const std::string &name, Method &method_node);
-				LocalVariable(const std::string &name, Block &block_node);
-				LocalVariable(const LocalVariable &other);
+      /**
+       */
+      class LocalVariable {
+      public:
+        LocalVariable();
+        LocalVariable(const std::string &name, Block &block_node);
+        LocalVariable(const LocalVariable &other);
 
-				LocalVariable &operator = (const LocalVariable &other);
+        LocalVariable &operator = (const LocalVariable &other);
 
-				uint8_t get_index() const;
-				const std::string &get_name() const { return name; }
+        std::uint8_t index() const;
+        const std::string &name() const { return _name; }
 
-			private:
-				std::string name;
-				Method *method;  // The method context of the variable.
-				Block *block;    // The block context of the variable if there is one.
-			};
+      private:
+        std::string _name;
+        Block *block;    // The block context of the variable if there is one.
+      };
 
-			/**
-			 */
-			class ASTNode {
-			public:
-				ASTNode();
-				virtual ~ASTNode() throw();
+      /**
+       */
+      class Node {
+      public:
+        Node();
+        virtual ~Node() throw();
 
-				virtual void gen_bytecode(bool prelim) = 0;
-				virtual LocalVariable gen_result(bool prelim) = 0;
+        virtual void gen_bytecode(bool prelim) = 0;
+        virtual LocalVariable gen_result(bool prelim) = 0;
 
-				virtual bool is_value() { return false; }
-				virtual bool is_block() { return false; }
+        virtual bool is_value() { return false; }
+        virtual bool is_block() { return false; }
 
-				virtual uint8_t locals() const;
-				virtual LocalVariable add_local(const std::string &name);
-				virtual LocalVariable add_temp_local();
+        virtual std::uint8_t locals() const;
+        virtual LocalVariable local(const std::string &name);
+        virtual LocalVariable anon_local();
 
-				virtual void add(ASTNode *node);
+        virtual Block &scope() const;
+        virtual void scope(Block *block);
 
-				/** To have any access to a value it needs to be set in a local variable.
-				 * This includes object properties and message results. To create
-				 * efficient byte code, here we can set the local variable destination
-				 * for our value instead of having the AST nodes first creating
-				 * temperary local variables for the values.
-				 *
-				 */
-				void set_result_dest(LocalVariable dest);
-				void set_result_dest();
-				LocalVariable get_result_dest();
+        /** To have any access to a value it needs to be set in a local variable.
+         * This includes object properties and message results. To create
+         * efficient byte code, here we can set the local variable destination
+         * for our value instead of having the AST nodes first creating
+         * temperary local variables for the values.
+         *
+         */
+        void set_result_dest(LocalVariable dest);
+        void set_result_dest();
+        LocalVariable get_result_dest();
 
-			protected:
-				ASTNode *container;
+      protected:
+        Block *_scope;
 
-				bool result_set;
-				LocalVariable result;
+        bool result_set;
+        LocalVariable result;
 
-				virtual int16_t resolve_property(const std::string &name) const;
-				virtual int16_t resolve_class_property(const std::string &name) const;
-				virtual LocalVariable resolve_local(const std::string &name) const;
+        virtual std::int16_t resolve_property(const std::string &name) const;
+        virtual std::int16_t
+        resolve_class_property(const std::string &name) const;
+        virtual LocalVariable resolve_local(const std::string &name) const;
 
-				/** Returns the offset of the next bytecode that will be inserted.
-				 */
-				virtual uint16_t bytecode();
-				virtual void bytecode(uint8_t value);
-				virtual void bytecode(uint16_t value);
-				virtual void bytecode(uint16_t marker, uint16_t value);
-				virtual void bytecode(uint32_t value);
-				virtual void bytecode(int32_t value);
-				virtual void bytecode(float_t value);
-			};
+        /** Returns the offset of the next bytecode that will be inserted.
+         */
+        virtual std::uint16_t bytecode();
+        virtual void bytecode(std::uint8_t value);
+        virtual void bytecode(std::uint16_t value);
+        virtual void bytecode(std::uint16_t marker, std::uint16_t value);
+        virtual void bytecode(std::uint32_t value);
+        virtual void bytecode(std::int32_t value);
+        virtual void bytecode(double value);
+      };
 
-			/**
-			 */
-			class Method : public ASTNode {
-			public:
-				Method(const meat::List &properties, int p_offset,
-							 const meat::List &class_properties, int cp_offset);
-				virtual ~Method() throw();
+      /**
+       */
+      class Block : public Node {
+      public:
+        virtual ~Block() noexcept;
 
-				virtual void add(ASTNode *command);
+        /** Add an ast node to the block. The scope for the node will also be
+         * be set in the node as it's added.
+         */
+        virtual void add(Node *node);
 
-				uint8_t add_parameter(const std::string &name);
+        /**
+         */
+        std::uint8_t locals() const;
 
-				uint8_t local_count() const;
+        /** Add a local variable to the block.
+         */
+        LocalVariable local(const std::string &name);
 
-				virtual void gen_bytecode(bool prelim);
-				virtual LocalVariable gen_result(bool prelim);
+        /** Creates an anonymous local variable, usually needed when a command
+         * is passed as a parameter.
+         */
+        virtual LocalVariable anon_local();
 
-				virtual uint8_t locals() const;
-				virtual LocalVariable add_local(const std::string &name);
-				virtual LocalVariable add_temp_local();
+        friend class LocalVariable;
 
-				void append_bytecode(std::vector<uint8_t> &bc);
+      protected:
+        std::deque<std::string> _locals;
+        std::deque<Node *> _nodes;
+        unsigned int temp_counter;
 
-				friend class LocalVariable;
+        Block();
 
-			protected:
-				virtual int16_t resolve_property(const std::string &name) const;
-				virtual int16_t resolve_class_property(const std::string &name) const;
-				virtual LocalVariable resolve_local(const std::string &name) const;
+        std::uint8_t locals_offset() const;
+      };
 
-				virtual uint16_t bytecode();
-				virtual void bytecode(uint8_t value);
-				virtual void bytecode(uint16_t value);
-				virtual void bytecode(uint16_t marker, uint16_t value);
-				virtual void bytecode(uint32_t value);
-				virtual void bytecode(int32_t value);
-				virtual void bytecode(float_t value);
+      /**
+       */
+      class Method : public Block {
+      public:
+        Method(const meat::List &properties, int p_offset,
+               const meat::List &class_properties, int cp_offset);
+        virtual ~Method() throw();
 
-			private:
-				std::deque<std::string> properties;
-				int p_offset;
-				std::deque<std::string> class_properties;
-				int cp_offset;
+        std::uint8_t add_parameter(const std::string &name);
 
-				std::deque<std::string> local_names;
-				std::deque<ASTNode *> commands;
+        virtual void gen_bytecode(bool prelim);
+        virtual LocalVariable gen_result(bool prelim);
 
-				std::vector<uint8_t> bc;
+        void append_bytecode(std::vector<std::uint8_t> &bc);
 
-				uint8_t temp_counter;
-			};
+        friend class LocalVariable;
 
-			class Block : public ASTNode {
-			public:
-				Block();
-				virtual ~Block() throw();
+      protected:
+        virtual std::int16_t resolve_property(const std::string &name) const;
+        virtual std::int16_t resolve_class_property(const std::string &name) const;
+        virtual LocalVariable resolve_local(const std::string &name) const;
 
-				virtual void add(ASTNode *command);
+        virtual std::uint16_t bytecode();
+        virtual void bytecode(std::uint8_t value);
+        virtual void bytecode(std::uint16_t value);
+        virtual void bytecode(std::uint16_t marker, uint16_t value);
+        virtual void bytecode(std::uint32_t value);
+        virtual void bytecode(std::int32_t value);
+        virtual void bytecode(double value);
 
-				void set_parent_block(Block *parent);
+      private:
+        std::deque<std::string> properties;
+        int p_offset;
+        std::deque<std::string> class_properties;
+        int cp_offset;
 
-				virtual void gen_bytecode(bool prelim);
-				virtual LocalVariable gen_result(bool prelim);
+        std::vector<std::uint8_t> bc;
+      };
 
-				virtual bool is_block() { return true; }
+      class ContextBlock : public Block {
+      public:
+        ContextBlock();
+        virtual ~ContextBlock() throw();
 
-				virtual uint8_t locals() const;
-				virtual LocalVariable add_local(const std::string &name);
-				virtual LocalVariable add_temp_local();
+        virtual void gen_bytecode(bool prelim);
+        virtual LocalVariable gen_result(bool prelim);
 
-				friend class LocalVariable;
+        virtual bool is_block() { return true; }
 
-			protected:
-				virtual LocalVariable resolve_local(const std::string &name) const;
+        virtual std::uint8_t locals() const;
+        virtual LocalVariable anon_local();
 
-				uint8_t get_layer() const;
-				uint8_t local_offset() const;
-				uint8_t local_count() const;
+      protected:
+        virtual LocalVariable resolve_local(const std::string &name) const;
 
-			private:
-				std::deque<std::string> local_names;
-				std::deque<ASTNode *> commands;
+        std::uint8_t local_offset() const;
+        std::uint8_t local_count() const;
 
-				LocalVariable local_var;
+      private:
+        std::deque<std::string> local_names;
+        //std::deque<Node *> commands;
 
-				Method *top_level;
-				Block *parent;
+        LocalVariable local_var;
 
-				uint8_t temp_counter;
-			};
+        std::uint8_t temp_counter;
+      };
 
-			/** Represents a value with in the interpreter. The value can be a
-			 * constant, local variable, code block or an object property.
-			 */
-			class Value : public ASTNode {
-			public:
-				typedef enum {
-					UNKNOWN,
-					STRING_CONST,
-					FLOAT_CONST,
-					INT_CONST,
-					LOCAL_VARIABLE,
-					BLOCK_PARAMETER,
-					OBJECT_PROPERTY,
-					CLASS_PROPERTY,
-					CLASS_REFERENCE
-				} value_type_t;
+      /** Represents a value with in the interpreter. The value can be a
+       * constant, local variable, code block or an object property.
+       */
+      class Value : public Node {
+      public:
+        typedef enum {
+          UNKNOWN,
+          STRING_CONST,
+          FLOAT_CONST,
+          INT_CONST,
+          LOCAL_VARIABLE,
+          BLOCK_PARAMETER,
+          OBJECT_PROPERTY,
+          CLASS_PROPERTY,
+          CLASS_REFERENCE
+        } value_type_t;
 
-				Value(const std::string &value, bool string_constant = false);
-				virtual ~Value() throw();
+        Value(const std::string &value, bool string_constant = false);
+        virtual ~Value() throw();
 
-				value_type_t get_type() const;
-				uint8_t get_index() const { return index; }
+        value_type_t get_type() const;
+        std::uint8_t get_index() const { return index; }
 
-				/** Resolves the value to...
-				 */
-				void resolve();
+        /** Resolves the value to...
+         */
+        void resolve();
 
-				virtual void gen_bytecode(bool prelim);
-				virtual LocalVariable gen_result(bool prelim);
+        virtual void gen_bytecode(bool prelim);
+        virtual LocalVariable gen_result(bool prelim);
 
-				virtual bool is_value() { return true; }
+        virtual bool is_value() { return true; }
 
-				const std::string &get_value() const { return value; }
+        const std::string &get_value() const { return value; }
 
-				void make_local();
-				void make_block_param(Block *block);
+        void make_local();
+        void make_block_param(Block *block);
 
-			private:
-				value_type_t vtype;
-				std::string value;
+      private:
+        value_type_t vtype;
+        std::string value;
 
-				//LocalVariable destination;
-				LocalVariable block_param;
+        LocalVariable block_param;
 
-				uint8_t index;
-				int32_t int_value;
-				float_t flt_value;
-				//std::set<std::string> &symbols;
-			};
+        std::uint8_t index;
+        std::int32_t int_value;
+        double flt_value;
+      };
 
-			class Assignment : public ASTNode {
-			public:
-				Assignment(Value *dest, ASTNode *src);
-				virtual ~Assignment() throw();
+      class Identifier : public Node {
+      public:
+        typedef enum {
+          UNKNOWN,
+          LOCAL_VARIABLE,
+          BLOCK_PARAMETER,
+          OBJECT_PROPERTY,
+          CLASS_PROPERTY,
+          CLASS_REFERENCE
+        } ident_type_t;
 
-				virtual void gen_bytecode(bool prelim);
-				virtual LocalVariable gen_result(bool prelim);
+        Identifier(const std::string &value);
+        ~Identifier() noexcept;
 
-			private:
-				Value *dest;
-				ASTNode *src;
-			};
+        void new_local();
+        void block_parameter(Block *block);
 
-			class Message : public ASTNode {
-			public:
-				Message(ASTNode *who, const std::string &mesg);
-				virtual ~Message() throw();
+        ident_type_t type() const { return _type; }
+        std::uint8_t index() const { return _index; }
 
-				void add_param(ASTNode *param);
+        virtual void gen_bytecode(bool prelim);
+        virtual LocalVariable gen_result(bool prelim);
 
-				void message_super(bool to_super);
+      private:
+        ident_type_t _type;
 
-				virtual void gen_bytecode(bool prelim);
-				virtual LocalVariable gen_result(bool prelim);
+        std::string _name;
+        std::uint8_t _index;
+        LocalVariable _parameter;
+      };
 
-			private:
-				ASTNode *who;
-				std::string method;
-				std::deque<ASTNode *> params;
+      /** Represents a constant value.
+       */
+      class Constant : public Node {
+      public:
+        Constant(const std::string &value);
+        Constant(std::int32_t value);
+        Constant(double value);
+        ~Constant() noexcept;
 
-				bool super;
-			};
+        virtual void gen_bytecode(bool prelim);
+        virtual LocalVariable gen_result(bool prelim);
 
-		} /* namespace ast */
-  } /* namespace compiler */
+      private:
+        enum {
+          TEXT, INTEGER, NUMBER
+        } _type;
+
+        std::string _text;
+        union {
+          std::int32_t integer;
+          double number;
+        } _value;
+      };
+
+      class Assignment : public Node {
+      public:
+        Assignment(Identifier *dest, Node *src);
+        virtual ~Assignment() throw();
+
+        virtual void scope(Block *block);
+
+        virtual void gen_bytecode(bool prelim);
+        virtual LocalVariable gen_result(bool prelim);
+
+      private:
+        Identifier *dest;
+        Node *src;
+      };
+
+      class Message : public Node {
+      public:
+        Message(Node *who);
+        Message(Node *who, const std::string &name);
+        virtual ~Message() throw();
+
+        void method(const std::string &name);
+
+        void add_param(Node *param);
+
+        void message_super(bool to_super);
+
+        virtual void scope(Block *block);
+
+        virtual void gen_bytecode(bool prelim);
+        virtual LocalVariable gen_result(bool prelim);
+
+      private:
+        Node *who;
+        std::string _method;
+        std::deque<Node *> params;
+
+        bool super;
+      };
+
+    } /* namespace ast */
+  } /* namespace grinder */
 } /* namespace meat */
 
 #endif /* _MEAT_AST_H */

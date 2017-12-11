@@ -19,10 +19,11 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.68])
-AC_INIT([meat], [0.2.0], [ron.rwsoft@gmail.com])
+AC_INIT([meat], [0.2.1], [ron.rwsoft@gmail.com])
 AM_INIT_AUTOMAKE
 AM_SILENT_RULES
 AC_CONFIG_SRCDIR([src/meat.cpp])
+AC_CONFIG_MACRO_DIR([m4])
 
 # Platform detection.
 AC_CANONICAL_HOST
@@ -53,6 +54,9 @@ AC_DEFINE([MEAT_BUILD])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AX_CHECK_COMPILE_FLAG([-std=c++11],
+  [AX_APPEND_FLAG([-std=c++11], CXXFLAGS)],
+  AC_MSG_ERROR(C++11 not supported by compiler))
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_CHECK_PROG([lmk], [latexmk], [yes], [no])
@@ -91,5 +95,5 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  tests/Makefile
                  include/Makefile
-	               docs/Makefile])
+                 docs/Makefile])
 AC_OUTPUT

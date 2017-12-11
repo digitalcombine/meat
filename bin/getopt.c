@@ -85,7 +85,7 @@ int getopt(int nargc, const char * nargv[], const char *ostr) {
     if (*place == 0)
       ++optind;
     if (opterr && *ostr != ':')
-      (void)fprintf(stderr, "illegal option -- %c\n", optopt);
+      (void)fprintf(stderr, "Illegal option -%c\n", optopt);
     return (BADCH);
   }
 
@@ -115,7 +115,7 @@ int getopt(int nargc, const char * nargv[], const char *ostr) {
         return (BADARG);
       if (opterr)
         (void)fprintf(stderr,
-                      "option requires an argument -- %c\n", optopt);
+                      "Option -%c requires an argument\n", optopt);
       return (BADCH);
     }
     place = EMSG;

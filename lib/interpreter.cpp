@@ -67,92 +67,19 @@ meat::grinder::Interpreter::~Interpreter() throw() {
  * Interpreter::command *
  ************************/
 
-void meat::grinder::Interpreter::command(Tokenizer &tokens) {
-
+void meat::grinder::Interpreter::command() {
   std::string object, message;
 
 #ifdef DEBUG
-  std::cout << "COMMAND: " << tokens.to_string() << std::endl;
+  std::cout << "INTERPRETER: " << tokens.to_string() << std::flush;
 #endif
-
-  if (tokens.count() == 3 and tokens[1] == "=") {
-    // Found assignment statement
-
-#ifdef DEBUG
-    std::cout << "DEBUG: Assignment" << std::endl;
-#endif
-    if (tokens[0].type() != Token::WORD) {
-      throw Exception("Can only assign to a variable");
-    }
-
-    variables[tokens[0]] = resolve_object(tokens[2]);
+  if (tokens.expect(Token::EOL)) {
+    tokens.next();
+  } else if (tokens.expect(1, Token::WORD, "=")) {
+    assignment();
   } else {
-    Reference obj = resolve_object(tokens[0]);
-
-#ifdef TESTING
-    if (obj.is_null()) {
-      throw Exception("Can't message a null object");
-    }
-#endif
-
-    if (tokens.count() == 2) {
-      if (tokens[1].is_type(Token::WORD)) {
-				message = (std::string &)(tokens[1]);
-      }
-
-#ifdef DEBUG
-      std::cout << "DEBUG: message \"" << message << "\"" << std::endl;
-#endif
-
-      context = meat::message(obj, message.c_str(), context);
-      result = meat::execute(context);
-      context = cast<Context>(context).messenger();
-
-#ifdef DEBUG
-      if (not result.is_null())
-				std::cout << "       got result" << std::endl;
-#endif
-
-    } else if (tokens.count() > 2 && tokens.count() % 2 == 1) {
-      /* Build the message name. */
-      for (unsigned int c = 1; c < tokens.count(); c += 2) {
-				message += (std::string &)(tokens[c]);
-      }
-
-#ifdef DEBUG
-      std::cout << "DEBUG: message \"" << message << "\"" << std::endl;
-#endif
-
-      /* Create the new context. */
-      Reference new_ctx = meat::message(obj, hash(message.c_str()), context);
-
-      /* Add the parameters */
-      uint32_t c;
-      uint8_t param;
-      for (c = 2, param = 0; c < tokens.count(); c += 2, param++) {
-        Reference value = resolve_object(tokens[c]);
-        cast<Context>(new_ctx).parameter(param, value);
-      }
-
-      context = new_ctx;
-
-      result = meat::execute(context);
-      context = cast<Context>(context).messenger();
-
-#ifdef DEBUG
-      if (not result.is_null())
-        std::cout << "       got result" << std::endl;
-#endif
-
-    } else {
-      //std::cerr << "ERROR: Syntax error" << std::endl;
-      throw Exception("Invalid message syntax");
-    }
+    this->message();
   }
-#ifdef DEBUG
-  //std::cout << "DEBUG:  clear " << object << " " << message << std::endl;
-#endif /* DEBUG */
-  tokens.clear();
 }
 
 /*******************************
@@ -161,33 +88,33 @@ void meat::grinder::Interpreter::command(Tokenizer &tokens) {
 
 meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
   int32_t int_value;
-  float_t flt_value;
+  double flt_value;
 
 #ifdef DEBUG
-  std::cout << "COMPILER: Resolving token " << (std::string &)token
-      << std::endl;
+  std::cout << "INTERPRETER: Resolving token " << (std::string)token
+            << std::endl;
 #endif
 
   switch (token.type()) {
   case Token::WORD:
-    if (Utils::is_integer(token, &int_value)) {
+    if (Utils::is_integer(token, int_value)) {
 #ifdef DEBUG
-      std::cout << "          is integer" << std::endl;
+      std::cout << "             is integer" << std::endl;
 #endif
       return new Value(int_value);
-    } else if (Utils::is_float(token, &flt_value)) {
+    } else if (Utils::is_float(token, flt_value)) {
 #ifdef DEBUG
-      std::cout << "          is float" << std::endl;
+      std::cout << "             is float" << std::endl;
 #endif
       return new Value(flt_value);
     } else if (variables.find(token) != variables.end()) {
 #ifdef DEBUG
-      std::cout << "          is variable" << std::endl;
+      std::cout << "             is variable" << std::endl;
 #endif
       return variables[token];
     } else {
 #ifdef DEBUG
-      std::cout << "          is class" << std::endl;
+      std::cout << "             is class" << std::endl;
 #endif
       try {
         Reference result = meat::Class::resolve(((std::string &)token).c_str());
@@ -195,32 +122,121 @@ meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
       } catch (...) {
         throw meat::Exception(std::string("Symbol ") +
           ((std::string &)token).c_str() +
-          " was not found");
+          " could not be resolved.");
       }
     }
   case Token::SUBST_STRING:
   case Token::LITRL_STRING:
 #ifdef DEBUG
-    std::cout << "          is string " << std::endl;
+    std::cout << "              is string " << std::endl;
 #endif
     return new Text((std::string &)token);
-  case Token::COMMAND: {
-#ifdef DEBUG
-    std::cout << "          is command " << std::endl;
-#endif
-    Tokenizer cmd_parser;
-    cmd_parser.parse(token);
-    command(cmd_parser);
-#ifdef DEBUG
-    std::cout << "COMPILER: Command [" << (std::string &)token << "] is done"
-        << std::endl;
-#endif
-#ifdef TESTING
-    if (result.is_null())
-      throw Exception("Command is missing result");
-#endif
-    return result;
-  }
+  default:
+    throw meat::Exception(std::string("Symbol ") +
+          ((std::string &)token).c_str() +
+          " could not be resolved.");
   }
   return meat::Null();
+}
+
+/******************************************
+ * meat::grinder::Interpreter::assignment *
+ ******************************************/
+
+void meat::grinder::Interpreter::assignment() {
+  std::string name = (const std::string &)tokens[0];
+  tokens.permit(Token::WORD);
+  tokens.permit(Token::WORD, "=");
+
+  Reference source;
+
+  if (tokens.expect(Token::WORD)) {
+    source = resolve_object(tokens[0]);
+    tokens.next();
+  } else if (tokens.expect(Token::COMMAND)) {
+    tokens.push();
+    source = message();
+    tokens.pop();
+  }
+
+  variables[name] = source;
+}
+
+/***************************************
+ * meat::grinder::Interpreter::message *
+ ***************************************/
+
+meat::Reference meat::grinder::Interpreter::message() {
+  Reference object;
+
+#ifdef DEBUG
+  std::cout << "INTERPRETER: Message " << tokens.to_string() << std::flush;
+#endif
+
+  // Determine the object that we are messaging.
+  if (tokens.expect(Token::COMMAND)) {
+    tokens.push();
+    object = message();
+    tokens.pop();
+  } else if (tokens.expect(Token::WORD)) {
+    if (variables.find(tokens[0]) != variables.end()) {
+      object = variables[tokens[0]];
+      tokens.permit(Token::WORD);
+    } else {
+      try {
+        object = meat::Class::resolve(((std::string)tokens[0]));
+        tokens.permit(Token::WORD);
+      } catch (...) {
+        throw meat::Exception(std::string("Identifier ") +
+          ((std::string)tokens[0]) +
+          " could not be resolved as an object to message.");
+      }
+    }
+  } else {
+    throw Exception("Unable to resolve object to be messaged");
+  }
+
+  // Get the message.
+  std::string method_name;
+  std::deque<Reference> parameters;
+
+  for (unsigned int c = 0; not tokens.expect(Token::EOL); ++c) {
+    if (c % 2 == 0) {
+      // Put together the method name.
+      method_name += (std::string)tokens[0];
+      tokens.permit(Token::WORD);
+
+    } else {
+      // Parameters
+      if (tokens.expect(Token::WORD)) {
+        parameters.push_back(resolve_object(tokens[0]));
+        tokens.next();
+      } else if (tokens.expect(Token::LITRL_STRING) or
+                 tokens.expect(Token::SUBST_STRING)) {
+        parameters.push_back(new meat::Text(tokens[0]));
+        tokens.next();
+      } else if (tokens.expect(Token::COMMAND)) {
+        tokens.push();
+        parameters.push_back(message());
+        tokens.pop();
+      } else if (tokens.expect(Token::BLOCK, "{")) {
+        parameters.push_back(new meat::Text(tokens[0]));
+        tokens.next();
+      }
+
+    }
+  }
+
+  // Clean up ending tokens.
+  tokens.permit(Token::EOL);
+
+  // Create the context and execute it.
+  Reference new_context = meat::message(object, method_name, context);
+  for (unsigned int idx = 0; idx < parameters.size(); ++idx) {
+    cast<Context>(new_context).parameter(idx, parameters[idx]);
+  }
+  context = new_context;
+  Reference result = meat::execute(context);
+  context = cast<Context>(context).messenger();
+  return result;
 }

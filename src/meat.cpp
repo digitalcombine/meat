@@ -57,7 +57,7 @@ meat::Object::Object(Reference type) : _type(type), _property(0) {
   }
 }
 
-meat::Object::Object(Reference type, meat::uint8_t properties)
+meat::Object::Object(Reference type, std::uint8_t properties)
   : _type(type), _properties(properties), _property(0) {
 #ifdef TESTING
   static bool first_fail = true;
@@ -136,7 +136,7 @@ void meat::Object::unserialize(data::Archive &store,
  * meat::Object::property *
  **************************/
 
-meat::Reference &meat::Object::property(meat::uint8_t index) {
+meat::Reference &meat::Object::property(std::uint8_t index) {
   if (index < _properties)
     return _property[index];
   std::stringstream msg;
@@ -146,7 +146,7 @@ meat::Reference &meat::Object::property(meat::uint8_t index) {
   throw Exception(msg.str());
 }
 
-const meat::Reference &meat::Object::property(meat::uint8_t index) const {
+const meat::Reference &meat::Object::property(std::uint8_t index) const {
   if (index < _properties)
     return _property[index];
   std::stringstream msg;
@@ -176,7 +176,7 @@ static meat::Reference ClassClass(bool initializing = false) {
 
 /** The mapping type for the class registry.
  */
-typedef std::map<meat::uint32_t, meat::Reference> class_registry_t;
+typedef std::map<std::uint32_t, meat::Reference> class_registry_t;
 
 /** Since Meat is compiled as a shared library we cannot use class properties
  * since the properties will get duplicated instead of be a global source. To
@@ -192,14 +192,15 @@ static class_registry_t &class_registry() {
  * meat::Class::Class *
  **********************/
 
-meat::Class::Class(const char *parent, uint8_t obj_props)
+meat::Class::Class(const char *parent, std::uint8_t obj_props)
   : Object(ClassClass(), 0), _hash_id(0), _obj_properties(obj_props),
     library(NULL), _bytecode_size(0), _bytecode(0), _bytecode_static(true) {
 
   _super = resolve(parent);
 }
 
-meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
+meat::Class::Class(const char *parent, std::uint8_t cls_props,
+                   std::uint8_t obj_props)
   : Object(ClassClass(), cls_props), _hash_id(0),
     _obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
     _bytecode_static(true) {
@@ -207,15 +208,14 @@ meat::Class::Class(const char *parent, uint8_t cls_props, uint8_t obj_props)
   _super = resolve(parent);
 }
 
-meat::Class::Class(meat::Reference parent, uint8_t obj_props)
+meat::Class::Class(meat::Reference parent, std::uint8_t obj_props)
   : Object(ClassClass(true), 0), _hash_id(0), _super(parent),
     _obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
     _bytecode_static(true) {
 }
 
-meat::Class::Class(meat::Reference parent,
-                   uint8_t cls_props,
-                   uint8_t obj_props)
+meat::Class::Class(meat::Reference parent, std::uint8_t cls_props,
+                   std::uint8_t obj_props)
   : Object(ClassClass(), cls_props), _hash_id(0), _super(parent),
     _obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
     _bytecode_static(true) {
@@ -233,8 +233,8 @@ meat::Class::~Class () throw () {
  * meat::Class::obj_properties *
  *******************************/
 
-meat::uint8_t meat::Class::obj_properties() const {
-  meat::uint8_t total = _obj_properties;
+std::uint8_t meat::Class::obj_properties() const {
+  std::uint8_t total = _obj_properties;
   if (!_super.is_null())
     total += cast<const Class>(_super).obj_properties();
   return total;
@@ -278,7 +278,7 @@ void meat::Class::set_constructor(constructor_t constructor) {
  * meat::Class::set_vtable *
  ***************************/
 
-void meat::Class::set_vtable(uint8_t entries, vtable_entry_t table[],
+void meat::Class::set_vtable(std::uint8_t entries, vtable_entry_t table[],
                              alloc_t table_alloc) {
   vtable.set_vtable(entries, table, table_alloc);
 }
@@ -287,7 +287,7 @@ void meat::Class::set_vtable(uint8_t entries, vtable_entry_t table[],
  * meat::Class::set_class_vtable *
  *********************************/
 
-void meat::Class::set_class_vtable(uint8_t entries, vtable_entry_t table[],
+void meat::Class::set_class_vtable(std::uint8_t entries, vtable_entry_t table[],
                                    alloc_t table_alloc) {
   vtable.set_class_vtable(entries, table, table_alloc);
 }
@@ -296,7 +296,8 @@ void meat::Class::set_class_vtable(uint8_t entries, vtable_entry_t table[],
  * meat::Class::bytecode *
  *************************/
 
-void meat::Class::bytecode(uint16_t size, uint8_t *code, alloc_t code_alloc) {
+void meat::Class::bytecode(std::uint16_t size, std::uint8_t *code,
+                           alloc_t code_alloc) {
   //_bytecode.set(size, code, code_alloc);
   if (size) {
     _bytecode_size = size;
@@ -310,7 +311,7 @@ void meat::Class::bytecode(uint16_t size, uint8_t *code, alloc_t code_alloc) {
       _bytecode_static = false;
       break;
     case COPY:
-      _bytecode = new uint8_t[_bytecode_size];
+      _bytecode = new std::uint8_t[_bytecode_size];
       std::memcpy(_bytecode, code, _bytecode_size);
       _bytecode_static = false;
       break;
@@ -318,7 +319,7 @@ void meat::Class::bytecode(uint16_t size, uint8_t *code, alloc_t code_alloc) {
   }
 }
 
-const meat::uint8_t *meat::Class::bytecode() const {
+const std::uint8_t *meat::Class::bytecode() const {
   return _bytecode;
 }
 
@@ -326,7 +327,8 @@ const meat::uint8_t *meat::Class::bytecode() const {
  * meat::Class::get_vtable *
  ***************************/
 
-const meat::vtable_entry_t *meat::Class::get_vtable(uint8_t &count) const {
+const meat::vtable_entry_t *
+meat::Class::get_vtable(std::uint8_t &count) const {
   count = vtable.no_entries;
   return vtable.entries;
 }
@@ -336,7 +338,7 @@ const meat::vtable_entry_t *meat::Class::get_vtable(uint8_t &count) const {
  *********************************/
 
 const meat::vtable_entry_t *
-meat::Class::get_class_vtable(uint8_t &count) const {
+meat::Class::get_class_vtable(std::uint8_t &count) const {
   count = vtable.no_centries;
   return vtable.centries;
 }
@@ -361,7 +363,7 @@ void meat::Class::write(std::ostream &lib_file) const {
   }
 
   // Write my own hash id.
-  meat::uint32_t cooked_id = endian::write_be(_hash_id);
+  std::uint32_t cooked_id = endian::write_be(_hash_id);
   lib_file.write((const char *)&cooked_id, 4);
 
   // Write our super's hash_id.
@@ -381,7 +383,7 @@ void meat::Class::write(std::ostream &lib_file) const {
 
   // Write the bytecode
   // Write the size of the bytecode.
-  meat::uint16_t size_be = endian::write_be(_bytecode_size);
+  std::uint16_t size_be = endian::write_be(_bytecode_size);
   lib_file.write((const char *)&size_be, 2);
 
   // Write the bytecode to the file.
@@ -393,7 +395,7 @@ void meat::Class::write(std::ostream &lib_file) const {
  ***********************/
 
 meat::Class *meat::Class::import(std::istream &lib_file) {
-  meat::uint32_t class_id;
+  std::uint32_t class_id;
   lib_file.read((char *)&class_id, 4);
   class_id = endian::read_be(class_id);
 
@@ -402,12 +404,12 @@ meat::Class *meat::Class::import(std::istream &lib_file) {
             << std::dec << std::endl;
 #endif /* DEBUG */
 
-  meat::uint32_t super_id;
+  std::uint32_t super_id;
   lib_file.read((char *)&super_id, 4);
   Reference super = resolve(endian::read_be(super_id));
 
-  meat::uint8_t class_props = lib_file.get();
-  meat::uint8_t obj_props = lib_file.get();
+  std::uint8_t class_props = lib_file.get();
+  std::uint8_t obj_props = lib_file.get();
 
   Class *cls = new Class(super, class_props, obj_props);
   cls->_hash_id = class_id;
@@ -419,7 +421,7 @@ meat::Class *meat::Class::import(std::istream &lib_file) {
   cls->_bytecode_size = endian::read_be(cls->_bytecode_size);
 
   // Allocate space for the bytecode and read it in.
-  cls->_bytecode = new uint8_t[cls->_bytecode_size];
+  cls->_bytecode = new std::uint8_t[cls->_bytecode_size];
   lib_file.read((char *)cls->_bytecode, cls->_bytecode_size);
 
   cls->_bytecode_static = false;
@@ -436,7 +438,7 @@ meat::Class *meat::Class::import(std::istream &lib_file) {
  * meat::Class::lookup *
  ***********************/
 
-std::string meat::Class::lookup(uint32_t hash_id) const {
+std::string meat::Class::lookup(std::uint32_t hash_id) const {
   if (library) return library->lookup(hash_id);
   return itohex(hash_id);
 }
@@ -446,7 +448,7 @@ std::string meat::Class::lookup(uint32_t hash_id) const {
  ***********************/
 
 void meat::Class::record(Reference &cls, bool replace) {
-  meat::uint32_t hash_id = cast<Class>(cls)._hash_id;
+  std::uint32_t hash_id = cast<Class>(cls)._hash_id;
 
 #ifdef DEBUG
   std::cout << "CLASS: Recording class as " << std::hex
@@ -456,7 +458,7 @@ void meat::Class::record(Reference &cls, bool replace) {
   class_registry_t &classes = class_registry();
   if (not replace && classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cast<Class>(cls).name()) +
-										" already registered.");
+                    " already registered.");
   }
 
   classes[hash_id] = cls;
@@ -465,7 +467,7 @@ void meat::Class::record(Reference &cls, bool replace) {
 }
 
 void meat::Class::record(Class *cls, const char *id, bool replace) {
-  meat::uint32_t hash_id = hash(id);
+  std::uint32_t hash_id = hash(id);
 
 #ifdef DEBUG
   std::cout << "CLASS: Recording class " << id << " as id " << std::hex
@@ -475,7 +477,7 @@ void meat::Class::record(Class *cls, const char *id, bool replace) {
   class_registry_t &classes = class_registry();
   if (not replace && classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cls->name()) +
-										" already registered.");
+                    " already registered.");
   }
 
   classes[hash_id] = cls;
@@ -485,7 +487,7 @@ void meat::Class::record(Class *cls, const char *id, bool replace) {
 }
 
 void meat::Class::record(Reference &cls, const char *id, bool replace) {
-  meat::uint32_t hash_id = hash(id);
+  std::uint32_t hash_id = hash(id);
   Class &thecls = cast<Class>(cls);
 
 #ifdef DEBUG
@@ -496,7 +498,7 @@ void meat::Class::record(Reference &cls, const char *id, bool replace) {
   class_registry_t &classes = class_registry();
   if (not replace && classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cast<Class>(cls).name()) +
-										" already registered.");
+                    " already registered.");
   }
 
   classes[hash_id] = cls;
@@ -535,7 +537,7 @@ void meat::Class::relink() {
  ************************/
 
 meat::Reference &meat::Class::resolve(const std::string &id) {
-  meat::uint32_t hash_id = hash(id.c_str());
+  std::uint32_t hash_id = hash(id.c_str());
 
   class_registry_t &classes = class_registry();
   if (classes.find(hash_id) == classes.end()) {
@@ -546,7 +548,7 @@ meat::Reference &meat::Class::resolve(const std::string &id) {
   return classes[hash_id];
 }
 
-meat::Reference &meat::Class::resolve(meat::uint32_t hash_id) {
+meat::Reference &meat::Class::resolve(std::uint32_t hash_id) {
   class_registry_t &classes = class_registry();
   std::stringstream msg;
 
@@ -574,12 +576,12 @@ bool meat::Class::have_class(const std::string &id) {
  *********************/
 
 const meat::vtable_entry_t *
-meat::Class::find(meat::uint32_t hash_id) const {
+meat::Class::find(std::uint32_t hash_id) const {
   return vtable.find(hash_id);
 }
 
 const meat::vtable_entry_t *
-meat::Class::class_find(meat::uint32_t hash_id) const {
+meat::Class::class_find(std::uint32_t hash_id) const {
   return vtable.class_find(hash_id);
 }
 
@@ -624,13 +626,14 @@ meat::Class::VTable::~VTable() throw() {
  * meat::Class::Vtable::set_vtable *
  ***********************************/
 
-void meat::Class::VTable::set_vtable(uint8_t entries, vtable_entry_t table[],
+void meat::Class::VTable::set_vtable(std::uint8_t entries,
+                                     vtable_entry_t table[],
                                      alloc_t table_alloc) {
 
 #ifdef TESTING
   // All we can really test here is the entries are sorted by the hash value.
   meat::test::test("Class virtual table validation", false);
-  for (uint8_t c = 1; c < entries; c++) {
+  for (std::uint8_t c = 1; c < entries; c++) {
     if (table[c - 1].hash_id >= table[c].hash_id) {
       meat::test::failed("Class virtual table validation", false);
       break;
@@ -660,13 +663,13 @@ void meat::Class::VTable::set_vtable(uint8_t entries, vtable_entry_t table[],
  * meat::Class::Vtable::set_class_vtable *
  *****************************************/
 
-void meat::Class::VTable::set_class_vtable(uint8_t entries,
+void meat::Class::VTable::set_class_vtable(std::uint8_t entries,
                                            vtable_entry_t table[],
                                            alloc_t table_alloc) {
 #ifdef TESTING
   // All we can really test here is the entries are sorted by the hash value.
   meat::test::test("Class class virtual table validation", false);
-  for (uint8_t c = 1; c < entries; c++) {
+  for (std::uint8_t c = 1; c < entries; c++) {
     if (table[c - 1].hash_id >= table[c].hash_id) {
       meat::test::failed("Class class virtual table validation", false);
       break;
@@ -751,8 +754,8 @@ void meat::Class::VTable::link(Class &super) {
  *****************************/
 
 meat::vtable_entry_t *
-meat::Class::VTable::find(uint32_t hash_id) {
-  register meat::int16_t lo = 0, hi = no_entries - 1, pivot;
+meat::Class::VTable::find(std::uint32_t hash_id) {
+  int lo = 0, hi = no_entries - 1, pivot;
 
   /*  Simple binary search for entries. Note that all the entries must be
    * sorted.
@@ -760,7 +763,7 @@ meat::Class::VTable::find(uint32_t hash_id) {
   if (no_entries > 0) {
     while (lo <= hi) {
       pivot = (hi + lo) >> 1;
-      meat::int32_t res = hash_id - entries[pivot].hash_id;
+      int res = hash_id - entries[pivot].hash_id;
       if (res == 0) return &entries[pivot];
       else if (res < 0) hi = pivot - 1;
       else if (res > 0) lo = pivot + 1;
@@ -770,8 +773,8 @@ meat::Class::VTable::find(uint32_t hash_id) {
 }
 
 const meat::vtable_entry_t *
-meat::Class::VTable::find(uint32_t hash_id) const {
-  register meat::int16_t lo = 0, hi = no_entries - 1, pivot;
+meat::Class::VTable::find(std::uint32_t hash_id) const {
+  int lo = 0, hi = no_entries - 1, pivot;
 
   /*  Simple binary search for entries. Note that all the entries must be
    * sorted.
@@ -779,7 +782,7 @@ meat::Class::VTable::find(uint32_t hash_id) const {
   if (no_entries > 0) {
     while (lo <= hi) {
       pivot = (hi + lo) >> 1;
-      meat::int32_t res = hash_id - entries[pivot].hash_id;
+      int res = hash_id - entries[pivot].hash_id;
       if (res == 0) return &entries[pivot];
       else if (res < 0) hi = pivot - 1;
       else if (res > 0) lo = pivot + 1;
@@ -793,8 +796,8 @@ meat::Class::VTable::find(uint32_t hash_id) const {
  ***********************************/
 
 meat::vtable_entry_t *
-meat::Class::VTable::class_find(meat::uint32_t hash_id) {
-  register int16_t lo = 0, hi = no_centries, pivot;
+meat::Class::VTable::class_find(std::uint32_t hash_id) {
+  int lo = 0, hi = no_centries, pivot;
 
   /*  Simple binary search for class entries. Note that all the class
    * entries must be sorted.
@@ -802,7 +805,7 @@ meat::Class::VTable::class_find(meat::uint32_t hash_id) {
   if (no_centries > 0) {
     while (lo <= hi) {
       pivot = (hi + lo) >> 1;
-      int32_t res = hash_id - centries[pivot].hash_id;
+      int res = hash_id - centries[pivot].hash_id;
       if (res == 0) return &centries[pivot];
       else if (res < 0) hi = pivot - 1;
       else if (res > 0) lo = pivot + 1;
@@ -812,8 +815,8 @@ meat::Class::VTable::class_find(meat::uint32_t hash_id) {
 }
 
 const meat::vtable_entry_t *
-meat::Class::VTable::class_find(meat::uint32_t hash_id) const {
-  register int16_t lo = 0, hi = no_centries, pivot;
+meat::Class::VTable::class_find(std::uint32_t hash_id) const {
+  int lo = 0, hi = no_centries, pivot;
 
   /*  Simple binary search for class entries. Note that all the class
    * entries must be sorted.
@@ -821,7 +824,7 @@ meat::Class::VTable::class_find(meat::uint32_t hash_id) const {
   if (no_centries > 0) {
     while (lo <= hi) {
       pivot = (hi + lo) >> 1;
-      int32_t res = hash_id - centries[pivot].hash_id;
+      int res = hash_id - centries[pivot].hash_id;
       if (res == 0) return &centries[pivot];
       else if (res < 0) hi = pivot - 1;
       else if (res > 0) lo = pivot + 1;
@@ -840,13 +843,13 @@ void meat::Class::VTable::write(std::ostream &lib_file) const {
   lib_file.put(no_entries);
   lib_file.put(no_centries);
 
-  for (meat::uint8_t c = 0; c < no_entries; c++) {
+  for (std::uint_fast8_t c = 0; c < no_entries; c++) {
     if ((entries[c].flags & VTM_BYTECODE) == 0 &&
         !(entries[c].flags & VTM_SUPER)) {
       throw Exception("I can't serialize native classes.");
     }
 
-    meat::uint32_t cooked_hash = endian::write_be(entries[c].hash_id);
+    std::uint32_t cooked_hash = endian::write_be(entries[c].hash_id);
     lib_file.write((const char *)&cooked_hash, 4);
     cooked_hash = endian::write_be(entries[c].class_id);
     lib_file.write((const char *)&cooked_hash, 4);
@@ -858,20 +861,20 @@ void meat::Class::VTable::write(std::ostream &lib_file) const {
       lib_file.put(entries[c].flags);
       lib_file.put(entries[c].locals);
 
-      meat::uint16_t cooked_offset =
+      std::uint16_t cooked_offset =
         endian::write_be((uint16_t)entries[c].method.offset);
       lib_file.write((const char *)&cooked_offset, 2);
     }
   }
 
   // Write the class methods virtual table.
-  for (meat::uint8_t c = 0; c < no_centries; c++) {
+  for (std::uint_fast8_t c = 0; c < no_centries; c++) {
     if ((centries[c].flags & VTM_BYTECODE) == 0 &&
         !(centries[c].flags & VTM_SUPER)) {
       throw Exception("I can't serialize native classes.");
     }
 
-    meat::uint32_t cooked_hash = endian::write_be(centries[c].hash_id);
+    std::uint32_t cooked_hash = endian::write_be(centries[c].hash_id);
     lib_file.write((const char *)&cooked_hash, 4);
     cooked_hash = endian::write_be(centries[c].class_id);
     lib_file.write((const char *)&cooked_hash, 4);
@@ -883,8 +886,8 @@ void meat::Class::VTable::write(std::ostream &lib_file) const {
       lib_file.put(centries[c].flags);
       lib_file.put(centries[c].locals);
 
-      meat::uint16_t cooked_offset =
-        endian::write_be((uint16_t)centries[c].method.offset);
+      std::uint16_t cooked_offset =
+        endian::write_be((std::uint16_t)centries[c].method.offset);
       lib_file.write((const char *)&cooked_offset, 2);
     }
   }
@@ -903,8 +906,8 @@ void meat::Class::VTable::read(std::istream &lib_file) {
 
   // Read in the object method virtual table.
   entries = new vtable_entry_t[no_entries];
-  for (meat::uint8_t c = 0; c < no_entries; c++) {
-    meat::uint32_t hash_id, class_id;
+  for (std::uint_fast8_t c = 0; c < no_entries; c++) {
+    std::uint32_t hash_id, class_id;
     lib_file.read((char *)&hash_id, 4);
     entries[c].hash_id = endian::read_be(hash_id);
     lib_file.read((char *)&class_id, 4);
@@ -913,7 +916,7 @@ void meat::Class::VTable::read(std::istream &lib_file) {
     entries[c].flags = lib_file.get();
     entries[c].locals = lib_file.get();
 
-    meat::uint16_t offset;
+    std::uint16_t offset;
     lib_file.read((char *)&offset, 2);
     entries[c].method.offset = endian::read_be(offset);
   }
@@ -921,8 +924,8 @@ void meat::Class::VTable::read(std::istream &lib_file) {
 
   // Read in the class methods virtual table.
   centries = new vtable_entry_t[no_centries];
-  for (meat::uint8_t c = 0; c < no_centries; c++) {
-    meat::uint32_t hash_id, class_id;
+  for (std::uint_fast8_t c = 0; c < no_centries; c++) {
+    std::uint32_t hash_id, class_id;
     lib_file.read((char *)&hash_id, 4);
     centries[c].hash_id = endian::read_be(hash_id);
     lib_file.read((char *)&class_id, 4);
@@ -931,7 +934,7 @@ void meat::Class::VTable::read(std::istream &lib_file) {
     centries[c].flags = lib_file.get();
     centries[c].locals = lib_file.get();
 
-    meat::uint16_t offset;
+    std::uint16_t offset;
     lib_file.read((char *)&offset, 2);
     centries[c].method.offset = endian::read_be(offset);
   }
@@ -942,20 +945,20 @@ void meat::Class::VTable::read(std::istream &lib_file) {
  * meat::Context Class
  */
 
-static const meat::uint8_t CFL_BYTECODE = 0x00;
-static const meat::uint8_t CFL_NATIVE   = 0x01;
+static const std::uint8_t CFL_BYTECODE = 0x00;
+static const std::uint8_t CFL_NATIVE   = 0x01;
 
 /**************************
  * meat::Context::Context *
  **************************/
 
-meat::Context::Context(meat::uint8_t locals)
+meat::Context::Context(std::uint8_t locals)
   : Object(Class::resolve("Context")), _result_index(0), done(false) {
   num_of_locals = locals + 4;
   this->_locals = new Reference[num_of_locals];
 }
 
-meat::Context::Context(Reference context, meat::uint8_t locals)
+meat::Context::Context(Reference context, std::uint8_t locals)
   : Object(Class::resolve("Context")), _messenger(context), _result_index(0),
     done(false) {
   num_of_locals = locals + 4;
@@ -964,7 +967,7 @@ meat::Context::Context(Reference context, meat::uint8_t locals)
 
 meat::Context::Context(Reference cls,
                        Reference context,
-                       meat::uint8_t locals)
+                       std::uint8_t locals)
   : Object(cls), _messenger(context), _result_index(0), done(false) {
   num_of_locals = locals + 4;
   this->_locals = new Reference[num_of_locals];
@@ -976,11 +979,7 @@ meat::Context::Context(Reference cls,
 
 meat::Context::~Context() throw() {
   delete [] _locals;
-	//std::cout << "~Context" << std::endl;
-	//if (_messenger.is_null() or _messenger == Null())
-	//	memory::GC::collect_all();
-	//else
-	memory::gc::collect();
+  memory::gc::collect();
 }
 
 /***********************
@@ -1011,11 +1010,11 @@ void meat::Context::messenger(Reference context) {
  * meat::Context::parameter *
  ****************************/
 
-meat::Reference meat::Context::parameter(uint8_t index) const {
+meat::Reference meat::Context::parameter(std::uint8_t index) const {
   return _locals[index + 4];
 }
 
-void meat::Context::parameter(uint8_t index, Reference value) {
+void meat::Context::parameter(std::uint8_t index, Reference value) {
   _locals[index + 4] = value;
 }
 
@@ -1023,7 +1022,7 @@ void meat::Context::parameter(uint8_t index, Reference value) {
  * meat::Context::local *
  ************************/
 
-meat::Reference &meat::Context::local(uint8_t index) const {
+meat::Reference &meat::Context::local(std::uint8_t index) const {
   if (index >= 0 and index < num_of_locals) return _locals[index];
   else {
     std::stringstream msg;
@@ -1037,7 +1036,7 @@ meat::Reference &meat::Context::local(uint8_t index) const {
  * meat::Context::result_index *
  *******************************/
 
-void meat::Context::result_index(uint8_t local_parent_index) {
+void meat::Context::result_index(std::uint8_t local_parent_index) {
   _result_index = local_parent_index;
   cast<Context>(_messenger).local(_result_index) = meat::Null();
 }
@@ -1069,8 +1068,8 @@ meat::Reference meat::Context::result() const {
  * meat::BlockContext::BlockContext *
  ************************************/
 
-meat::BlockContext::BlockContext(Reference context, meat::uint8_t locals,
-                                 uint16_t ip)
+meat::BlockContext::BlockContext(Reference context, std::uint8_t locals,
+                                 std::uint16_t ip)
   : Context(Class::resolve("BlockContext"), context, locals),
     _origin(context), bc_flags(0), start_ip(ip) {
   flags = meat::Context::BYTECODE;
@@ -1088,8 +1087,8 @@ meat::BlockContext::~BlockContext() throw() {
  * meat::BlockContext::local *
  *****************************/
 
-meat::Reference &meat::BlockContext::local(meat::uint8_t index) const {
-  meat::uint8_t local_cnt = cast<const Context>(_origin).locals();
+meat::Reference &meat::BlockContext::local(std::uint8_t index) const {
+  std::uint8_t local_cnt = cast<const Context>(_origin).locals();
 
   //if (index == 3) return self
 
@@ -1103,7 +1102,7 @@ meat::Reference &meat::BlockContext::local(meat::uint8_t index) const {
  * meat::BlockContext::locals *
  ******************************/
 
-meat::uint8_t meat::BlockContext::locals() const {
+std::uint8_t meat::BlockContext::locals() const {
   return cast<const Context>(_origin).locals() + Context::locals();
 }
 
@@ -1170,7 +1169,7 @@ meat::Exception::Exception(const Exception &other)
   this->property(1) = other.property(1);
 }
 
-meat::Exception::Exception(Reference cls, meat::uint8_t properties)
+meat::Exception::Exception(Reference cls, std::uint8_t properties)
   : Object(cls, properties) {
   // Empty Exception constructor used for class inheritance.
 }
@@ -1228,7 +1227,7 @@ meat::Value::Value(int32_t value)
   data.i = value;
 }
 
-meat::Value::Value(float_t value)
+meat::Value::Value(double value)
   : Object(Class::resolve("Number")), data_type(FLOAT) {
   data.f = value;
 }
@@ -1246,7 +1245,7 @@ void meat::Value::serialize(data::Archive &store,
                             std::ostream &data_stream) const {
   switch (data_type) {
   case BOOLEAN:
-    store << (uint8_t)data.b;
+    store << (std::uint8_t)data.b;
     break;
   case INTEGER:
     store << data.i;
@@ -1274,7 +1273,7 @@ void meat::Value::unserialize(data::Archive &store,
   }
 }
 
-meat::Value::operator meat::int32_t() const {
+meat::Value::operator std::int32_t() const {
   switch (data_type) {
   case INTEGER:
     return data.i;
@@ -1285,7 +1284,7 @@ meat::Value::operator meat::int32_t() const {
   }
 }
 
-meat::Value::operator meat::float_t() const {
+meat::Value::operator double() const {
   switch (data_type) {
   case INTEGER:
     return data.i;
@@ -1356,7 +1355,11 @@ void meat::Text::unserialize(data::Archive &store,
 meat::List::List() : Object(Class::resolve("List")) {
 }
 
-meat::List::List(Reference cls, meat::uint8_t properties)
+meat::List::List(const List &other)
+  : std::deque<Reference>(other), Object(Class::resolve("List")) {
+}
+
+meat::List::List(Reference cls, std::uint8_t properties)
   : Object(cls, properties) {
 }
 
@@ -1367,7 +1370,7 @@ meat::List::List(Reference cls, meat::uint8_t properties)
 void meat::List::serialize(data::Archive &store,
                            std::ostream &data_stream) const {
   // Record the size of the list.
-  store << (uint32_t)size();
+  store << (std::uint32_t)size();
 
   // Add all the list entries to the store.
   for (unsigned int c = 0; c < size(); c++) {
@@ -1383,11 +1386,11 @@ void meat::List::serialize(data::Archive &store,
 void meat::List::unserialize(data::Archive &store,
                              std::istream &data_stream) {
   // Read in the size of the list
-  uint32_t elements;
+  std::uint32_t elements;
   store >> elements;
 
   // Read in all the Objects that are in the list.
-  meat::uint32_t index;
+  std::uint32_t index;
   for (unsigned int c = 0; c < elements; c++) {
     store >> index;
     push_back(store.get_object(index));
@@ -1405,7 +1408,11 @@ void meat::List::unserialize(data::Archive &store,
 meat::Set::Set() : Object(Class::resolve("Set")) {
 }
 
-meat::Set::Set(Reference cls, meat::uint8_t properties)
+meat::Set::Set(const Set &other)
+  : std::set<Reference, obj_less>(other), Object(Class::resolve("Set")) {
+}
+
+meat::Set::Set(Reference cls, std::uint8_t properties)
   : Object(cls, properties) {
 }
 
@@ -1416,7 +1423,7 @@ meat::Set::Set(Reference cls, meat::uint8_t properties)
 void meat::Set::serialize(data::Archive &store,
                           std::ostream &data_stream) const {
   // Record the size of the list.
-  store << (uint32_t)size();
+  store << (std::uint32_t)size();
 
   // Add all the list entries to the store.
   meat::Set::const_iterator it = begin();
@@ -1431,11 +1438,11 @@ void meat::Set::serialize(data::Archive &store,
 void meat::Set::unserialize(data::Archive &store,
                             std::istream &data_stream) {
   // Read in the size of the list
-  uint32_t elements;
+  std::uint32_t elements;
   store >> elements;
 
   // Read in all the Objects that are in the list.
-  meat::uint32_t index;
+  std::uint32_t index;
   for (unsigned int c = 0; c < elements; c++) {
     store >> index;
     insert(store.get_object(index));
@@ -1463,7 +1470,7 @@ bool meat::obj_less::operator()(const Reference &first,
 meat::Index::Index() : Object(Class::resolve("Index")) {
 }
 
-meat::Index::Index(Reference cls, meat::uint8_t properties)
+meat::Index::Index(Reference cls, std::uint8_t properties)
   : Object(cls, properties) {
 }
 
@@ -1474,7 +1481,7 @@ meat::Index::Index(Reference cls, meat::uint8_t properties)
 void meat::Index::serialize(data::Archive &store,
                             std::ostream &data_stream) const {
   // Record the size of the list.
-  store << (uint32_t)size();
+  store << (std::uint32_t)size();
 
   // Add all the index entries to the store.
   for (const_iterator it = begin(); it != end(); it++) {
@@ -1493,11 +1500,11 @@ void meat::Index::serialize(data::Archive &store,
 void meat::Index::unserialize(data::Archive &store,
                               std::istream &data_stream) {
   // Read in the size of the list
-  uint32_t elements;
+  std::uint32_t elements;
   store >> elements;
 
   // Read in all the Objects that are in the list.
-  meat::uint32_t key_index, val_index;
+  std::uint32_t key_index, val_index;
   for (unsigned int c = 0; c < elements; c++) {
     store >> key_index;
     store >> val_index;
@@ -1514,8 +1521,8 @@ void meat::Index::unserialize(data::Archive &store,
  *****************/
 
 void meat::cleanup() {
-	meat::data::Library::unload();
-	memory::gc::collect_all();
+  meat::data::Library::unload();
+  memory::gc::collect_all();
 }
 
 /*****************
@@ -1523,7 +1530,7 @@ void meat::cleanup() {
  *****************/
 
 meat::Reference meat::message(meat::Reference object,
-                              meat::uint32_t hash_id,
+                              std::uint32_t hash_id,
                               meat::Reference context) {
 
   Reference cls, obj_cls;
@@ -1566,8 +1573,8 @@ meat::Reference meat::message(meat::Reference object,
     throw Exception(std::string("Message ") +
                     cast<Class>(obj_cls).lookup(hash_id) +
                     " is unresolved for class " +
-										cast<Class>(obj_cls).name(),
-										context);
+                    cast<Class>(obj_cls).name(),
+                    context);
 
   // Now create the new context.
   Context *ctx = new Context(context, m_entry->locals);
@@ -1593,7 +1600,7 @@ meat::Reference meat::message(meat::Reference object,
 }
 
 meat::Reference meat::message(meat::Reference object,
-                              const char *method,
+                              const std::string &method,
                               meat::Reference context) {
   return message(object, hash(method), context);
 }
@@ -1603,7 +1610,7 @@ meat::Reference meat::message(meat::Reference object,
  ***********************/
 
 meat::Reference meat::message_super(meat::Reference object,
-                                    meat::uint32_t hash_id,
+                                    std::uint32_t hash_id,
                                     meat::Reference context) {
 
   Reference cls, obj_cls;
@@ -1635,12 +1642,11 @@ meat::Reference meat::message_super(meat::Reference object,
 
   // Raise an error if we couldn't resolve the method name.
   if (m_entry == 0)
-		throw Exception(std::string("Message ") +
+    throw Exception(std::string("Message ") +
                     cast<Class>(obj_cls).lookup(hash_id) +
                     " is unresolved for class " +
-										cast<Class>(obj_cls).name(),
-										context);
-	//throw Exception(std::string("Message is unresolved"), context);
+                    cast<Class>(obj_cls).name(),
+                    context);
 
   // Now create the new context.
   Context *ctx = new Context(context, m_entry->locals);
@@ -1683,11 +1689,11 @@ static meat::CompilerInterface *&_compiler() {
 }
 
 void meat::compiler(CompilerInterface *impl) {
-	_compiler() = impl;
+  _compiler() = impl;
 }
 
 meat::CompilerInterface *meat::compiler() {
-	return _compiler();
+  return _compiler();
 }
 
 /*****************
@@ -1709,13 +1715,13 @@ meat::Reference meat::Boolean(bool value) {
 }
 
 bool DECLSPEC meat::Boolean(meat::Reference value) {
-	static Reference true_object;
+  static Reference true_object;
 
   if (true_object.is_null()) {
     true_object = Class::resolve("Boolean")->property(0);
   }
 
-	return (value == true_object);
+  return (value == true_object);
 }
 
 /**************
@@ -1733,7 +1739,7 @@ meat::Reference meat::Null() {
      * initially someone wants a Null object before there is a Null object we
      * just return a null reference.
      */
-    meat::uint32_t hash_id = hash("Null");
+    std::uint32_t hash_id = hash("Null");
     class_registry_t &classes = class_registry();
 
     if (classes.find(hash_id) != classes.end()) {

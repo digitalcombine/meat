@@ -21,6 +21,7 @@
 
 #include <meat.h>
 #include <meat/types.h>
+#include <meat/numeric.h>
 #include <iostream>
 
 #ifndef _UTILITIES_H
@@ -33,44 +34,41 @@ namespace endian {
 #define read_be(value) (value)
 #define write_be(value) (value)
 #else
-  DECLSPEC meat::int32_t  read_be(meat::int32_t value);
-  DECLSPEC meat::uint32_t read_be(meat::uint32_t value);
-  DECLSPEC meat::int16_t  read_be(meat::int16_t value);
-  DECLSPEC meat::uint16_t read_be(meat::uint16_t value);
-  DECLSPEC meat::float_t  read_be(meat::float_t value);
+  DECLSPEC std::int64_t  read_be(std::int64_t value);
+  DECLSPEC std::uint64_t read_be(std::uint64_t value);
+  DECLSPEC std::int32_t  read_be(std::int32_t value);
+  DECLSPEC std::uint32_t read_be(std::uint32_t value);
+  DECLSPEC std::int16_t  read_be(std::int16_t value);
+  DECLSPEC std::uint16_t read_be(std::uint16_t value);
+  //DECLSPEC meat::float_t  read_be(meat::float_t value);
 
-  DECLSPEC meat::int32_t  write_be(meat::int32_t value);
-  DECLSPEC meat::uint32_t write_be(meat::uint32_t value);
-  DECLSPEC meat::int16_t  write_be(meat::int16_t value);
-  DECLSPEC meat::uint16_t write_be(meat::uint16_t value);
+  DECLSPEC std::int64_t  write_be(std::int64_t value);
+  DECLSPEC std::uint64_t write_be(std::uint64_t value);
+  DECLSPEC std::int32_t  write_be(std::int32_t value);
+  DECLSPEC std::uint32_t write_be(std::uint32_t value);
+  DECLSPEC std::int16_t  write_be(std::int16_t value);
+  DECLSPEC std::uint16_t write_be(std::uint16_t value);
 #endif
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   inline int read_le(int value) { return value; }
 #define write_le(value) (value)
 #else
-  DECLSPEC meat::int32_t  read_le(meat::int32_t value);
-  DECLSPEC meat::uint32_t read_le(meat::uint32_t value);
-  DECLSPEC meat::int16_t  read_le(meat::int16_t value);
-  DECLSPEC meat::uint16_t read_le(meat::uint16_t value);
+  DECLSPEC std::int64_t  read_le(std::int64_t value);
+  DECLSPEC std::uint64_t read_le(std::uint64_t value);
+  DECLSPEC std::int32_t  read_le(std::int32_t value);
+  DECLSPEC std::uint32_t read_le(std::uint32_t value);
+  DECLSPEC std::int16_t  read_le(std::int16_t value);
+  DECLSPEC std::uint16_t read_le(std::uint16_t value);
   DECLSPEC meat::float_t  read_le(meat::float_t value);
 
-  DECLSPEC meat::int32_t  write_le(meat::int32_t value);
-  DECLSPEC meat::uint32_t write_le(meat::uint32_t value);
-  DECLSPEC meat::int16_t  write_le(meat::int16_t value);
-  DECLSPEC meat::uint16_t write_le(meat::uint16_t value);
+  DECLSPEC std::int64_t  write_le(std::int64_t value);
+  DECLSPEC std::uint64_t write_le(std::uint64_t value);
+  DECLSPEC std::int32_t  write_le(std::int32_t value);
+  DECLSPEC std::uint32_t write_le(std::uint32_t value);
+  DECLSPEC std::int16_t  write_le(std::int16_t value);
+  DECLSPEC std::uint16_t write_le(std::uint16_t value);
 #endif
-
-#if __FLOAT_WORD_ORDER__ == __ORDER_BIG_ENDIAN__
-#else
-  DECLSPEC meat::float_t write_be(meat::float_t value);
-#endif
-
-#if __FLOAT_WORD_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#else
-  DECLSPEC meat::float_t write_le(meat::float_t value);
-#endif
-
 }
 
 /** Creates an integer hash for any give string.
@@ -78,8 +76,8 @@ namespace endian {
  * @param table_size The maximum size of the hash value.
  * @return Unsigned integer hash value.
  */
-DECLSPEC meat::uint32_t hash(const std::string &word,
-														 size_t table_size = 0x7fffffff);
+DECLSPEC std::uint32_t hash(const std::string &word,
+                            size_t table_size = 0x7fffffff);
 
 /** Converts an hexidecimal integer value to a string.
  */

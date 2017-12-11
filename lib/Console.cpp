@@ -21,9 +21,9 @@ static Reference Console_cm_error_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference message = cast<Context>(context).parameter(0);
 
-		std::cerr << meat::cast<meat::Text>(message);
-		return null;
-	}
+    std::cerr << meat::cast<meat::Text>(message);
+    return null;
+  }
 
 // class method errorLn:
 static Reference Console_cm_errorLn_(Reference context) {
@@ -31,19 +31,19 @@ static Reference Console_cm_errorLn_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference message = cast<Context>(context).parameter(0);
 
-		std::cerr << meat::cast<meat::Text>(message) << std::endl;
-		return null;
-	}
+    std::cerr << meat::cast<meat::Text>(message) << std::endl;
+    return null;
+  }
 
 // class method input
 static Reference Console_cm_input(Reference context) {
   Reference self = cast<Context>(context).self();
   Reference klass = cast<Context>(context).klass();
 
-		std::string result;
-		std::cin >> result;
-		return new meat::Text(result);
-	}
+    std::string result;
+    std::cin >> result;
+    return new meat::Text(result);
+  }
 
 // class method write:
 static Reference Console_cm_write_(Reference context) {
@@ -51,9 +51,9 @@ static Reference Console_cm_write_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference message = cast<Context>(context).parameter(0);
 
-		std::cout << meat::cast<meat::Text>(message);
-		return null;
-	}
+    std::cout << meat::cast<meat::Text>(message);
+    return null;
+  }
 
 // class method writeLn:
 static Reference Console_cm_writeLn_(Reference context) {
@@ -61,9 +61,9 @@ static Reference Console_cm_writeLn_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference message = cast<Context>(context).parameter(0);
 
-		std::cout << meat::cast<meat::Text>(message) << std::endl;
-		return null;
-	}
+    std::cout << meat::cast<meat::Text>(message) << std::endl;
+    return null;
+  }
 
 static meat::vtable_entry_t ConsoleCMethods[] = {
   {0x0000043c, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -86,7 +86,7 @@ static meat::vtable_entry_t ConsoleCMethods[] = {
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
-static meat::uint8_t Symbols[] = {
+static std::uint8_t Symbols[] = {
   "Console\0error:\0errorLn:\0input\0write:\0writeLn:\0\0"
 };
 

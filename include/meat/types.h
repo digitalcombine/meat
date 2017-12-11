@@ -31,28 +31,8 @@
 
 namespace meat {
 
-  /* Macros for creating fixed size integer types. */
-#undef __intN_t
-#define __intN_t(N, MODE) \
-  typedef int int##N##_t __attribute__ ((__mode__(MODE)))
-#undef __uintN_t
-#define __uintN_t(N, MODE) \
-  typedef unsigned int uint##N##_t __attribute__ ((__mode__(MODE)))
-
-  /* Signed Integer Types. */
-  __intN_t(8, __QI__);  // int8_t
-  __intN_t(16, __HI__); // int16_t
-  __intN_t(32, __SI__); // int32_t
-  __intN_t(64, __DI__); // int64_t
-
-  /* Unsigned Integer Types. */
-  __uintN_t(8, __QI__);  // uint8_t
-  __uintN_t(16, __HI__); // uint16_t
-  __uintN_t(32, __SI__); // uint32_t
-  __uintN_t(64, __DI__); // uint64_t
-
-  /* Fixed size floating point types. */
-  typedef float float_t __attribute__((__mode__(__SF__)));   // 32 bits
+  /* XXX These are to disappear */
+  //typedef float float_t __attribute__((__mode__(__SF__)));   // 32 bits
   typedef double double_t __attribute__((__mode__(__DF__))); // 64 bits
 }
 

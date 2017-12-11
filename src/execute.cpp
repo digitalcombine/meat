@@ -25,6 +25,7 @@
 
 #include <cstring>
 #include <sstream>
+#include <cmath>
 
 #ifdef TESTING
 #include <testing.h>
@@ -35,7 +36,7 @@
 #include <iomanip>
 #include <cstddef>
 
-inline std::string local(meat::uint8_t id) {
+inline std::string local(std::uint8_t id) {
   switch (id) {
   case 0:
     return "self";
@@ -76,8 +77,8 @@ meat::Reference meat::execute(Reference context) {
 
   } else {
     /* The bytecode interpreter starts here */
-    meat::uint16_t ip = meat::cast<Context>(context)._ip;
-    const uint8_t *code =
+    std::uint16_t ip = meat::cast<Context>(context)._ip;
+    const std::uint8_t *code =
       cast<Class>(cast<Context>(context).klass()).bytecode();
     cast<Context>(context).local(2) = context.weak();
 
@@ -124,7 +125,7 @@ meat::Reference meat::execute(Reference context) {
 #endif /* DEBUG */
 
         Reference obj = cast<Context>(context).local(bc->o.m.object);
-        meat::uint32_t method_id = endian::read_be(bc->o.m.message_id);
+        std::uint32_t method_id = endian::read_be(bc->o.m.message_id);
 
         // Create the new context in which to execute the message in.
         Reference new_ctx;
@@ -185,7 +186,7 @@ meat::Reference meat::execute(Reference context) {
 #endif /* DEBUG */
 
         Reference obj = cast<Context>(context).local(bc->o.mr.object);
-        meat::uint32_t method_id = endian::read_be(bc->o.mr.message_id);
+        std::uint32_t method_id = endian::read_be(bc->o.mr.message_id);
 
         // Create the new context in which to execute the message in.
         Reference new_ctx;
@@ -284,7 +285,7 @@ meat::Reference meat::execute(Reference context) {
                   << std::endl;
 #endif /* DEBUG */
         cast<Context>(context).local(bc->o.ap.destination) =
-					self->property(bc->o.ap.property_id);
+          self->property(bc->o.ap.property_id);
         ip += 3;
         break;
       }
@@ -321,14 +322,17 @@ meat::Reference meat::execute(Reference context) {
       case meat::bytecode::ASSIGN_CONST_NUM: {
 #ifdef DEBUG
         std::cout << "BC" << BCLOC << ": NUMBER " << std::dec
-                  << local(bc->o.cn.destination) << " = "
-                  << (float)endian::read_be(bc->o.cn.value)
-                  << std::endl;
+                  << local(bc->o.cn.destination) << " = ";
 #endif /* DEBUG */
 
-        Reference float_obj = new Value(endian::read_be(bc->o.cn.value));
+        double mantissa = ldexp(endian::read_be(bc->o.cn.mantissa), -53);
+        Reference float_obj =
+          new Value(ldexp(mantissa, endian::read_be(bc->o.cn.exponent)));
         cast<Context>(context).local(bc->o.cn.destination) = float_obj;
-        ip += 6;
+#ifdef DEBUG
+        std:: cout << FLOAT(float_obj) << std::endl;
+#endif /* DEBUG */
+        ip += 13;
         break;
       }
 
@@ -393,15 +397,15 @@ meat::Reference meat::execute(Reference context) {
          * necessary contexts are kept.
          */
 #ifdef TESTING
-				meat::test::test("Context weak self reference", false);
-				if (not cast<Context>(context).local(2).is_weak()) {
-					meat::test::failed("Context weak self reference", false);
-				}
+        meat::test::test("Context weak self reference", false);
+        if (not cast<Context>(context).local(2).is_weak()) {
+          meat::test::failed("Context weak self reference", false);
+        }
 #endif
         Reference old_ctx = context;
         context = cast<Context>(context).messenger();
         cast<Context>(old_ctx).messenger(meat::Null());
-				//cast<Context>(old_ctx).local(2) = NULL; // context
+        //cast<Context>(old_ctx).local(2) = NULL; // context
 
         // If we are the top level context then return.
         if (context.is_null() or context == meat::Null()) {

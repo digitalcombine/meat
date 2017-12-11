@@ -49,7 +49,7 @@ Test subclass: Test.Text as: {
 			self fail: "Invalid sub text returned"
 		}
 
-		[["Hello " + "World"] == "Hello World] isFalse: {
+		[["Hello " + "World"] == "Hello World"] isFalse: {
 			self fail: "Text append operator returned invalid result"
 		}
 

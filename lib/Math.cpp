@@ -102,7 +102,7 @@ static Reference Math_cm_exp_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference value = cast<Context>(context).parameter(0);
 
-    meat::float_t answer = (meat::float_t)std::exp(FLOAT(value));
+    double answer = (double)std::exp(FLOAT(value));
 
     if (answer == HUGE_VAL) throw meat::Exception("exp range error");
 
@@ -148,7 +148,7 @@ static Reference Math_cm_round_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference value = cast<Context>(context).parameter(0);
 
-    return new meat::Value((meat::float_t)round(FLOAT(value)));
+    return new meat::Value((double)round(FLOAT(value)));
   }
 
 // class method sin:
@@ -205,7 +205,7 @@ static Reference Math_cm_truncate_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference value = cast<Context>(context).parameter(0);
 
-   return new meat::Value((meat::float_t)trunc(FLOAT(value)));
+   return new meat::Value((double)trunc(FLOAT(value)));
   }
 
 static meat::vtable_entry_t MathCMethods[] = {
@@ -240,7 +240,7 @@ static meat::vtable_entry_t MathCMethods[] = {
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
-static meat::uint8_t Symbols[] = {
+static std::uint8_t Symbols[] = {
   "Math\0acos:\0asin:\0atan2y:x:\0atan:\0ceiling:\0cos:\0cosh:\0exp:\0floor:\0"
   "log10:\0log:\0round:\0sin:\0sinh:\0sqrt:\0tan:\0tanh:\0truncate:\0\0"
 };

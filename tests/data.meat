@@ -44,7 +44,7 @@ data set: "Test Object" to: obj
 # Serialize a List
 list = [List new]
 list push: 128
-list push: 0.4342944819
+list push: -0.4342944819
 list push: "Hello from the list"
 data set: "List" to: list
 
@@ -53,3 +53,4 @@ data set: "Empty List" to: [List new]
 
 # Create the data archive
 archive setObject: data
+archive sync

@@ -1,0 +1,71 @@
+The Meat Programming Language
+=============================
+
+REQUIREMENTS
+============
+
+GNU Automake & Autoconf tools
+GNU C++ Compiler Suite
+
+On Window Platforms
+ The GNU tools are provided with the mingw system.
+
+On Apple and Other Platforms
+ Currently it's completely untests. So you're on your own.
+
+ Currently the suite does use features that are specific to GNU's compilers.
+This may change in the future, but for now that is how it is.
+
+INSTALL
+=======
+
+ Building and installing uses the standard GNU automake/autoconf tools. So the
+following configure/make will work.
+
+./configure
+make
+make check
+make install
+
+ The above will work, but ideally the following compiling flags shown be set
+during the configure stage.
+
+CXXCFLAGS="-Wall -pedantic -O2" ./configure
+
+USAGE
+=====
+
+To compile libraries:
+
+meat-grinder my-library.meat
+meat-grinder my-program.meat
+
+ A simple interpreter to build data files. Note this *NOT* how meat code should
+be executed.
+
+meat-grinder -s make-data-file.meat
+
+Executing libraries or data files with an Application class set:
+
+meat my-program.mlib
+meat my-program.mar
+
+See the man pages for further details and options.
+
+LICENSE
+=======
+
+Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
+
+Meat is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Meat is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Meat.  If not, see <http://www.gnu.org/licenses/>.
