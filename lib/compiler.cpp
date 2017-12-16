@@ -284,6 +284,192 @@ void meat::grinder::Tokenizer::parse(const std::string &code) {
   get_next_line();
 }
 
+/**********************************
+ * meat::grinder::Tokenizer::push *
+ **********************************/
+
+void meat::grinder::Tokenizer::push() {
+  Token current = tokens.front();
+
+  if (not current.is_type(Token::COMMAND) and
+      not current.is_type(Token::BLOCK)) {
+    throw Exception("Internal error reparsing token");
+  }
+
+  tokens.pop_front();
+  states.push({tokens, remaining, stream, position});
+
+  stream = new std::stringstream((const std::string &)current);
+  remaining = "";
+  position = current.position();
+  tokens.clear();
+
+  get_next_line();
+}
+
+/*********************************
+ * meat::grinder::Tokenizer::pop *
+ *********************************/
+
+void meat::grinder::Tokenizer::pop() {
+  if (not states.empty()) {
+    delete stream;
+
+    tokens = states.top().tokens;
+    remaining = states.top().remaining;
+    stream = states.top().stream;
+    position = states.top().position;
+
+    states.pop();
+  }
+}
+
+/***********************************
+ * meat::grinder::Tokenizer::count *
+ ***********************************/
+
+size_t meat::grinder::Tokenizer::count() {
+  return tokens.size();
+}
+
+/*****************************************
+ * meat::grinder::Tokenizer::is_complete *
+ *****************************************/
+
+bool meat::grinder::Tokenizer::is_complete() {
+  return complete;
+}
+
+/***********************************
+ * meat::grinder::Tokenizer::clear *
+ ***********************************/
+
+void meat::grinder::Tokenizer::clear() {
+  tokens.clear(); // Clear all the tokens.
+}
+
+/************************************
+ * meat::grinder::Tokenizer::expect *
+ ************************************/
+
+bool meat::grinder::Tokenizer::expect(Token::token_t id) {
+  if (is_more() && tokens.front().is_type(id))
+    return true;
+  return false;
+}
+
+bool meat::grinder::Tokenizer::expect(Token::token_t id,
+                                      const std::string &value) {
+  // Same type and value
+  if (is_more() && tokens.front().is_type(id))
+    return (tokens.front() == value);
+  return false;
+}
+
+bool meat::grinder::Tokenizer::expect(size_t index, Token::token_t id) {
+  if (is_more() && tokens.at(index).is_type(id))
+    return true;
+  return false;
+}
+
+bool meat::grinder::Tokenizer::expect(size_t index, Token::token_t id,
+                                      const std::string &value) {
+  // Same type and value
+  if (is_more() && tokens.at(index).is_type(id))
+    return (tokens.at(index) == value);
+  return false;
+}
+
+/************************************
+ * meat::grinder::Tokenizer::permit *
+ ************************************/
+
+void meat::grinder::Tokenizer::permit(Token::token_t id) {
+  if (expect(id)) next();
+  else
+    throw Exception((const std::string &)tokens.front().position() +
+                    ": Got unexpected value of " +
+                    (std::string &)tokens.front());
+}
+
+void meat::grinder::Tokenizer::permit(Token::token_t id,
+                                      const std::string &value) {
+  if (expect(id, value)) next();
+  else
+    throw Exception((const std::string &)tokens.front().position() +
+                    ": Got unexpected value of " +
+                    (std::string &)tokens.front());
+}
+
+/**********************************
+ * meat::grinder::Tokenizer::next *
+ **********************************/
+
+void meat::grinder::Tokenizer::next() {
+  if (is_more()) tokens.pop_front();
+}
+
+/*************************************
+ * meat::grinder::Tokenizer::is_more *
+ *************************************/
+
+bool meat::grinder::Tokenizer::is_more() {
+  if (tokens.empty()) get_next_line();
+  if (tokens.empty()) return false;
+  return true;
+}
+
+/***************************************
+ * meat::grinder::Tokenizer::to_string *
+ ***************************************/
+
+std::string meat::grinder::Tokenizer::to_string() const {
+  std::string result;
+
+  std::deque<Token>::const_iterator it;
+  for (it = tokens.begin(); it != tokens.end(); ++it) {
+    switch (it->type()) {
+    case Token::WORD:
+      result += (std::string)(*it) + " "; break;
+    case Token::SUBST_STRING:
+    case Token::LITRL_STRING:
+      result += std::string("'") + (std::string)(*it) + "' "; break;
+    case Token::COMMAND:
+      result += std::string("[") + (std::string)(*it) + "] "; break;
+    case Token::BLOCK:
+      result += std::string("{") + (std::string)(*it) + "} "; break;
+    case Token::EOL:
+      result += "\u21b5\n"; break;
+    };
+  }
+
+  return result;
+}
+
+bool meat::grinder::Tokenizer::get_uchar(std::string &destination) {
+  char ch;
+  destination = "";
+
+  while (stream->get(ch)) {
+    destination += ch;
+    if ((ch & 0xc0) != 0x80) return stream->good();
+  }
+  return stream->good();
+}
+
+void meat::grinder::Tokenizer::get_line(std::string &destination) {
+  std::string ch;
+  while (get_uchar(ch)) {
+    if (ch == "\n" or ch == "\r\n" or ch == "\r" or ch == "\v" or ch == "\f")
+      return;
+    destination += ch;
+  }
+}
+
+/****************************************
+ * meat::grinder::Tokenizer::parse_line *
+ ****************************************/
+
 void meat::grinder::Tokenizer::parse_line(const std::string &line,
                                           bool more) {
   size_t t_begin = 0;
@@ -468,165 +654,6 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
   }
 }
 
-/**********************************
- * meat::grinder::Tokenizer::push *
- **********************************/
-
-void meat::grinder::Tokenizer::push() {
-  Token current = tokens.front();
-
-  if (not current.is_type(Token::COMMAND) and
-      not current.is_type(Token::BLOCK)) {
-    throw Exception("Internal error reparsing token");
-  }
-
-  tokens.pop_front();
-  states.push({tokens, remaining, stream, position});
-
-  stream = new std::stringstream((const std::string &)current);
-  remaining = "";
-  position = current.position();
-  tokens.clear();
-
-  get_next_line();
-}
-
-/*********************************
- * meat::grinder::Tokenizer::pop *
- *********************************/
-
-void meat::grinder::Tokenizer::pop() {
-  if (not states.empty()) {
-    delete stream;
-
-    tokens = states.top().tokens;
-    remaining = states.top().remaining;
-    stream = states.top().stream;
-    position = states.top().position;
-
-    states.pop();
-  }
-}
-
-/***********************************
- * meat::grinder::Tokenizer::count *
- ***********************************/
-
-size_t meat::grinder::Tokenizer::count() {
-  return tokens.size();
-}
-
-/*****************************************
- * meat::grinder::Tokenizer::is_complete *
- *****************************************/
-
-bool meat::grinder::Tokenizer::is_complete() {
-  return complete;
-}
-
-/***********************************
- * meat::grinder::Tokenizer::clear *
- ***********************************/
-
-void meat::grinder::Tokenizer::clear() {
-  tokens.clear(); // Clear all the tokens.
-}
-
-/************************************
- * meat::grinder::Tokenizer::expect *
- ************************************/
-
-bool meat::grinder::Tokenizer::expect(Token::token_t id) {
-  if (is_more() && tokens.front().is_type(id))
-    return true;
-  return false;
-}
-
-bool meat::grinder::Tokenizer::expect(Token::token_t id,
-                                      const std::string &value) {
-  // Same type and value
-  if (is_more() && tokens.front().is_type(id))
-    return (tokens.front() == value);
-  return false;
-}
-
-bool meat::grinder::Tokenizer::expect(size_t index, Token::token_t id) {
-  if (is_more() && tokens.at(index).is_type(id))
-    return true;
-  return false;
-}
-
-bool meat::grinder::Tokenizer::expect(size_t index, Token::token_t id,
-                                      const std::string &value) {
-  // Same type and value
-  if (is_more() && tokens.at(index).is_type(id))
-    return (tokens.at(index) == value);
-  return false;
-}
-
-/************************************
- * meat::grinder::Tokenizer::permit *
- ************************************/
-
-void meat::grinder::Tokenizer::permit(Token::token_t id) {
-  if (expect(id)) next();
-  else
-    throw Exception((const std::string &)tokens.front().position() +
-                    ": Got unexpected value of " +
-                    (std::string &)tokens.front());
-}
-
-void meat::grinder::Tokenizer::permit(Token::token_t id,
-                                      const std::string &value) {
-  if (expect(id, value)) next();
-  else
-    throw Exception((const std::string &)tokens.front().position() +
-                    ": Got unexpected value of " +
-                    (std::string &)tokens.front());
-}
-
-/**********************************
- * meat::grinder::Tokenizer::next *
- **********************************/
-
-void meat::grinder::Tokenizer::next() {
-  if (is_more()) tokens.pop_front();
-}
-
-/*************************************
- * meat::grinder::Tokenizer::is_more *
- *************************************/
-
-bool meat::grinder::Tokenizer::is_more() {
-  if (tokens.empty()) get_next_line();
-  if (tokens.empty()) return false;
-  return true;
-}
-
-std::string meat::grinder::Tokenizer::to_string() const {
-  std::string result;
-
-  std::deque<Token>::const_iterator it;
-  for (it = tokens.begin(); it != tokens.end(); ++it) {
-    switch (it->type()) {
-    case Token::WORD:
-      result += (std::string)(*it) + " "; break;
-    case Token::SUBST_STRING:
-    case Token::LITRL_STRING:
-      result += std::string("'") + (std::string)(*it) + "' "; break;
-    case Token::COMMAND:
-      result += std::string("[") + (std::string)(*it) + "] "; break;
-    case Token::BLOCK:
-      result += std::string("{") + (std::string)(*it) + "} "; break;
-    case Token::EOL:
-      result += "\u21b5\n"; break;
-    };
-    //result += " ";
-  }
-
-  return result;
-}
-
 meat::grinder::Token &meat::grinder::Tokenizer::operator[] (size_t index) {
   return tokens.at(index);
 }
@@ -647,6 +674,7 @@ void meat::grinder::Tokenizer::get_next_line() {
     std::string line;
 
     std::getline(*stream, line);
+    //get_line(line);
     position.inc_line();
 
     if (cook_lines) {

@@ -1,6 +1,6 @@
 #                                                           -*- Makefile.am -*-
 
-TESTS = memory_tests tests.mapp libtests.mlib hello.mlib
+TESTS = tests.mlib hello.mlib
 LOG_COMPILER = @top_srcdir@/bin/meat
 AM_LOG_FLAGS = -i ../lib/.libs/
 
@@ -29,13 +29,6 @@ CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 MEATDEPS = @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat \
 	@top_srcdir@/src/libmeat.la
 
-check_PROGRAMS = memory_tests
-
-memory_tests_SOURCES = memory_tests.cpp
-memory_tests_CPPFLAGS = -I@top_srcdir@/include
-memory_tests_LDADD = @top_srcdir@/src/libmeat.la
-memory_tests_LDFLAGS = -rdynamic
-
 .meat.mlib:
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<
 
@@ -53,14 +46,8 @@ Test.Boolean.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Exception.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Numeric.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Integer.mlib: UnitTest.mlib $(MEATDEPS)
-Test.Number.mlib: UnitTest.mlib $(MEATDEPS)
-Test.Text.mlib: UnitTest.mlib $(MEATDEPS)
-Test.Index.mlib: UnitTest.mlib $(MEATDEPS)
 Test.List.mlib: UnitTest.mlib $(MEATDEPS)
-Test.Data.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Application.mlib: UnitTest.mlib $(MEATDEPS)
-Test.Compiler.mlib: UnitTest.mlib $(MEATDEPS)
-Console.cpp: $(MEATDEPS)
 builtin.cpp: $(MEATDEPS)
 Datastore.cpp: $(MEATDEPS)
 grinder.cpp: $(MEATDEPS)
@@ -68,27 +55,18 @@ grinder.cpp: $(MEATDEPS)
 data.mar: Test.Data.mlib
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -s data.meat
 
-tests.mapp: $(MEATDEPS)
-tests.mapp: UnitTest.mlib
-tests.mapp: Test.Number.mlib Test.Text.mlib
-tests.mapp: Test.Index.mlib Test.Data.mlib Test.Compiler.mlib
-tests.mapp: builtin.cpp Datastore.cpp grinder.cpp
-tests.mapp: data.mar
-tests.mapp: tests.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -s tests.meat
-
-libtests.mlib: $(MEATDEPS)
-libtests.mlib: UnitTest.mlib
-libtests.mlib: Test.Characters.mlib
-libtests.mlib: Test.Object.mlib Test.Class.mlib
-libtests.mlib: Test.BlockContext.mlib
-libtests.mlib: Test.Null.mlib Test.Exception.mlib
-libtests.mlib: Test.Boolean.mlib Test.Numeric.mlib
-libtests.mlib: Test.Integer.mlib
-libtests.mlib: Test.List.mlib
-libtests.mlib: Test.Application.mlib
-libtests.mlib: libtests.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ libtests.meat
+tests.mlib: $(MEATDEPS)
+tests.mlib: UnitTest.mlib
+tests.mlib: Test.Characters.mlib
+tests.mlib: Test.Object.mlib Test.Class.mlib
+tests.mlib: Test.BlockContext.mlib
+tests.mlib: Test.Null.mlib Test.Exception.mlib
+tests.mlib: Test.Boolean.mlib Test.Numeric.mlib
+tests.mlib: Test.Integer.mlib
+tests.mlib: Test.List.mlib
+tests.mlib: Test.Application.mlib
+tests.mlib: tests.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ tests.meat
 
 hello.mlib: hello.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -c Hello hello.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ hello.meat

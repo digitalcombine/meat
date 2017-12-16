@@ -131,8 +131,6 @@ namespace meat {
 
       /** Cast the token as a constant string.
        */
-      //operator std::string() const;
-
       operator const std::string &() const { return value; };
 
       /** Convert the token to a float_t if possible. If the token could not
@@ -141,8 +139,8 @@ namespace meat {
       operator double ();
 
     private:
-      token_t value_type;  /**< The type of token parsed */
-      std::string value;   /**< The value of the token. */
+      token_t value_type; /**< The type of token parsed */
+      std::string value;  /**< The value of the token. */
       Location _position; /**< Location of the token in the original text. */
     };
 
@@ -219,6 +217,8 @@ namespace meat {
 
       std::deque<Token> tokens;
 
+      bool get_uchar(std::string &destination);
+      void get_line(std::string &destination);
       void parse_line(const std::string &command, bool more = false);
 
     private:

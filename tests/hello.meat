@@ -63,3 +63,5 @@ Application subclass: Hello as: {
     context return: 0
   }
 }
+
+Library setApplicationClass: Hello

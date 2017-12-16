@@ -79,13 +79,13 @@ void meat::test::summary() {
     std::map<std::string, unsigned int>::iterator it;
     for (it = test_results.begin(); it != test_results.end(); it++) {
       if (it->second > 0) {
-	std::cout << "  " << it->first << "... FAILED" << std::endl;
-	failures++;
+        std::cout << "  " << it->first << "... FAILED" << std::endl;
+        failures++;
       }
     }
 
     std::cout << "  " << std::dec << failures << " of the tests failed."
-	      << std::endl;
+              << std::endl;
   }
 }
 

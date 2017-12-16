@@ -1,4 +1,4 @@
-# Build the archive that holds the TestSuite application.
+# Build the library that holds the TestSuite application.
 #
 # Copyright (c) 2017 Ron R Wills <ron.rwsoft@gmail.com>
 #
@@ -17,24 +17,40 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-archive = [Archive create: "tests.mapp"]
+Library requires: "UnitTest"
+Library requires: "Test.Characters"
+Library requires: "Test.Object"
+Library requires: "Test.Class"
+Library requires: "Test.BlockContext"
+Library requires: "Test.Null"
+Library requires: "Test.Exception"
+Library requires: "Test.Boolean"
+Library requires: "Test.Numeric"
+Library requires: "Test.Integer"
+Library requires: "Test.List"
+Library requires: "Test.Application"
 
-archive import: "UnitTest"
-archive import: "Test.Number"
-archive import: "Test.Text"
-archive import: "Test.Index"
-archive import: "Test.Data"
-archive import: "Test.Compiler"
+Application subclass: Tests as: {
 
-# Create the Test Suite.
-suite = [TestSuite new]
+	class method entry {
+		summary = [Test.Summary new]
 
-# Add all our tests to the test suite
-suite add: [Test.NumberBadness new]
-suite add: [Test.Text new]
-suite add: [Test.Index new]
-suite add: [Test.Data new]
-suite add: [Test.Compiler new]
+		summary addSuite: [Test.Object new]
+		summary addSuite: [Test.Class new]
+		summary addSuite: [Test.BlockContext new]
+		summary addSuite: [Test.Null new]
+		summary addSuite: [Test.Exception new]
+		summary addSuite: [Test.Boolean new]
+		summary addSuite: [Test.Numeric new]
+		summary addSuite: [Test.Integer new]
+		summary addSuite: [Test.List new]
+		summary addSuite: [Test.Characters new]
+		summary addSuite: [Test.Application new]
 
-# Add the Test Suite to the archive.
-archive setObject: suite
+		context return: [summary runAndSummarize]
+	}
+
+}
+
+# This currently doesn't work.
+Library setApplicationClass: Tests
