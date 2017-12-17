@@ -26,6 +26,9 @@
 
 namespace memory {
 
+  /** Garbage collector for recyclable objects.
+   * @todo Update for C++-11 standard
+   */
 	class gc {
 	public:
 		static std::size_t limit;
@@ -44,6 +47,9 @@ namespace memory {
 		static std::size_t free_size;
 	};
 
+  /** 
+   * @todo Update for C++-11 standard
+   */
 	class recyclable {
 	public:
 		void *operator new(std::size_t size) throw(std::bad_alloc);
@@ -74,7 +80,7 @@ namespace memory {
         : refs(irefs), wrefs(0), nobj(obj) {
       }
 
-      /* Destroy the native object. */
+      /** Destroy the native object. */
       virtual ~__reference() throw() {
         if (nobj) delete nobj;
       }
@@ -83,35 +89,35 @@ namespace memory {
 
       void free() {
         /* We have to set nobj to null before deleting it to prevent any kind
-        * of race conditions with weak pointers.
-        */
+         * of race conditions with weak pointers.
+         */
         Ty *obj = nobj;
         nobj = 0;
         delete obj;
       }
 
-      /* Increment the weak reference counter by 1. */
+      /** Increment the weak reference counter by 1. */
       void inc_weak_ref() { wrefs++; }
 
-      /* Decrease the weak reference counter by 1. */
+      /** Decrease the weak reference counter by 1. */
       void dec_weak_ref() { if (wrefs > 0) wrefs--; }
 
-      /* Get the current weak reference count. */
+      /** Get the current weak reference count. */
       const unsigned int __wref_cnt() const { return wrefs; }
 
-      /* Increment the reference counter by 1. */
+      /** Increment the reference counter by 1. */
       void inc_ref() { refs++; }
 
-      /* Decrease the reference counter by 1. */
+      /** Decrease the reference counter by 1. */
       void dec_ref() { refs--; }
 
-      /* Get the current reference count. */
+      /** Get the current reference count. */
       const unsigned int __ref_cnt() const { return refs; }
 
-      /* Cast this as a reference to the object being wrapped. */
+      /** Cast this as a reference to the object being wrapped. */
       operator Ty &() { return (Ty &)*nobj; }
 
-      /* Cast this as a pointer to the object being wrapped. */
+      /** Cast this as a pointer to the object being wrapped. */
       operator Ty*() { return (Ty *)nobj; }
 
     private:

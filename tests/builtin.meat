@@ -39,6 +39,8 @@ Library include: {
 
 #==============================================================================
 # Object Class
+#
+#
 
 Object subclass: Objectᶲ as: {
 
@@ -46,6 +48,7 @@ Object subclass: Objectᶲ as: {
     return new meat::Object(klass, properties);
   }
 
+  # 3.1.1
   class method == other {
     context return: [self is: other]
   }
@@ -76,6 +79,18 @@ Object subclass: Objectᶲ as: {
 
   class method type {
     context return: Class
+  }
+
+	class function weakReference {
+    return self.weak();
+  }
+
+  class function normalReference {
+    return self.normal();
+  }
+
+  class function isWeakReference {
+    return self.is_weak();
   }
 
   method initialize {
@@ -124,8 +139,12 @@ Object subclass: Objectᶲ as: {
     return self.weak();
   }
 
-  function reference {
+  function normalReference {
     return self.normal();
+  }
+
+  function isWeakReference {
+    return self.is_weak();
   }
 }
 

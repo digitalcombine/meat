@@ -65,6 +65,7 @@ tests.mlib: Test.Boolean.mlib Test.Numeric.mlib
 tests.mlib: Test.Integer.mlib
 tests.mlib: Test.List.mlib
 tests.mlib: Test.Application.mlib
+tests.mlib: builtin.cpp Datastore.cpp grinder.cpp
 tests.mlib: tests.meat
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ tests.meat
 

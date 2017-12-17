@@ -219,23 +219,6 @@ bool meat::grinder::Token::operator ==(const std::string &value) const {
   return (this->value == value);
 }
 
-/*meat::grinder::Token::operator std::string () const {
-  switch (value_type) {
-  case WORD:
-    return value;
-  case SUBST_STRING:
-  case LITRL_STRING:
-    return std::string("'") + value + "'";
-  case COMMAND:
-    return std::string("[") + value + "]";
-  case BLOCK:
-    return std::string("{") + value + "}";
-  case EOL:
-    return "0x210xb5";
-  };
-  return value;
-}*/
-
 /*****************************************
  * meat::grinder::Token::operator double *
  *****************************************/
@@ -446,21 +429,43 @@ std::string meat::grinder::Tokenizer::to_string() const {
   return result;
 }
 
-bool meat::grinder::Tokenizer::get_uchar(std::string &destination) {
-  char ch;
-  destination = "";
+/***************************************
+ * meat::grinder::Tokenizer::get_uchar *
+ ***************************************/
 
-  while (stream->get(ch)) {
-    destination += ch;
-    if ((ch & 0xc0) != 0x80) return stream->good();
+bool meat::grinder::Tokenizer::get_uchar(std::string &destination) {
+  char ch[5] = {0, 0, 0, 0, 0};
+
+  // Read in the first byte of the character.
+  destination.clear();
+  if (not stream->get(ch[0])) return stream->good();
+
+  /* Determine and read in more characters if necessary. This doesn't not
+   * check for UTF-8 correctness.
+   */
+  if ((ch[0] & 0x80) != 0) {
+    if ((ch[0] & 0xe0) == 0xc0) {
+      stream->get(ch[1]);
+    } else if ((ch[0] & 0xf0) == 0xe0) {
+      stream->get(&ch[1], 2);
+    } else if ((ch[0] & 0xf0) == 0xf0) {
+      stream->get(&ch[1], 3);
+    }
   }
+
+  // Return the results.
+  destination = ch;
   return stream->good();
 }
+
+/**************************************
+ * meat::grinder::Tokenizer::get_line *
+ **************************************/
 
 void meat::grinder::Tokenizer::get_line(std::string &destination) {
   std::string ch;
   while (get_uchar(ch)) {
-    if (ch == "\n" or ch == "\r\n" or ch == "\r" or ch == "\v" or ch == "\f")
+    if (ch == "\n" or ch == "\r" or ch == "\v" or ch == "\f")
       return;
     destination += ch;
   }
@@ -654,9 +659,17 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
   }
 }
 
+/****************************************
+ * meat::grinder::Tokenizer::operator[] *
+ ****************************************/
+
 meat::grinder::Token &meat::grinder::Tokenizer::operator[] (size_t index) {
   return tokens.at(index);
 }
+
+/*******************************************
+ * meat::grinder::Tokenizer::get_next_line *
+ *******************************************/
 
 void meat::grinder::Tokenizer::get_next_line() {
 
@@ -673,8 +686,8 @@ void meat::grinder::Tokenizer::get_next_line() {
     // Read a line from the file.
     std::string line;
 
-    std::getline(*stream, line);
-    //get_line(line);
+    //std::getline(*stream, line);
+    get_line(line);
     position.inc_line();
 
     if (cook_lines) {

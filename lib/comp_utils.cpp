@@ -29,7 +29,7 @@ static unsigned int is_numeric(const char *value) {
     // Devavagari Digits U+0966 - U+096F
     if (std::strcmp(value, "\xe0\xa5\xa6") >= 0 and
         std::strcmp(value, "\xe0\xa5\xaf") <= 0)
-      return 3;
+        return 3;
 
     // Bengali Digits U+09E6 - U+09EF
     if (std::strcmp(value, "\xe0\xa7\xa6") >= 0 and
@@ -621,6 +621,10 @@ static unsigned int to_numeric(const char *value) {
   return 0;
 }
 
+/************************************
+ * meat::grinder::Utils::is_integer *
+ ************************************/
+
 bool meat::grinder::Utils::is_integer(const std::string &value,
                                       int32_t &res) {
   bool neg = false;
@@ -652,6 +656,10 @@ bool meat::grinder::Utils::is_integer(const std::string &value,
 
   return true;
 }
+
+/**********************************
+ * meat::grinder::Utils::is_float *
+ **********************************/
 
 bool meat::grinder::Utils::is_float(const std::string &value, double &res) {
   const char *s_value = value.c_str();
