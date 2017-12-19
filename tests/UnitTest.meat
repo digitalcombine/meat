@@ -82,8 +82,9 @@ Object subclass: Test.Test as: {
 
   # Fail and exit the test, setting the reason why.
   method fail: reason {
+    #Console writeLn: ["DEBUG: failed " + reason]
     _passed = [Boolean false]
-    _failReason = reason
+    _failedReason = reason
     _test return
   }
 }
