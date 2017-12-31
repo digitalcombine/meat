@@ -5,15 +5,15 @@ The class Class is the base type for all Class objects.
 
 \begin{lstlisting}
 Object subClass: Class body: {
-  class method subClass: name as: definition
+  class method subclass: name as: definition
   class method newObject
   class method superClass
   class method initialize
-  method getName
+  method name
 }
 \end{lstlisting}
 
-\subsubsection{class method subClass: name as: definition}
+\subsubsection{class method subclass: name as: definition}
 This method should raise an Exception. The functionality for this method is to be provided by a compiler library. How a compiler library hooks in the functionality is up to the underlying implementation and is not defined here.
 
 \subsubsection{class method newObject}
@@ -43,5 +43,5 @@ When a library is loaded and the class is unserialized, this method is messaged 
   }
 \end{lstlisting}
 
-\subsubsection{method getName}
+\subsubsection{method name}
 Returns the Text representation of the class name.

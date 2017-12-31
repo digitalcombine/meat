@@ -1,9 +1,9 @@
 \subsection {Object Class}
 
-The Object class is the base class for all objects and classes in the Meat virtual machine.
+The Object class is the base class for all objects and classes.
 
 \begin{lstlisting}
-Object subClass: Object body: {
+Object subclass: Object body: {
   class method == other
   class method <> other
   class method is: other
@@ -12,9 +12,14 @@ Object subClass: Object body: {
   class method isClass
   class method isNull
   class method type
+  class method isType: class
+  class method weakReference
+  class method normalReference
+  class method isWeakReference
   method initialize
+  method cleanup
   method == other
-  method != other
+  method <> other
   method is: other
   method isNot: other
   method isObject
@@ -22,7 +27,9 @@ Object subClass: Object body: {
   method isNull
   method type
   method isType: class
-  method weak
+  method weakReference
+  method normalReference
+  method isWeakReference
 }
 \end{lstlisting}
 
@@ -102,6 +109,40 @@ Tests if the object or class is the Null object. These methods always return the
 Returns the class for the object. The class method always returns the class Class.
 
 \hfill
+\subsubsection {The isType methods}
+\begin{lstlisting}
+class method isType: type
+method isType: type
+\end{lstlisting}
+
+\hfill
+\subsubsection {The weakReference methods}
+\begin{lstlisting}
+  class method weakReference 
+  method weakReference
+\end{lstlisting}
+
+Returns a reference to the object that does not affect the normal memory management reference counting.
+
+\hfill
+\subsubsection {The normalReference methods}
+\begin{lstlisting}
+  class method normalReference
+  method normalReference
+\end{lstlisting}
+
+Returns a reference to the object that does the normal memory management reference counting.
+
+\hfill
+\subsubsection {The isWeakReference methods}
+\begin{lstlisting}
+class method isWeakReference
+method isWeakReference
+\end{lstlisting}
+
+Returns the true object if the object reference is a weak reference otherwise the false object is returned.
+
+\hfill
 \subsubsection {method initialize}
 When a class creates a new object
 (\hyperref[sec:class_method_newobject]{see newObject method}) this method is messaged to populate the objects properties with default values. By default, the properties of a new object are all initially set to the Null object. This method can be overridden by sub-classes to set it's properties to something other than null and must always message the super class initialize method.
@@ -113,6 +154,4 @@ When a class creates a new object
   }
 \end{lstlisting}
 
-\subsubsection {method weak}
-
-Returns a weak reference to the object that does not affect the normal memory management reference counting.
+\subsubsection {method cleanup}

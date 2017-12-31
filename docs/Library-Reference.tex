@@ -1,7 +1,7 @@
 \subsection{Library Class}
 
 \begin{lstlisting}
-Object subClass: Library body: {
+Object subclass: Library body: {
   class method exists: libraryName
   class method import: libraryName
   class method requires: libraryName
@@ -16,6 +16,7 @@ Object subClass: Library body: {
 Checks every search path directory for the library given by \textit{libraryName} and return the true Boolean object if the library was found otherwise it returns the false Boolean object.
 
 \subsubsection{class method import:}
+Loads 
 
 \subsubsection{class method requires:}
-By default this method always throws an Exception. This method should be hooked when a compiler is loaded.
+This method is implemented by a compiler when loaded, import a library and add it as a requirement for the new compiled library. When a compiler is not loaded then an Exception is raised.
