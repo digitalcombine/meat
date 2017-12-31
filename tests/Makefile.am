@@ -63,6 +63,7 @@ tests.mlib: Test.BlockContext.mlib
 tests.mlib: Test.Null.mlib Test.Exception.mlib
 tests.mlib: Test.Boolean.mlib Test.Numeric.mlib
 tests.mlib: Test.Integer.mlib
+tests.mlib: Test.Text.mlib
 tests.mlib: Test.List.mlib
 tests.mlib: Test.Application.mlib
 tests.mlib: builtin.cpp Datastore.cpp grinder.cpp

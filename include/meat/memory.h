@@ -29,37 +29,37 @@ namespace memory {
   /** Garbage collector for recyclable objects.
    * @todo Update for C++-11 standard
    */
-	class gc {
-	public:
-		static std::size_t limit;
-		static time_t collection_age;
+  class gc {
+  public:
+    static std::size_t limit;
+    static time_t collection_age;
 
-		static void *alloc(std::size_t size) throw(std::bad_alloc);
+    static void *alloc(std::size_t size) throw(std::bad_alloc);
 
-		static void recycle(void *ptr) throw();
+    static void recycle(void *ptr) throw();
 
-		static void collect(void);
+    static void collect(void);
 
-		static void collect_all(void);
+    static void collect_all(void);
 
-	private:
-		static std::multimap<std::size_t, void *> free_memory;
-		static std::size_t free_size;
-	};
+  private:
+    static std::multimap<std::size_t, void *> free_memory;
+    static std::size_t free_size;
+  };
 
-  /** 
+  /**
    * @todo Update for C++-11 standard
    */
-	class recyclable {
-	public:
-		void *operator new(std::size_t size) throw(std::bad_alloc);
+  class recyclable {
+  public:
+    void *operator new(std::size_t size) throw(std::bad_alloc);
 
-		void *operator new[](std::size_t size) throw(std::bad_alloc);
+    void *operator new[](std::size_t size) throw(std::bad_alloc);
 
-		void operator delete(void *ptr) throw();
+    void operator delete(void *ptr) throw();
 
-		void operator delete[](void *ptr) throw();
-	};
+    void operator delete[](void *ptr) throw();
+  };
 
   template <typename Ty>
   class reference : public recyclable {
@@ -143,7 +143,7 @@ namespace memory {
     /** Default copy constructor.
      */
     reference(const reference<Ty> &obj)
-			: weak_ref(obj.weak_ref), obj(obj.obj) {
+      : weak_ref(obj.weak_ref), obj(obj.obj) {
       inc_reference();
     }
 
@@ -174,7 +174,7 @@ namespace memory {
       return (obj ? obj->__ref_cnt() : 0);
     }
 
-		unsigned int weak_references(void) {
+    unsigned int weak_references(void) {
       return (obj ? obj->__wref_cnt() : 0);
     }
 
@@ -195,7 +195,7 @@ namespace memory {
       return result;
     }
 
-		/** Creates a new normal reference.
+    /** Creates a new normal reference.
      */
     reference normal(void) {
       reference result;
@@ -309,8 +309,8 @@ namespace memory {
           obj->dec_weak_ref();
           if (obj->__ref_cnt() == 0 and obj->__wref_cnt() == 0) {
             delete obj;
-						obj = 0;
-					}
+            obj = 0;
+          }
         } else {
           obj->dec_ref();
           if (!obj->__ref_cnt()) {
@@ -318,8 +318,8 @@ namespace memory {
               obj->free();
             else {
               delete obj;
-							obj = 0;
-						}
+              obj = 0;
+            }
           }
         }
       }

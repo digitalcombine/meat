@@ -27,6 +27,7 @@ Library requires: "Test.Exception"
 Library requires: "Test.Boolean"
 Library requires: "Test.Numeric"
 Library requires: "Test.Integer"
+Library requires: "Test.Text"
 Library requires: "Test.List"
 Library requires: "Test.Application"
 
@@ -43,6 +44,7 @@ Application subclass: Tests as: {
 		summary addSuite: [Test.Boolean new]
 		summary addSuite: [Test.Numeric new]
 		summary addSuite: [Test.Integer new]
+		summary addSuite: [Test.Text new]
 		summary addSuite: [Test.List new]
 		summary addSuite: [Test.Characters new]
 		summary addSuite: [Test.Application new]

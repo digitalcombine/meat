@@ -25,7 +25,7 @@
 #endif
 
 /******************************************************************************
- * Location Class
+ * meat::grinder::Location Class
  */
 
 /*************************************
@@ -64,21 +64,29 @@ void meat::grinder::Location::inc_offset(uint32_t amount) {
   _offset += amount;
 }
 
-/*************************************
- * meat::grinder::Location::inc_line *
- *************************************/
+/***********************************
+ * meat::grinder::Location::offset *
+ ***********************************/
 
 void meat::grinder::Location::offset(uint32_t position) {
   _offset = position;
 }
 
-/*************************************
- * meat::grinder::Location::inc_line *
- *************************************/
+/**********************************
+ * meat::grinder::Location::reset *
+ **********************************/
 
 void meat::grinder::Location::reset() {
   _line = 0;
   _offset = 0;
+}
+
+/***********************************
+ * meat::grinder::Location::rewind *
+ ***********************************/
+
+void meat::grinder::Location::rewind() {
+  --_line;
 }
 
 /***************************************
@@ -115,7 +123,7 @@ std::ostream &meat::grinder::operator << (std::ostream &out,
 }
 
 /******************************************************************************
- * Token Class
+ * meat::grinder::Token Class
  */
 
 /********************************
@@ -198,6 +206,32 @@ void meat::grinder::Token::subst() {
   }
 }
 
+/******************************
+ * meat::grinder::Token::type *
+ ******************************/
+
+meat::grinder::Token::token_t
+meat::grinder::Token::type() const {
+  return value_type;
+}
+
+/*********************************
+ * meat::grinder::Token::is_type *
+ *********************************/
+
+bool meat::grinder::Token::is_type(token_t value_type) const {
+  return (this->value_type == value_type);
+}
+
+/**********************************
+ * meat::grinder::Token::position *
+ **********************************/
+
+const meat::grinder::Location &
+meat::grinder::Token::position() const {
+  return _position;
+}
+
 /************************************
  * meat::grinder::Token::operator = *
  ************************************/
@@ -228,7 +262,23 @@ meat::grinder::Token::operator double () {
 }
 
 /******************************************************************************
- * Tokens Class Implementation
+ * meat::grinder::SyntaxException Class
+ */
+
+meat::grinder::SyntaxException::SyntaxException(const Token &token,
+                                                const std::string &message)
+  : meat::Exception(meat::Class::resolve("Grinder.SyntaxException"), 2),
+    token(token) {
+  this->property(0) = new Text(std::string("Syntax Error (") +
+                               (std::string)token.position() + ") " +
+                               message);
+}
+
+meat::grinder::SyntaxException::~SyntaxException() noexcept {
+}
+
+/******************************************************************************
+ * meat::grinder::Tokenizer Class
  */
 
 /************************
@@ -276,7 +326,7 @@ void meat::grinder::Tokenizer::push() {
 
   if (not current.is_type(Token::COMMAND) and
       not current.is_type(Token::BLOCK)) {
-    throw Exception("Internal error reparsing token");
+    throw SyntaxException(current, "Internal error reparsing token");
   }
 
   tokens.pop_front();
@@ -285,6 +335,7 @@ void meat::grinder::Tokenizer::push() {
   stream = new std::stringstream((const std::string &)current);
   remaining = "";
   position = current.position();
+  position.rewind(); // Backup the line position by one.
   tokens.clear();
 
   get_next_line();
@@ -370,18 +421,20 @@ bool meat::grinder::Tokenizer::expect(size_t index, Token::token_t id,
 void meat::grinder::Tokenizer::permit(Token::token_t id) {
   if (expect(id)) next();
   else
-    throw Exception((const std::string &)tokens.front().position() +
-                    ": Got unexpected value of " +
-                    (std::string &)tokens.front());
+    throw SyntaxException(tokens.front(),
+                          (const std::string &)tokens.front().position() +
+                          ": Got unexpected value of " +
+                          (std::string &)tokens.front());
 }
 
 void meat::grinder::Tokenizer::permit(Token::token_t id,
                                       const std::string &value) {
   if (expect(id, value)) next();
   else
-    throw Exception((const std::string &)tokens.front().position() +
-                    ": Got unexpected value of " +
-                    (std::string &)tokens.front());
+    throw SyntaxException(tokens.front(),
+                          (const std::string &)tokens.front().position() +
+                          ": Got unexpected value of " +
+                          (std::string &)tokens.front());
 }
 
 /**********************************
@@ -465,8 +518,11 @@ bool meat::grinder::Tokenizer::get_uchar(std::string &destination) {
 void meat::grinder::Tokenizer::get_line(std::string &destination) {
   std::string ch;
   while (get_uchar(ch)) {
-    if (ch == "\n" or ch == "\r" or ch == "\v" or ch == "\f")
+    if (ch == "\n" or ch == "\r" or ch == "\v" or ch == "\f"
+        or ch == "\u2028" or ch == "\u2029") {
+      position.inc_line();
       return;
+    }
     destination += ch;
   }
 }
@@ -526,7 +582,11 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
               command_done = true;
               return;
             } else
-              throw meat::Exception(
+              throw SyntaxException(
+                Token(command.substr(t_begin + 1,
+                                     t_end - t_begin - 1),
+                      Token::COMMAND,
+                      position),
                 std::string("Syntax error: Missing closing bracket "
                             "\"]\""));
           }
@@ -587,8 +647,11 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
 
           // Found a new line.
           if (command[t_end] == '\n')
-            throw meat::Exception("Syntax error: Multiline text constant not"
-                                   " allowed");
+            throw SyntaxException(Token(command.substr(t_begin + 1,
+                                                       t_end - t_begin - 1),
+                                        Token::SUBST_STRING,
+                                        position),
+                                  "Multiline text constant not allowed");
 
           // Incomplete string, but not a syntax error yet.
           if (t_end >= command.length()) {
@@ -616,8 +679,11 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
           t_end += 1;
 
           if (command[t_end] == '\n')
-            throw meat::Exception("Syntax error: Multiline text constant not"
-                                   " allowed");
+            throw SyntaxException(Token(command.substr(t_begin + 1,
+                                                       t_end - t_begin - 1),
+                                        Token::LITRL_STRING,
+                                        position),
+                                  "Multiline text constant not allowed");
 
           if (t_end >= command.length()) {
             command_done = true;
@@ -686,16 +752,12 @@ void meat::grinder::Tokenizer::get_next_line() {
     // Read a line from the file.
     std::string line;
 
-    //std::getline(*stream, line);
     get_line(line);
-    position.inc_line();
 
     if (cook_lines) {
       // Just skip over comments.
-      if (line[line.find_first_not_of(" \n\r\t")] == '#') {
-        position.inc_line();
+      if (line[line.find_first_not_of(" \n\r\t")] == '#')
         continue;
-      }
 
       // Trim any trailing white space
       line.erase(line.find_last_not_of(" \t") + 1);
@@ -714,7 +776,6 @@ void meat::grinder::Tokenizer::get_next_line() {
 #endif /* DEBUG */
         parse_line(line + '\n');
       } else {
-        position.inc_line();
         continue;
       }
     } else { // not cook_lines
@@ -732,12 +793,24 @@ void meat::grinder::Tokenizer::get_next_line() {
  * Language Class Implementation
  */
 
+/***********************************
+ * meat::grinder::Grammer::Grammer *
+ ***********************************/
+
 meat::grinder::Grammer::Grammer() {
   curr_line = 0;
 }
 
+/************************************
+ * meat::grinder::Grammer::~Grammer *
+ ************************************/
+
 meat::grinder::Grammer::~Grammer() throw() {
 }
+
+/***********************************
+ * meat::grinder::Grammer::execute *
+ ***********************************/
 
 void meat::grinder::Grammer::execute(std::istream &code) {
   tokens.parse(code);
@@ -757,14 +830,9 @@ void meat::grinder::Grammer::execute(const std::string &code) {
   }
 }
 
-void meat::grinder::Grammer::execute(const Token &token) {
-  tokens.parse(token);
-  while (tokens.is_more()) {
-    if (tokens.is_complete() and tokens.count() > 0) {
-      command();
-    }
-  }
-}
+/***********************************
+ * meat::grinder::Grammer::command *
+ ***********************************/
 
 void meat::grinder::Grammer::command() {
 }

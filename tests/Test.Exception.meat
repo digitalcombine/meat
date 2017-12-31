@@ -53,7 +53,7 @@ Test.Suite subclass: Test.Exception as: {
         Exception throw: "Exception was not caught by the try clause"
         self fail: "Exception thrown but not caught"
       } catch: .error do: {
-        [[.error message] != "Exception was not caught by the try clause"] isTrue: {
+        [[.error message] <> "Exception was not caught by the try clause"] isTrue: {
           self fail: "Didn't receive the correct error message"
         }
         self pass

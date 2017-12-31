@@ -361,6 +361,7 @@ void grinder::Library::set_application_class(meat::Reference klass) {
 Reference grinder::Library::message() {
   Reference object;
   std::string message;
+  Token mesgt = tokens[0];
 
   std::string class_name = (std::string)(tokens[0]);
   tokens.permit(Token::WORD);
@@ -387,18 +388,22 @@ Reference grinder::Library::message() {
         parameters.push_back(this->message());
         tokens.pop();
       } else {
-        throw Exception("Unexpected token in message");
+        throw SyntaxException(tokens[0], "Unexpected token in message");
       }
     }
   }
   tokens.next(); // Remove EOL.
 
-  Reference new_context = meat::message(object, method_name, context);
-  for (unsigned int idx = 0; idx < parameters.size(); ++idx) {
-    cast<Context>(new_context).parameter(idx, parameters[idx]);
+  try {
+    Reference new_context = meat::message(object, method_name, context);
+    for (unsigned int idx = 0; idx < parameters.size(); ++idx) {
+      cast<Context>(new_context).parameter(idx, parameters[idx]);
+    }
+    context = new_context;
+    Reference result = meat::execute(context);
+  } catch (Exception err) {
+    throw SyntaxException(mesgt, err.what());
   }
-  context = new_context;
-  Reference result = meat::execute(context);
   context = cast<Context>(context).messenger();
   return result;
 }
@@ -1587,4 +1592,3 @@ grinder::ast::Value *grinder::Method::text_constant() {
     throw Exception("Was expecting string constant");
   }
 }
-

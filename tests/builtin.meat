@@ -29,7 +29,6 @@ Library include: {
 
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 #include <sstream>
 
 #ifdef TESTING
@@ -38,8 +37,7 @@ Library include: {
 }
 
 #==============================================================================
-# Object Class
-#
+# 3.1 Object Class
 #
 
 Object subclass: Objectᶲ as: {
@@ -53,80 +51,105 @@ Object subclass: Objectᶲ as: {
     context return: [self is: other]
   }
 
+	# 3.1.2
   class method <> other {
     context return: [self isNot: other]
   }
 
+	# 3.1.3
   class function is: other {
     return Boolean(self == other);
   }
 
+	# 3.1.4
   class function isNot: other {
     return Boolean(not (self == other));
   }
 
+	# 3.1.5
   class method isObject {
     context return: [Boolean false]
   }
 
+	# 3.1.6
   class method isClass {
     context return: [Boolean true]
   }
 
+	# 3.1.7
   class method isNull {
     context return: [Boolean false]
   }
 
+	# 3.1.8
   class method type {
     context return: Class
   }
 
-	class function weakReference {
+	# 3.1.9
+	class method isType: type {
+		context return: [Class == type]
+	}
+
+	# 3.1.10
+  class function weakReference {
     return self.weak();
   }
 
+	# 3.1.11
   class function normalReference {
     return self.normal();
   }
 
+	# 3.1.12
   class function isWeakReference {
-    return self.is_weak();
+    return Boolean(self.is_weak());
   }
 
+	# 3.1.13
   method initialize {
   }
 
-  method cleanUp {
+	# 3.1.14
+  method cleanup {
   }
 
+	# 3.1.1
   method == other {
     context return: [self is: other]
   }
 
+	# 3.1.2
   method <> other {
     context return: [self isNot: other]
   }
 
+	# 3.1.3
   function is: other {
     return Boolean(self == other);
   }
 
+	# 3.1.4
   function isNot: other {
     return Boolean(not (self == other));
   }
 
+	# 3.1.5
   method isObject {
     context return: [Boolean true]
   }
 
+	# 3.1.6
   method isClass {
     context return: [Boolean false]
   }
 
+	# 3.1.8
   function type {
     return self->type();
   }
 
+	# 3.1.9
   function isType: type {
     return Boolean(self->is_type(type));
   }
@@ -135,21 +158,24 @@ Object subclass: Objectᶲ as: {
     context return: [Boolean false]
   }
 
+	# 3.1.10
   function weakReference {
     return self.weak();
   }
 
+	# 3.1.11
   function normalReference {
     return self.normal();
   }
 
+	# 3.1.12
   function isWeakReference {
-    return self.is_weak();
+    return Boolean(self.is_weak());
   }
 }
 
 #==============================================================================
-# Class Class
+# 3.2 Class Class
 
 Object subclass: Classᶲ as: {
 
@@ -901,80 +927,244 @@ Object subclass: Textᶲ as: {
     new meat::Text(klass, properties);
   }
 
+	# 3.11.1
   function isEmpty {
-    return (TEXT(self).empty() ? meat::True() : meat::False());
+    return Boolean(cast<Text>(self).empty());
   }
 
+	# 3.11.2
   function length {
-    unsigned int len = 0;
-    meat::Text &str = TEXT(self);
+    std::int32_t length = 0;
+    utf8::Iterator it(cast<const Text>(self));
+    for (; it != it.end(); ++it, ++length);
 
-    // Count UTF-8 characters not bytes.
-    for (unsigned int i = 0; str[i]; ++i)
-      if ((str[i] & 0xC0) != 0x80) len++;
-
-    return new meat::Value((meat::int32_t)len);
+    return new Value(length);
   }
 
+	# 3.11.3
   function getCharAt: index {
-    return new meat::Text(&(TEXT(self)[INTEGER(index) - 1]));
+    int i = INTEGER(index);
+
+    if (i <= 0) throw Exception("Text character index out of range");
+
+    utf8::Iterator it(cast<const Text>(self));
+    for (; it != it.end() and i > 1; ++it, --i);
+
+    if (it == it.end())
+      throw Exception("Text character index out of range");
+
+    return new Text(*it);
   }
 
-  function get: start to: end {
-    meat::int32_t start_pos = INTEGER(start) - 1;
-    meat::int32_t len = INTEGER(end) - start_pos;
+	# 3.11.4
+  function getFrom: start count: end {
+    int start_idx = INTEGER(index);
+    int end_count = INTEGER(end);
 
-    meat::Text *new_string = new meat::Text();
-    (*new_string) += TEXT(self).substr(start_pos, len);
-    return new_string;
+    // Make sure the starting index is in range.
+    if (start_idx <= 0)
+      throw Exception("Text character index out of range");
+
+    utf8::Iterator it(cast<const Text>(self));
+    for (; it != it.end() and start_idx > 1; ++it, --start_idx);
+
+    if (it == it.end())
+      throw Exception("Text character index out of range");
+
+    utf8::Iterator start_it(it);
+
+    for (; it != it.end() and end > 1; ++it, --end);
+
+    return new Text(utf8::substr(start_it, it));
   }
 
+	# 3.11.5
+	function replaceFrom: start count: end with: value {
+		int start_idx = INTEGER(start);
+  	int end_count = INTEGER(end);
+
+		// Make sure the starting index is in range.
+    if (start_idx <= 0)
+      throw Exception("Text character index out of range");
+
+    utf8::Iterator it(cast<const Text>(self));
+    for (; it != it.end() and start_idx > 1; ++it, --start_idx);
+
+    if (it == it.end())
+      throw Exception("Text character index out of range");
+
+    utf8::Iterator start_it(it);
+
+    for (; it != it.end() and end > 1; ++it, --end);
+
+		return new Text(utf8::replace(start_it, it, cast<Text>(value)));
+	}
+
+	# 3.11.6
+	function replaceAll: text with: value {
+	  const std::string &tvalue = cast<const Text>(text);
+		const std::string &vvalue = cast<const Text>(value);
+	  std::string result = cast<Text>(self);
+
+		size_t index = result.find(tvalue);
+		while (index != std::string::npos) {
+			result.replace(index, tvalue.length(), vvalue);
+			index = result.find(tvalue, index + vvalue.length());
+		}
+
+		return new Text(result);
+	}
+
+	# 3.11.7
+  function findFirst: value {
+    std::int32_t index = 1;
+    utf8::Iterator first_char(cast<const Text>(value));
+    utf8::Iterator it(cast<const Text>(self));
+
+    for (; it != it.end(); ++it, ++index) {
+      if ((*it == *first_char) and
+          (cast<Text>(self).compare(it.position(),
+                                    cast<Text>(value).length(),
+                                    cast<Text>(value)) == 0)) {
+        return new Value(index);
+      }
+    }
+
+    return new Value(0);
+  }
+
+	# 3.11.8
+  function findFirst: value at: index {
+		std::int32_t result = 1;
+  	utf8::Iterator first_char(cast<const Text>(value));
+  	utf8::Iterator it(cast<const Text>(self));
+
+    int start_idx = INTEGER(index);
+
+    // Make sure the starting index is in range.
+    if (start_idx <= 0)
+      throw Exception("Text character index out of range");
+
+    for (; it != it.end() and start_idx > 1; ++it, --start_idx, ++result);
+
+    if (it == it.end())
+      throw Exception("Text character index out of range");
+
+    for (; it != it.end(); ++it, ++result) {
+      if ((*it == *first_char) and
+          (cast<Text>(self).compare(it.position(),
+                                    cast<Text>(value).length(),
+                                    cast<Text>(value)) == 0)) {
+        return new Value(result);
+      }
+    }
+
+    return new Value(0);
+  }
+
+	# 3.11.9
+  function findLast: value {
+    return null;
+  }
+
+	# 3.11.10
+	function findLast: value at: index {
+	  return null;
+	}
+
+	# 3.11.11
+  function forEach: character do: block {
+    std::uint8_t local_id = INTEGER(character);
+    cast<Context>(block).messenger(context);
+
+    utf8::Iterator it(cast<const Text>(self));
+    for (; it != it.end(); ++it) {
+      cast<BlockContext>(block).set_break_trap();
+      cast<Context>(block).local(local_id) = new Text(*it);
+      execute(block);
+
+      if (cast<BlockContext>(block).break_called()) break;
+      else cast<BlockContext>(block).reset();
+    }
+    cast<BlockContext>(block).reset();
+
+    return null;
+  }
+
+	# 3.11.12
+	method asLowercase {
+	  context return: self
+	}
+
+	# 3.11.13
+	method asUppercase {
+	  context return: self
+	}
+
+	# 3.11.14
+	function copy {
+    return new Text(cast<Text>(self));
+  }
+
+	# 3.11.15
+	function asNumber {
+	  return null;
+	}
+
+	# 3.11.16
+	function asInteger {
+	  return null;
+	}
+
+	# 3.11.17
+	method asText {
+    context return: self
+  }
+
+	# 3.11.18
   function == other {
-    return (TEXT(self).compare(TEXT(other)) == 0 ?
-      meat::BTrue() : meat::BFalse());
+    return Boolean(cast<Text>(self).compare(cast<Text>(other)) == 0);
   }
 
+	# 3.11.19
   function <> other {
-    return (TEXT(self).compare(TEXT(other)) != 0 ?
-      meat::BTrue() : meat::BFalse());
+    return Boolean(cast<Text>(self).compare(cast<Text>(other)) != 0);
   }
 
+	# 3.11.20
   function < other {
-    return (TEXT(self).compare(TEXT(other)) < 0 ?
-      meat::BTrue() : meat::BFalse());
+    return Boolean(cast<Text>(self).compare(cast<Text>(other)) < 0);
   }
 
+	# 3.11.21
   function <= other {
-    return (TEXT(self).compare(TEXT(other)) <= 0 ?
-      meat::BTrue() : meat::BFalse());
+    return Boolean(cast<Text>(self).compare(cast<Text>(other)) <= 0);
   }
 
+	# 3.11.22
   function > other {
-    return (TEXT(self).compare(TEXT(other)) > 0 ?
-      meat::BTrue() : meat::BFalse());
+    return Boolean(cast<Text>(self).compare(cast<Text>(other)) > 0);
   }
 
+	# 3.11.23
   function >= other {
-    return (TEXT(self).compare(TEXT(other)) >= 0 ?
-      meat::BTrue() : meat::BFalse());
+    return Boolean(cast<Text>(self).compare(cast<Text>(other)) >= 0);
   }
 
+	# 3.11.24
   function + other {
-    return new meat::Text(TEXT(self) +  TEXT(other));
+    return new Text(cast<Text>(self) + cast<Text>(other));
   }
 
+	# 3.11.25
   function * count {
-    meat::int32_t cnt_value = INTEGER(count);
-    meat::Text *result = new meat::Text();
+    std::int32_t cnt_value = INTEGER(count);
+    Text *result = new Text();
 
-    for (int c = 0; c < cnt_value; c++)
-      (*result) += TEXT(self);
+    for (std::int_fast32_t c = 0; c < cnt_value; ++c)
+      (*result) += cast<Text>(self);
 
     return result;
-  }
-
-  method asText {
-    context return: self
   }
 }
 

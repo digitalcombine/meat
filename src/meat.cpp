@@ -1210,7 +1210,7 @@ const char* meat::Exception::what() const throw() {
 }
 
 /******************************************************************************
- * Value Class Implemenation
+ * meat::Value Class
  */
 
 /**********************

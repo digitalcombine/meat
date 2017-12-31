@@ -29,6 +29,32 @@ Library include: {
 }
 
 #==============================================================================
+# Grinder.SyntaxException Class
+
+Exception subclass: Grinder.SyntaxExceptionᶲ as: {
+
+	function line {
+		return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).line()));
+	}
+
+	function character {
+		return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).character()));
+	}
+
+	class method throw {
+		Exception throw
+	}
+
+	class method throw: message {
+		Exception throw: message
+	}
+
+	class method throw: message for: ctx {
+    Exception throw: message for: ctx
+  }
+}
+
+#==============================================================================
 # Grinder.Library Class
 
 Object subclass: Grinder.Libraryᶲ as: {

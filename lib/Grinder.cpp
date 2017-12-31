@@ -26,6 +26,73 @@ using namespace meat;
 #define null (meat::Null())
 
 /******************************************************************************
+ * Grinder.SyntaxException Class
+ */
+
+// method character
+static Reference Grinder_SyntaxException_om_character(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+
+  return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).character()));
+}
+
+// method line
+static Reference Grinder_SyntaxException_om_line(Reference context) {
+  Reference self = cast<Context>(context).self();
+  Reference klass = cast<Context>(context).klass();
+
+  return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).line()));
+}
+
+static meat::vtable_entry_t Grinder_SyntaxExceptionMethods[] = {
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x0032aff4, 0x384d5eee, VTM_NATIVE  , 0, Grinder_SyntaxException_om_line},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x38b735d9, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x38eb0035, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x5d3c5a1d, 0x384d5eee, VTM_NATIVE  , 0, Grinder_SyntaxException_om_character},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
+};
+
+static meat::vtable_entry_t Grinder_SyntaxExceptionCMethods[] = {
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x003675df, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x0693a6e6, 0x0e394025, VTM_BYTECODE, 5, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x4be13615, 0x0e394025, VTM_BYTECODE, 6, {(meat::method_ptr_t)14}},
+  {0x4e48308e, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6db68ab6, 0x0e394025, VTM_BYTECODE, 7, {(meat::method_ptr_t)29}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7bebbd56, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
+};
+
+static std::uint8_t Grinder_SyntaxExceptionBytecode[] = {
+  0x13, 0x04, 0x4f, 0xc2, 0x61, 0x66, 0x01, 0x04, 0x06, 0x93, 0xa6, 0xe6, 0x00,
+  0x0b, 0x13, 0x05, 0x4f, 0xc2, 0x61, 0x66, 0x01, 0x05, 0x4b, 0xe1, 0x36, 0x15,
+  0x01, 0x04, 0x0b, 0x13, 0x06, 0x4f, 0xc2, 0x61, 0x66, 0x01, 0x06, 0x6d, 0xb6,
+  0x8a, 0xb6, 0x02, 0x04, 0x05, 0x0b
+};
+
+/******************************************************************************
  * Grinder.Library Class
  */
 
@@ -374,16 +441,16 @@ static std::uint8_t Grinder_MethodBytecode[] = {
 };
 
 static std::uint8_t Symbols[] = {
-  "+\0==\0Grinder.Class\0Grinder.Library\0Grinder.Method\0addClass:\0"
-  "addClassMethod:\0addClassProperty:\0addMethod:\0addParameter:\0"
-  "addProperty:\0append:\0asText\0compile\0copy\0forEach:do:\0getBody\0"
-  "getClass:\0getClassList\0getClassMethodList\0getClassPropertiesList\0"
-  "getImportList\0getMethodList\0getName\0getParameterList\0"
-  "getPropertiesList\0getSuperName\0import:\0initialize\0isNative\0isNative:\0"
-  "isTrue:\0new\0new:\0newObject\0push:\0remove:\0removeClass:\0"
-  "removeClassMethod:\0removeImport:\0removeMethod:\0removeParameter:\0"
-  "renameTo:\0return:\0setApplicationClass:\0setBody:\0subClass:as:\0throw:\0"
-  "\0"
+  "+\0==\0Grinder.Class\0Grinder.Library\0Grinder.Method\0"
+  "Grinder.SyntaxException\0addClass:\0addClassMethod:\0addClassProperty:\0"
+  "addMethod:\0addParameter:\0addProperty:\0append:\0asText\0character\0"
+  "compile\0copy\0forEach:do:\0from:subclass:\0getBody\0getClass:\0"
+  "getClassList\0getClassMethodList\0getClassPropertiesList\0getImportList\0"
+  "getMethodList\0getName\0getParameterList\0getPropertiesList\0getSuperName\0"
+  "import:\0initialize\0isNative\0isNative:\0isTrue:\0line\0new\0new:\0"
+  "newObject\0push:\0remove:\0removeClass:\0removeClassMethod:\0"
+  "removeImport:\0removeMethod:\0removeParameter:\0renameTo:\0return:\0"
+  "setApplicationClass:\0setBody:\0throw\0throw:\0throw:for:\0\0"
 };
 
 /******************************************************************************
@@ -396,7 +463,14 @@ extern "C" {
 void init_Grinder(meat::data::Library &library) {
   meat::Class *cls;
 
-  /* Create the Comiler.Library class. */
+  // Create the Grinder.SyntaxException class.
+  cls = new meat::Class("Exception", 2);
+  cls->set_vtable(18, Grinder_SyntaxExceptionMethods, meat::STATIC);
+  cls->set_class_vtable(16, Grinder_SyntaxExceptionCMethods, meat::STATIC);
+  cls->bytecode(45, Grinder_SyntaxExceptionBytecode, meat::STATIC);
+  library.add(cls, "Grinder.SyntaxException");
+
+  // Create the Grinder.Library class.
   cls = new meat::Class("Object", 5);
   cls->set_constructor(Grinder_Library_constructor);
   cls->set_vtable(23, Grinder_LibraryMethods, meat::STATIC);
@@ -404,7 +478,7 @@ void init_Grinder(meat::data::Library &library) {
   cls->bytecode(369, Grinder_LibraryBytecode, meat::STATIC);
   library.add(cls, "Grinder.Library");
 
-  /* Create the Compiler.Class class */
+  // Create the Grinder.Class class
   cls = new meat::Class("Object", 8);
   cls->set_constructor(Grinder_Class_constructor);
   cls->set_vtable(25, Grinder_ClassMethods, meat::STATIC);
@@ -412,7 +486,7 @@ void init_Grinder(meat::data::Library &library) {
   cls->bytecode(290, Grinder_ClassBytecode, meat::STATIC);
   library.add(cls, "Grinder.Class");
 
-  /* Create the Compiler.Method class. */
+  // Create the Grinder.Method class.
   cls = new meat::Class(meat::Class::resolve(0xc658f60), 4, 0);
   cls->set_constructor(Grinder_Method_constructor);
   cls->set_vtable(19, Grinder_MethodMethods, meat::STATIC);

@@ -19,44 +19,141 @@
 
 Library import: UnitTest
 
-Test subclass: Test.Text as: {
+Test.Suite subclass: Test.Text as: {
 
-	method initialize {
-		super initialize
-		self setTitle: "Text objects"
-	}
-
-	method execute {
+	method setup {
+	  self title: "3.11 The Text Class"
 		sample = "Hello World"
 
-		# Test isEmpty method
-		["" isEmpty] isFalse: {
-			self fail: "Empty text says it's not empty"
-		}
-		[sample isEmpty] isTrue: {
-			self fail: "Sample text says it's empty when it's not"
+    self title: "3.11.1 isEmpty method" test: {
+  		["" isEmpty] isFalse: {
+  			self fail: "Empty text says it's not empty"
+  		}
+  		[sample isEmpty] isTrue: {
+  			self fail: "Sample text says it's empty when it's not"
+  		}
+  		self pass
+  	}
+
+    self title: "3.11.2 length method" test: {
+  		[["" length] == 0] isFalse: {
+  			self fail: "Empty text says it's length is > 0"
+  		}
+  		[[sample length] <> 11] isTrue: {
+  			self fail: "Sample text says it's length <> 11"
+  		}
+  		[["٠١٢٣٤٥٦٧٨٩" length] <> 10] isTrue: {
+  			self fail: "Multi character UTF8 sample text says it's length <> 10"
+  		}
+  		self pass
+  	}
+
+  	self title: "3.11.3 getCharAt: method" test: {
+			# Zero index should alway raise an Exception.
+			caught = [Boolean false]
+			Exception try: {
+				sample getCharAt: 0
+			} catch: {
+				caught = [Boolean true]
+			}
+			caught isFalse: {
+				self fail: "Failed to catch an out of range index"
+			}
+
+			# Less than zero index should alway raise an Exception.
+			caught = [Boolean false]
+			Exception try: {
+				sample getCharAt: -5
+			} catch: {
+				caught = [Boolean true]
+			}
+			caught isFalse: {
+				self fail: "Failed to catch an out of range index"
+			}
+
+			# Beyond the length of the text should alway raise an Exception.
+			caught = [Boolean false]
+			Exception try: {
+				sample getCharAt: 12
+			} catch: {
+				caught = [Boolean true]
+			}
+			caught isFalse: {
+				self fail: "Failed to catch an out of range index"
+			}
+
+			# The first character should be at index 1.
+  	  [[sample getCharAt: 1] == "H"] isFalse: {
+  	    self fail: ["getCharAt returned the wrong character H <> " + \
+  	                [sample getCharAt: 1]]
+  	  }
+
+			# Index sample.
+  	  [[sample getCharAt: 5] == "o"] isFalse: {
+  	    self fail: ["getCharAt: returned the wrong character o <> " + \
+  	                [sample getCharAt: 5]]
+  	  }
+
+			# Multibyte unicode index.
+  	  [["०१२३४५६७८९" getCharAt: 5] == "४"] isFalse: {
+  	    self fail: ["getCharAt: returned the wrong character ४ <> " + \
+  	                ["०१२३४५६७८९" getCharAt: 5]]
+  	  }
+  	  self pass
+  	}
+
+		self title: "3.11.4 getFrom:count: method" test: {
+			[[sample getFrom: 2 count: 4] == "ello"] isFalse: {
+  	    self fail: ["getFrom:count: returned the wrong string ello <> " + \
+  	                [sample getFrom: 2 count: 4]]
+  	  }
+			self pass
 		}
 
-		[[sample length] == 11] isFalse: {
-			self fail: "Sample text length is wrong"
+		self title: "3.11.5 replaceFrom:count:with: method" test: {
+			result = [sample replaceFrom: 6 count: 1 with: " to all the "]
+			[result <> "Hello to all the World"] isTrue: {
+				self fail: ["Failed to properly replace text: " + result]
+			}
+			self pass
 		}
 
-		[[sample getCharAt: 1] == "H"] isFalse: {
-			self fail: "First index of 1 not returning first character"
+		self title: "3.11.6 replaceAll:with: method" test: {
+			result = [sample replaceAll: "l" with: "qlq"]
+			[result <> "Heqlqqlqo Worqlqd"] isTrue: {
+				self fail: ["Failed to properly replace text: " + result]
+			}
+			self pass
 		}
 
-		[[sample get: 7 to: 11] == "World"] isFalse: {
-			self fail: "Invalid sub text returned"
-		}
+  	self title: "3.11.7 findFirst: method" test: {
+  	  [[sample findFirst: "hi"] == 0] isFalse: {
+  	    self fail: "Test hi wasn't supposed to be found in sample text"
+  	  }
 
-		[["Hello " + "World"] == "Hello World"] isFalse: {
-			self fail: "Text append operator returned invalid result"
-		}
+  	  index = [sample findFirst: "Hello"]
+  	  [index == 1] isFalse: {
+  	    self fail: ["Sub text wasn't found in sample text 1 != " + \
+  	                [index asText]]
+  	  }
 
-		[["hi" * 3] == "hihihi"] isFalse: {
-			self fail: "Text repeat operator returned invalid result"
-		}
+  	  index = [sample findFirst: "lo Wor"]
+  	  [index == 4] isFalse: {
+  	    self fail: ["Sub text wasn't found in sample text 4 != " + \
+  	                [index asText]]
+  	  }
+  	  self pass
+  	}
 
-		self pass
+  	self title: "3.11.? forEach:do: method" test: {
+  	  result = ""
+  	  sample forEach: .character do: {
+  	    result = [result + .character]
+  	  }
+  	  [result == sample] isFalse: {
+  	    self fail: ["forEach:do: didn't rebuild sample properly"]
+  	  }
+  	  self pass
+  	}
 	}
 }

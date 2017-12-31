@@ -15,10 +15,11 @@ NAMES=
 case "${FILE}" in
 		builtin.cpp)
 				NAMES="Object Class Context BlockContext Null Exception Boolean \
-						 Numeric Integer Number Text List Set Index Application"
+						   Numeric Integer Number Text List Set Index Application"
 				;;
 		grinder.cpp)
-				NAMES="Grinder.Library Grinder.Class Grinder.Method"
+				NAMES="Grinder.SyntaxException Grinder.Library Grinder.Class \
+               Grinder.Method"
 				;;
 		Datastore.cpp)
 				NAMES="Library Archive"

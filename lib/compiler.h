@@ -60,6 +60,7 @@ namespace meat {
       void inc_offset(std::uint32_t amount = 1);
       void offset(std::uint32_t position);
       void reset();
+      void rewind();
 
       Location &operator =(const Location &other);
 
@@ -109,15 +110,13 @@ namespace meat {
       /** Returns the type of token.
        * @see token_t
        */
-      token_t type() const { return value_type; };
+      token_t type() const;
 
       /** Test if the token is of type.
        */
-      bool is_type(token_t value_type) const {
-        return (this->value_type == value_type);
-      };
+      bool is_type(token_t value_type) const;
 
-      const Location &position() const { return _position; };
+      const Location &position() const;
 
       /** Assign the values of another token to this token.
        */
@@ -142,6 +141,20 @@ namespace meat {
       token_t value_type; /**< The type of token parsed */
       std::string value;  /**< The value of the token. */
       Location _position; /**< Location of the token in the original text. */
+    };
+
+    /**
+     */
+    class DECLSPEC SyntaxException : public meat::Exception {
+    public:
+      SyntaxException(const Token &token, const std::string &message);
+      virtual ~SyntaxException() noexcept;
+
+      unsigned int line() const;
+      unsigned int character() const;
+
+    private:
+      Token token;
     };
 
     /** Collection of tokens parsed from a given command or text.
@@ -261,10 +274,6 @@ namespace meat {
       void execute(std::istream &code);
 
       void execute(const std::string &code);
-
-      /** Parse the code into tokens passing each command to Language::command.
-       */
-      void execute(const Token &token);
 
       virtual void command();
 

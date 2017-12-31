@@ -190,3 +190,162 @@ std::string itohex(unsigned int value, size_t width) {
   convert << value;
   return ("0x" + convert.str());
 }
+
+/******************************************************************************
+ * utf8::Iterator Class
+ */
+
+utf8::Iterator::Iterator(const std::string &value)
+  : _value(value), _index(0) {
+  _length = 1;
+
+  // Find the length of the character and make a copy for dereferencing.
+  for (; (_value[_index + _length] & 0xc0) == 0x80; ++_length);
+  _current = _value.substr(_index, _length);
+}
+
+utf8::Iterator::Iterator(const Iterator &other)
+  : _value(other._value), _index(other._index), _length(other._length),
+    _current(other._current) {
+}
+
+/*******************************
+ * utf8::Iterator::operator ++ *
+ *******************************/
+
+utf8::Iterator &utf8::Iterator::operator ++() {
+  // Increment the index.
+  if (_index < _value.length()) _index += _length;
+
+  // Get the length of the character and copy the character.
+  if (_index < _value.length()) {
+    for (; (_value[_index + _length] & 0xc0) == 0x80; ++_length);
+    _current = _value.substr(_index, _length);
+  } else {
+    _current.clear();
+  }
+
+  return *this;
+}
+
+utf8::Iterator utf8::Iterator::operator ++(int) {
+  Iterator tmp(*this);
+
+  // Increment the index.
+  if (_index < _value.length()) _index += _length;
+
+  // Get the length of the character and copy it.
+  if (_index < _value.length()) {
+    for (; (_value[_index + _length] & 0xc0) == 0x80; ++_length);
+    _current = _value.substr(_index, _length);
+  } else {
+    _current.clear();
+  }
+
+  return tmp;
+}
+
+/*******************************
+ * utf8::Iterator::operator -- *
+ *******************************/
+
+utf8::Iterator &utf8::Iterator::operator --() {
+  if (_index > 0) {
+    size_t tmp = _index;
+
+    // Find the first character.
+    for (--_index; (_value[_index] & 0xc0) == 0x80 and _index > 0; --_index);
+
+    // Get the length of the character and copy it.
+    _length = tmp - _index;
+    _current = _value.substr(_index, _length);
+  } else {
+    _current.clear();
+  }
+
+  return *this;
+}
+
+utf8::Iterator utf8::Iterator::operator --(int) {
+  Iterator tmp(*this);
+
+  if (_index > 0) {
+    size_t tmp = _index;
+
+    // Find the first character.
+    for (--_index; (_value[_index] & 0xc0) == 0x80 and _index > 0; --_index);
+
+    // Get the length of the character and copy it.
+    _length = tmp - _index;
+    _current = _value.substr(_index, _length);
+  } else {
+    _current.clear();
+  }
+
+  return tmp;
+}
+
+/*******************************
+ * utf8::Iterator::operator == *
+ *******************************/
+
+bool utf8::Iterator::operator ==(const Iterator &other) const {
+  return _index == other._index;
+}
+
+/*******************************
+ * utf8::Iterator::operator != *
+ *******************************/
+
+bool utf8::Iterator::operator !=(const Iterator &other) const {
+  return _index != other._index;
+}
+
+/******************************
+ * utf8::Iterator::operator * *
+ ******************************/
+
+const std::string &utf8::Iterator::operator *() const {
+  return _current;
+}
+
+utf8::Iterator utf8::Iterator::end() const {
+  Iterator tmp(*this);
+  tmp._index = _value.length();
+  return tmp;
+}
+
+size_t utf8::Iterator::position() const {
+  return _index;
+}
+
+size_t utf8::Iterator::length() const {
+  return _length;
+}
+
+/****************
+ * utf8::substr *
+ ****************/
+
+std::string utf8::substr(const Iterator &start, const Iterator &end) {
+  const std::string &value = start._value;
+  if (start != start.end() and end._index >= start._index) {
+    return value.substr(start._index, end._index + end._length);
+  }
+  throw std::range_error("sub string iterators out of range");
+}
+
+/*****************
+ * utf8::replace *
+ *****************/
+
+std::string utf8::replace(const Iterator &start, const Iterator &end,
+                          const std::string &value) {
+  std::string new_value = start._value;
+  if (start != start.end() and end._index >= start._index) {
+    return new_value.replace(start._index,
+                             (end._index + end._length) - start._index,
+                             value);
+  }
+  throw std::range_error("sub string iterators out of range");
+}
