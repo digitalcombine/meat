@@ -7,6 +7,7 @@
 
 # Shared libraries
 pkglib_LTLIBRARIES = Grinder.la Console.la Math.la
+EXTRA_DIST = Console.cpp Math.cpp
 
 Grinder_la_SOURCES = compiler.cpp comp_utils.cpp library.cpp \
 	interpreter.cpp Grinder.cpp ast.cpp ast.h compiler.h

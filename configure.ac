@@ -59,7 +59,6 @@ AX_CHECK_COMPILE_FLAG([-std=c++11],
   AC_MSG_ERROR(C++11 not supported by compiler))
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
-AC_CHECK_PROG([lmk], [latexmk], [yes], [no])
 AM_CONDITIONAL([LATEXMK], [test x$lmk = xyes])
 
 # Checks for libraries.

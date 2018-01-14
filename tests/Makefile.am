@@ -8,14 +8,15 @@ SUFFIXES = .meat .mlib
 
 EXTRA_DIST = UnitTest.meat Test.Characters.meat \
 			 Test.Object.meat Test.Class.meat \
-			 Test.BlockContext \
+			 Test.BlockContext.meat \
 			 Test.Null.meat Test.Exception.meat \
 			 Test.Boolean.meat Test.Numeric.meat \
 			 Test.Integer.meat Test.Number.meat \
 			 Test.Text.meat Test.Index.meat Test.List.meat Test.Data.meat \
 			 Test.Application.meat Test.Compiler.meat \
-			 tests.meat data.meat Console.meat builtin.meat \
-			 grinder.meat
+			 tests.meat data.meat \
+			 builtin.meat grinder.meat \
+			 fix-builtin.pl fix-grinder.pl
 CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 			 Test.Object.mlib Test.Class.mlib \
 			 Test.BlockContext.mlib \
