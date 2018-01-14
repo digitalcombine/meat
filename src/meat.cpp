@@ -455,6 +455,7 @@ void meat::Class::record(Reference &cls, bool replace) {
             << std::showbase << hash_id << std::endl;
 #endif
 
+  // Check if the class has already been recorded.
   class_registry_t &classes = class_registry();
   if (not replace && classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cast<Class>(cls).name()) +
@@ -474,6 +475,7 @@ void meat::Class::record(Class *cls, const char *id, bool replace) {
             << std::showbase << hash_id << std::endl;
 #endif
 
+  // Check if the class has already been recorded.
   class_registry_t &classes = class_registry();
   if (not replace && classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cls->name()) +
@@ -495,6 +497,7 @@ void meat::Class::record(Reference &cls, const char *id, bool replace) {
             << std::showbase << hash_id << std::endl;
 #endif
 
+  // Check if the class has already been recorded.
   class_registry_t &classes = class_registry();
   if (not replace && classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cast<Class>(cls).name()) +
@@ -724,9 +727,10 @@ void meat::Class::VTable::link(Class &super) {
         std::memcpy(&entries[c], other, sizeof(vtable_entry_t));
         entries[c].flags |= VTM_SUPER;
       }
-#ifdef DEBUG
+#ifdef TESTING
+      // This doesn't cause any problems, but is for quality control.
       else
-        std::cout << "VTABLE: Linking error for "
+        std::cerr << "VTABLE: Linking error for "
                   << std::hex << entries[c].hash_id << std::dec
                   << std::endl;
 #endif
@@ -739,9 +743,10 @@ void meat::Class::VTable::link(Class &super) {
         std::memcpy(&centries[c], other, sizeof(vtable_entry_t));
         centries[c].flags |= VTM_SUPER;
       }
-#ifdef DEBUG
+#ifdef TESTING
+      // This doesn't cause any problems, but is for quality control.
       else
-        std::cout << "VTABLE: Class linking error for "
+        std::cerr << "VTABLE: Class linking error for "
                   << std::hex << centries[c].hash_id << std::dec
                   << std::endl;
 #endif

@@ -331,7 +331,7 @@ void grinder::Library::create_class(meat::Reference super,
                                     meat::Reference context) {
   meat::Reference ctx =
     meat::message(meat::Class::resolve("Grinder.Class"),
-                  "from:createSubclass:",
+                  "from:subclass:",
                   context);
   meat::cast<meat::Context>(ctx).parameter(0, super);
   meat::cast<meat::Context>(ctx).parameter(1, new meat::Text(cls_name));

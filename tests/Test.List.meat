@@ -22,9 +22,10 @@ Library requires: UnitTest
 Test.Suite subclass: Test.List as: {
 
   method setup {
+	  self title: "3.? The List Class"
 	  alist = [List new]
 
-	  self title: "4.?.? Method copy" test: {
+	  self title: "3.?.? Method copy" test: {
 		  alist clear
 
 			alist append: 1
@@ -41,7 +42,7 @@ Test.Suite subclass: Test.List as: {
 				self fail: "Copy method didn't return a list."
 			}
 
-			[[acopy size] == 3] isFalse: {
+			[[acopy entries] == 3] isFalse: {
 			  self fail: "Copy method didn't return a shallow copy of the proper size."
 			}
 

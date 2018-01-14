@@ -143,7 +143,7 @@ namespace meat {
      */
     class DECLSPEC Archive : public Object {
     public:
-      Archive(const char *filename, bool create = false);
+      Archive(const std::string &filename, bool create = false);
       virtual ~Archive() throw();
 
       void add_import(const char *name);

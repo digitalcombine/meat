@@ -19,7 +19,7 @@ Library include: {
 #include <iostream>
 }
 
-Application subClass: Console as: {
+Application subclass: Console as: {
 
 	class function write: message {
 		std::cout << meat::cast<meat::Text>(message);

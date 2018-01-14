@@ -116,7 +116,7 @@ Object subclass: Grinder.Libraryᶲ as: {
 
   method getClass: className {
     classes forEach: .cls do: {
-      [className == [.cls getName]] isTrue: {
+      [className == [.cls name]] isTrue: {
         context return: .cls
       }
     }
@@ -165,8 +165,8 @@ Object subclass: Grinder.Classᶲ as: {
   method initialize {
     super initialize
 
-    objectProperties = [Set new]
-    classProperties = [Set new]
+    objectProperties = [List new]
+    classProperties = [List new]
 
     objectMethods = [Index new]
     classMethods = [Index new]
@@ -175,7 +175,7 @@ Object subclass: Grinder.Classᶲ as: {
   class method from: aClass subclass: name {
     self newObject
     className = name
-    superClass = [aClass getName]
+    superClass = [aClass name]
     context return: self
   }
 
@@ -204,12 +204,13 @@ Object subclass: Grinder.Classᶲ as: {
   }
 
   function addMethod: theMethod {
-    if (theMethod->is_type("Grinder.Method")) {
-      add_method(theMethod);
+	  if (theMethod->is_type("Grinder.Method")) {
+      cast<grinder::Class>(self).add_method(theMethod);
     } else {
-      throw Exception("Attempting to add a non Grinder.Method to a "
-                      "Grinder.Class");
+      throw meat::Exception("Attempting to add a non Grinder.Method to a "
+                            "Grinder.Class");
     }
+
     return null;
   }
 
@@ -223,11 +224,12 @@ Object subclass: Grinder.Classᶲ as: {
 
   function addClassMethod: theMethod {
     if (theMethod->is_type("Grinder.Method")) {
-      add_method(theMethod);
+      cast<grinder::Class>(self).add_method(theMethod);
     } else {
-      throw Exception("Attempting to add a non Grinder.Method to a "
-                      "Grinder.Class");
+      throw meat::Exception("Attempting to add a non Grinder.Method to a "
+                            "Grinder.Class");
     }
+
     return null;
   }
 
@@ -289,17 +291,17 @@ Object subclass: Grinder.Methodᶲ as: {
   }
 
   function isNative {
-    if (meat::cast<meat::grinder::Method>(*self).is_cpp())
-      return meat::True();
-    return meat::False();
+	  return meat::Boolean(cast<grinder::Method>(self).is_cpp());
   }
 
   function isNative: value {
-    if (value == meat::True())
-      meat::cast<meat::grinder::Method>(self).is_cpp(true);
-    else if (value == meat::False())
-      meat::cast<meat::grinder::Method>(self).is_cpp(false);
+	  if (meat::Boolean(value))
+      cast<grinder::Method>(self).is_cpp(true);
+    else if (not meat::Boolean(value))
+      cast<grinder::Method>(self).is_cpp(false);
     else
       throw meat::Exception("Grinder.Method isNative value is not a boolean");
+
+    return null;
   }
 }

@@ -23,13 +23,18 @@ static meat::vtable_entry_t MathMethods[] = {
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x24ab71da, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x331156ce, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7d180801, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 // class method acos:
@@ -227,7 +232,8 @@ static meat::vtable_entry_t MathCMethods[] = {
   {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x06906833, 0x00247b28, VTM_NATIVE  , 1, Math_cm_tanh_},
   {0x09e10969, 0x00247b28, VTM_NATIVE  , 2, Math_cm_atan2y_x_},
-  {0x2c296348, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x24ab71da, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x34345daf, 0x00247b28, VTM_NATIVE  , 1, Math_cm_floor_},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -237,7 +243,9 @@ static meat::vtable_entry_t MathCMethods[] = {
   {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x5fd81970, 0x00247b28, VTM_NATIVE  , 1, Math_cm_truncate_},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7d180801, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
 static std::uint8_t Symbols[] = {
@@ -256,8 +264,8 @@ void init_Math(meat::data::Library &library) {
   // Import required libraries.
 
   cls = new meat::Class(meat::Class::resolve(0x0c658f60), 0, 0);
-  cls->set_vtable(12, MathMethods, meat::STATIC);
-  cls->set_class_vtable(29, MathCMethods, meat::STATIC);
+  cls->set_vtable(17, MathMethods, meat::STATIC);
+  cls->set_class_vtable(32, MathCMethods, meat::STATIC);
   library.add(cls, "Math");
 
   library.set_symbols(Symbols, meat::STATIC);

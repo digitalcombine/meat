@@ -268,11 +268,11 @@ Method::Method(const meat::List &properties, int p_offset,
 
   List::const_iterator it;
   for (it = properties.begin(); it != properties.end(); it++)
-    this->properties.push_back(meat::cast<const meat::Text>(*it));
+    this->properties.push_back(cast<const Text>(*it));
   this->p_offset = p_offset;
 
   for (it = class_properties.begin(); it != class_properties.end(); it++)
-    this->class_properties.push_back(meat::cast<const meat::Text>(*it));
+    this->class_properties.push_back(cast<const Text>(*it));
   this->cp_offset = cp_offset;
 
   local("self");

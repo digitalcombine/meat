@@ -645,7 +645,9 @@ namespace meat {
     virtual ~List() throw() {}
 
     using std::deque<Reference>::push_back;
+    using std::deque<Reference>::push_front;
     using std::deque<Reference>::pop_back;
+    using std::deque<Reference>::pop_front;
     using std::deque<Reference>::clear;
     using std::deque<Reference>::at;
     using std::deque<Reference>::operator[];
@@ -653,6 +655,7 @@ namespace meat {
     using std::deque<Reference>::insert;
     using std::deque<Reference>::erase;
     using std::deque<Reference>::back;
+    using std::deque<Reference>::front;
     using std::deque<Reference>::size;
     using std::deque<Reference>::empty;
     using std::deque<Reference>::begin;

@@ -14,7 +14,7 @@ EXTRA_DIST = UnitTest.meat Test.Characters.meat \
 			 Test.Integer.meat Test.Number.meat \
 			 Test.Text.meat Test.Index.meat Test.List.meat Test.Data.meat \
 			 Test.Application.meat Test.Compiler.meat \
-			 tests.meat data.meat Console.meat builtin.meat Datastore.meat \
+			 tests.meat data.meat Console.meat builtin.meat \
 			 grinder.meat
 CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 			 Test.Object.mlib Test.Class.mlib \
@@ -24,7 +24,7 @@ CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 			 Test.Number.mlib Test.Integer.mlib \
 			 Test.Text.mlib Test.Index.mlib Test.List.mlib Test.Data.mlib \
 			 Test.Application.mlib Test.Compiler.mlib \
-			 builtin.cpp grinder.cpp Datastore.cpp \
+			 builtin.cpp grinder.cpp \
 			 data.mar tests.mapp hello.mlib libtests.mlib
 MEATDEPS = @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat \
 	@top_srcdir@/src/libmeat.la
@@ -34,7 +34,6 @@ MEATDEPS = @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat \
 
 .meat.cpp:
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<
-	@./fixnames.sh $*.cpp
 
 UnitTest.mlib: $(MEATDEPS) @top_srcdir@/lib/Console.la
 Test.Characters.mlib: UnitTest.mlib $(MEATDEPS)
@@ -49,7 +48,6 @@ Test.Integer.mlib: UnitTest.mlib $(MEATDEPS)
 Test.List.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Application.mlib: UnitTest.mlib $(MEATDEPS)
 builtin.cpp: $(MEATDEPS)
-Datastore.cpp: $(MEATDEPS)
 grinder.cpp: $(MEATDEPS)
 
 data.mar: Test.Data.mlib
@@ -66,7 +64,7 @@ tests.mlib: Test.Integer.mlib
 tests.mlib: Test.Text.mlib
 tests.mlib: Test.List.mlib
 tests.mlib: Test.Application.mlib
-tests.mlib: builtin.cpp Datastore.cpp grinder.cpp
+tests.mlib: builtin.cpp grinder.cpp
 tests.mlib: tests.meat
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ tests.meat
 

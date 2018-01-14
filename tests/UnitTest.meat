@@ -54,7 +54,7 @@ Object subclass: Test.Test as: {
       # Execute the test ContextBlock
       Console write: [["TEST: " + _title] + "... "]
       _test execute
-      
+
     } catch: .error do: {
       # If we got an uncaught exception then it's a fail.
       _failedReason = [.error message]
@@ -122,7 +122,7 @@ Object subclass: Test.Suite as: {
     _tests append: [Test.Test title: title test: body]
   }
 
-  #  To be overridden by a subclass to add tests to the suite using the 
+  #  To be overridden by a subclass to add tests to the suite using the
   # title:test: method. This method is messaged during the initializing of a
   # new object.
   method setup {
@@ -173,9 +173,9 @@ Object subclass: Test.Suite as: {
 
     # Create a index of the test counts
     result = [Index new]
-    result set: "tests preformed" to: [_tests size]
+    result set: "tests preformed" to: [_tests entries]
     result set: "tests passed" to: passedCount
-    result set: "tests failed" to: [[_tests size] - passedCount]
+    result set: "tests failed" to: [[_tests entries] - passedCount]
     context return: result
   }
 }

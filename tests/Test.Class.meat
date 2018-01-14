@@ -33,9 +33,9 @@ Test.Suite subclass: Test.Class as: {
 			self fail: "Didn't raise an Exception"
 		}
 
-		self title: "3.2.5 method getName" test: {
-			[[[10 type] getName] == "Integer"] isFalse: {
-			  self fail: ["Integer object type name returned " + [[10 type] getName]]
+		self title: "3.2.5 method name" test: {
+			[[[10 type] name] == "Integer"] isFalse: {
+			  self fail: ["Integer object type name returned " + [[10 type] name]]
 			}
 			self pass
 		}
