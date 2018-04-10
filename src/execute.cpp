@@ -272,7 +272,7 @@ meat::Reference meat::execute(Reference context) {
           self = cast<Context>(context).klass();
 
 #ifdef DEBUG
-        std::cout << "BC" << BCLOC << ": GET CLASS PROPERTY ";
+        std::cout << "BC" << BCLOC;
         switch (bc->code) {
         case bytecode::ASSIGN_PROP:
           std::cout << ": GET PROPERTY "; break;

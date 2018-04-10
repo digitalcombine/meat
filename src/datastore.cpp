@@ -63,7 +63,7 @@ static bool fexists(const char *filename) {
 }
 
 static nativelib_t dl_open(const char *filename) {
-#if defined (__linux__)
+#if defined (__linux__) || defined (__FreeBSD__)
   void *handle = dlopen(filename, RTLD_LAZY);
   if (handle == NULL)
     throw meat::Exception(dlerror());
@@ -72,14 +72,14 @@ static nativelib_t dl_open(const char *filename) {
 }
 
 static void dl_close(nativelib_t handle) {
-#if defined (__linux__)
+#if defined (__linux__) || defined (__FreeBSD__)
   if (dlclose(handle) != 0)
     std::cerr << "WARNING: dlclose " << dlerror() << std::endl;
 #endif
 }
 
 static void *dl_symbol(nativelib_t handle, const char *funcname) {
-#if defined (__linux__)
+#if defined (__linux__) || defined (__FreeBSD__)
   return dlsym(handle, funcname);
 #endif
 }
@@ -114,7 +114,7 @@ static std::deque<std::string> &get_path() {
   return path;
 }
 
-/**
+/** Registered libraries.
  */
 static std::map<std::string, meat::data::Library *> &get_libraries() {
   static std::map<std::string, meat::data::Library *> imported;

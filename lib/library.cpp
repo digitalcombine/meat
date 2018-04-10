@@ -180,8 +180,7 @@ grinder::Library::Library(Reference klass,
  ************************************/
 
 grinder::Library::~Library() throw() {
-  if (library)
-    data::Library::unload(library->name());
+  if (library) data::Library::unload(library->name());
 }
 
 /***************************************

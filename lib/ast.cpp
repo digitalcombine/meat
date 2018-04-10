@@ -81,7 +81,7 @@ std::uint8_t LocalVariable::index() const {
 }
 
 /******************************************************************************
- * Node Class
+ * meat::grinder::ast::Node Class
  */
 
 /**********************************
@@ -112,6 +112,10 @@ void Node::scope(Block *block) {
   _scope = block;
 }
 
+/************************************
+ * meat::grinder::ast::Node::locals *
+ ************************************/
+
 std::uint8_t Node::locals() const {
   return scope().locals();
 }
@@ -124,9 +128,17 @@ LocalVariable Node::local(const std::string &name) {
   return scope().local(name);
 }
 
+/****************************************
+ * meat::grinder::ast::Node::anon_local *
+ ****************************************/
+
 LocalVariable Node::anon_local() {
   return scope().anon_local();
 }
+
+/*********************************************
+ * meat::grinder::ast::Node::set_result_dest *
+ *********************************************/
 
 void Node::set_result_dest(LocalVariable dest) {
   result = dest;
@@ -134,23 +146,39 @@ void Node::set_result_dest(LocalVariable dest) {
 }
 
 void Node::set_result_dest() {
-  if (not result_set) {
+  if (not result_set) { // Only if the result hasn't been already set.
     result = anon_local();
     result_set = true;
   }
 }
 
+/*********************************************
+ * meat::grinder::ast::Node::get_result_dest *
+ *********************************************/
+
 LocalVariable Node::get_result_dest() {
   return result;
 }
+
+/**********************************************
+ * meat::grinder::ast::Node::resolve_property *
+ **********************************************/
 
 std::int16_t Node::resolve_property(const std::string &name) const {
   return scope().resolve_property(name);
 }
 
+/****************************************************
+ * meat::grinder::ast::Node::resolve_class_property *
+ ****************************************************/
+
 std::int16_t Node::resolve_class_property(const std::string &name) const {
   return scope().resolve_class_property(name);
 }
+
+/*******************************************
+ * meat::grinder::ast::Node::resolve_local *
+ *******************************************/
 
 LocalVariable Node::resolve_local(const std::string &name) const {
   return scope().resolve_local(name);
@@ -281,8 +309,16 @@ Method::Method(const meat::List &properties, int p_offset,
   local("null");
 }
 
+/***************************************
+ * meat::grinder::ast::Method::~Method *
+ ***************************************/
+
 Method::~Method() throw() {
 }
+
+/*********************************************
+ * meat::grinder::ast::Method::add_parameter *
+ *********************************************/
 
 std::uint8_t Method::add_parameter(const std::string &name) {
 #ifdef DEBUG
@@ -291,6 +327,10 @@ std::uint8_t Method::add_parameter(const std::string &name) {
   local(name);
   return _locals.size() - 1;
 }
+
+/********************************************
+ * meat::grinder::ast::Method::gen_bytecode *
+ ********************************************/
 
 void Method::gen_bytecode(bool prelim) {
 
@@ -344,6 +384,10 @@ LocalVariable Method::resolve_local(const std::string &name) const {
 
   return bad_result;
 }
+
+/****************************************
+ * meat::grinder::ast::Method::bytecode *
+ ****************************************/
 
 std::uint16_t Method::bytecode() {
   return bc.size();
@@ -791,21 +835,21 @@ LocalVariable Identifier::gen_result(bool prelim) {
 
       if ((local_idx = resolve_property(_name)) != -1) {
         // Is it an object property?
-  #ifdef DEBUG
+#ifdef DEBUG
         std::cout << "STAGE: Resolved identifier " << _name << " as property "
                   << std::dec << local_idx << std::endl;
-  #endif
+#endif
         _type = OBJECT_PROPERTY;
         _index = local_idx;
         set_result_dest();
 
       } else if ((local_idx = resolve_class_property(_name)) != -1) {
         // Is it a class property?
-  #ifdef DEBUG
+#ifdef DEBUG
         std::cout << "STAGE: Resolved identifier " << _name
                   << " as class property " << std::dec << local_idx
                   << std::endl;
-  #endif
+#endif
         _type = CLASS_PROPERTY;
         _index = local_idx;
         set_result_dest();
@@ -814,11 +858,11 @@ LocalVariable Identifier::gen_result(bool prelim) {
         // Is it a local variable?
         LocalVariable source = resolve_local(_name);
         if (not source.name().empty()) {
-  #ifdef DEBUG
+#ifdef DEBUG
           std::cout << "STAGE: Resolved identifier " << source.name()
                     << " as local variable " << (unsigned int)source.index()
                     << std::endl;
-  #endif
+#endif
           _type = LOCAL_VARIABLE;
           _index = source.index();
           if (not result_set) set_result_dest(source);
@@ -827,19 +871,19 @@ LocalVariable Identifier::gen_result(bool prelim) {
           // Is it a class object?
           result_set = false;
           if (meat::Class::have_class(_name)) {
-  #ifdef DEBUG
+#ifdef DEBUG
             std::cout << "STAGE: Resolved identifier " << _name
                       << " as class. " << std::endl;
-  #endif
+#endif
             _type = CLASS_REFERENCE;
             set_result_dest();
 
           } else {
             // So far we haven't been able to resolve the identifier.
-  #ifdef DEBUG
+#ifdef DEBUG
             std::cout << "STAGE: Identifier " << _name << " is unresolved."
                       << std::endl;
-  #endif
+#endif
           }
         }
       }
@@ -988,11 +1032,19 @@ Assignment::~Assignment() throw() {
   delete src;
 }
 
+/*****************************************
+ * meat::grinder::ast::Assignment::scope *
+ *****************************************/
+
 void Assignment::scope(Block *block) {
   Node::scope(block);
   dest->scope(block);
   src->scope(block);
 }
+
+/************************************************
+ * meat::grinder::ast::Assignment::gen_bytecode *
+ ************************************************/
 
 void Assignment::gen_bytecode(bool prelim) {
   // Generate the code needed for the source value.
@@ -1051,6 +1103,10 @@ void Assignment::gen_bytecode(bool prelim) {
   }
 }
 
+/**********************************************
+ * meat::grinder::ast::Assignment::gen_result *
+ **********************************************/
+
 LocalVariable Assignment::gen_result(bool prelim) {
   throw Exception("Cannot get the results of an assignment.");
 }
@@ -1058,6 +1114,10 @@ LocalVariable Assignment::gen_result(bool prelim) {
 /******************************************************************************
  * AST Message Class Node
  */
+
+/****************************************
+ * meat::grinder::ast::Message::Message *
+ ****************************************/
 
 Message::Message(Node *who) : who(who) {
 }
@@ -1134,7 +1194,7 @@ void Message::gen_bytecode(bool prelim) {
     param_idxs.push_back((*it)->gen_result(prelim));
   }
 
-  if (!prelim) {
+  if (not prelim) {
     LocalVariable lindex;
 
     if (super) {

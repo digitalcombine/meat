@@ -174,7 +174,7 @@ static meat::Reference ClassClass(bool initializing = false) {
   return cls;
 }
 
-/** The mapping type for the class registry.
+/** The mapping type for a class registry.
  */
 typedef std::map<std::uint32_t, meat::Reference> class_registry_t;
 

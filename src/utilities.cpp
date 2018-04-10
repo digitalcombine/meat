@@ -170,7 +170,7 @@ uint32_t hash(const std::string &word, size_t table_size) {
   /*  We add all the characters together with a seed. The seed ensures that
    * ab != ba.
    */
-  for(register size_t i = 0; i < len; i++) {
+  for(size_t i = 0; i < len; i++) {
     hvalue = (hvalue * seed) + word[i];
   }
 

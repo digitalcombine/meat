@@ -109,7 +109,7 @@ namespace meat {
        */
       class Block : public Node {
       public:
-        virtual ~Block() noexcept;
+        virtual ~Block() throw();
 
         /** Add an ast node to the block. The scope for the node will also be
          * be set in the node as it's added.
@@ -180,6 +180,8 @@ namespace meat {
         std::vector<std::uint8_t> bc;
       };
 
+      /**
+       */
       class ContextBlock : public Block {
       public:
         ContextBlock();
@@ -311,6 +313,8 @@ namespace meat {
         } _value;
       };
 
+      /**
+       */
       class Assignment : public Node {
       public:
         Assignment(Identifier *dest, Node *src);
@@ -326,6 +330,8 @@ namespace meat {
         Node *src;
       };
 
+      /**
+       */
       class Message : public Node {
       public:
         Message(Node *who);
