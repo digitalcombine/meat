@@ -20,7 +20,7 @@
 /** @file */
 
 #include <meat/memory.h>
-#include <meat/types.h>
+//#include <meat/types.h>
 #include <meat/numeric.h>
 
 #include <map>
@@ -43,7 +43,7 @@
 #  else
 #    define DECLSPEC __declspec(dllimport)
 #  endif
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
 #   define DECLSPEC __attribute__((visibility("default")))
 #else
 #   error("Don't know how to export shared object libraries")
@@ -75,6 +75,7 @@ namespace meat {
 
   void DECLSPEC cleanup();
 
+  //@{
   /** Creates a new message context to an Object.
    * @param Object The Object to send the message to.
    * @param hash_id The hashed id of the method name.
@@ -94,6 +95,7 @@ namespace meat {
   Reference DECLSPEC message_super(Reference object,
                                    std::uint32_t hash_id,
                                    Reference context);
+  //@}
 
   /** Executes a context that has been created by meat::message().
    * @param context The context created by message.
@@ -130,7 +132,7 @@ namespace meat {
     /** Tests Object if it is of type class.
      */
     bool is_type(Reference cls) const;
-    bool is_type(const char *class_name) const;
+    bool is_type(const std::string &class_name) const;
 
     virtual bool is_class() const { return false; };
 
@@ -185,7 +187,7 @@ namespace meat {
 
 #define VTM_END      (0x00)
 #define VTM_BYTECODE (0x01) // Vtable entry points to bytecode
-#define VTM_NATIVE   (0x00) // Vtable entry points to a native function.
+#define VTM_NATIVE   (0x02) // Vtable entry points to a native function.
 #define VTM_SUPER    (0x04) // Vtable entry needs to be synced from super.
 
   typedef struct _vtable_entry_s {
@@ -210,10 +212,13 @@ namespace meat {
    */
   class DECLSPEC Class : public Object {
   public:
+    typedef std::map<std::uint32_t, meat::Reference>::iterator iterator;
+
     /** Creates a new class Object.
      */
-    Class(const char *parent, std::uint8_t obj_props = 0);
-    Class(const char *parent, std::uint8_t cls_props, std::uint8_t obj_props);
+    Class(const std::string &parent, std::uint8_t obj_props = 0);
+    Class(const std::string &parent, std::uint8_t cls_props,
+          std::uint8_t obj_props);
     Class(Reference parent, std::uint8_t obj_props = 0);
     Class(Reference parent, std::uint8_t cls_props, std::uint8_t obj_props);
 
@@ -240,10 +245,11 @@ namespace meat {
     /** Gets the internal 32bit hash id for the class.
      */
     std::uint32_t hash_id() const { return _hash_id; };
-    std::string name() const { return lookup(_hash_id); }
+    std::string name() const;
+    void name(const std::string &new_name);
 
     /** Set the constructor function. The constructor is used by the method
-     * new_Object() to create the actual internal Object. If a constructor
+     * new_object() to create the actual internal Object. If a constructor
      * function is not set the parent meat classes will be checked for a
      * constuctor function. Most of the time the default Object constructor
      * is enough unless a unique C++ class was created for the Object.
@@ -266,11 +272,12 @@ namespace meat {
     virtual void serialize(data::Archive &store,
                            std::ostream &data_stream) const;
 
-    virtual operator Class &() { return *this; };
-
     virtual void write(std::ostream &lib_file) const;
     static Class *import(std::istream &lib_file);
 
+    /** Lookup the symbol for the given hash_id. If there's no symbol for the
+     * hash_id then the hash_id is returned as a hexidecimal string.
+     */
     std::string lookup(std::uint32_t hash_id) const;
 
     //@{
@@ -279,23 +286,27 @@ namespace meat {
      * @param id The name of the class used in the Script engine.
      * @param replace By default an error is raised if an existing recorded
      *        class already exists. If replace is set to true the this is
-     *        overrided. This should only be used internally.
+     *        overrided. This is for internal initialization only.
      */
-    static void record(Class *cls, const char *id, bool replace = false);
-    static void record(Reference &cls, const char *id, bool replace = false);
+    static void record(Class *cls, const std::string &id,
+                       bool replace = false);
+    static void record(Reference &cls, const std::string &id,
+                       bool replace = false);
     static void record(Reference &cls, bool replace = false);
     //@}
 
-    void relink();
+    static void record_compiled_class(Reference cls, const std::string &id);
 
-    static void unrecord(Reference &cls);
+    static void unrecord(Reference &cls, bool compiled = false);
+
+    void relink();
 
     /** Resolves a class that has been registered with record.
      * @param id The text name of the class.
      * @see record()
      * @exception Exception If the class cannot be found.
      */
-    static Reference &resolve(const std::string &id);
+    static Reference &resolve(const std::string &id, bool compiled = true);
 
     /** Resolves a class that has been registered with record.
      * @param hash_id The integer hash id of the class.
@@ -303,11 +314,14 @@ namespace meat {
      * @see hash()
      * @exception Exception If the class cannot be found.
      */
-    static Reference &resolve(std::uint32_t hash_id);
+    static Reference &resolve(std::uint32_t hash_id, bool compiled = true);
 
     /**
      */
     static bool have_class(const std::string &id);
+
+    static iterator begin();
+    static iterator end();
 
     /** Returns a reference to the class. This uses the resolve method
      * to find the reference so the class @b must be registered with record()
@@ -334,52 +348,53 @@ namespace meat {
     /** The virtual method table for class Objects.
      */
     class VTable {
-    public:
-      VTable();
-      virtual ~VTable() throw();
+      public:
+        VTable();
+        virtual ~VTable() throw();
 
-      void set_vtable(std::uint8_t entries, vtable_entry_t table[],
-                      alloc_t table_alloc);
-      void set_class_vtable(std::uint8_t entries, vtable_entry_t table[],
-                            alloc_t table_alloc);
-      void set(constructor_t constructor_func);
+        void set_vtable(std::uint8_t entries, vtable_entry_t table[],
+                        alloc_t table_alloc);
+        void set_class_vtable(std::uint8_t entries, vtable_entry_t table[],
+                              alloc_t table_alloc);
+        void set(constructor_t constructor_func);
 
-      void link(Class &super);
+        void link(Class &super);
 
-      /** Returns the virtual table entry if the method was found.
-       */
-      vtable_entry_t *find(std::uint32_t hash_id);
-      const vtable_entry_t *find(std::uint32_t hash_id) const;
-      vtable_entry_t *class_find(std::uint32_t hash_id);
-      const vtable_entry_t *class_find(std::uint32_t hash_id) const;
+        /** Returns the virtual table entry if the method was found.
+         */
+        vtable_entry_t *find(std::uint32_t hash_id);
+        const vtable_entry_t *find(std::uint32_t hash_id) const;
+        vtable_entry_t *class_find(std::uint32_t hash_id);
+        const vtable_entry_t *class_find(std::uint32_t hash_id) const;
 
-      void write(std::ostream &lib_file) const;
-      void read(std::istream &lib_file);
+        void write(std::ostream &lib_file) const;
+        void read(std::istream &lib_file);
 
-      friend class Class;
-      friend Reference message(Reference object,
-                               std::uint32_t hash_id,
-                               Reference context);
-      friend Reference message_super(Reference object,
-                                     std::uint32_t hash_id,
-                                     Reference context);
-    private:
-      // Object virtual table entries
-      std::uint8_t no_entries;
-      vtable_entry_t *entries;
-      bool e_is_static;
+        friend class Class;
+        friend Reference message(Reference object,
+                                 std::uint32_t hash_id,
+                                 Reference context);
+        friend Reference message_super(Reference object,
+                                       std::uint32_t hash_id,
+                                       Reference context);
+      private:
+        // Object virtual table entries
+        std::uint8_t no_entries;
+        vtable_entry_t *entries;
+        bool e_is_static;
 
-      // Class virtual table entries.
-      std::uint8_t no_centries;
-      vtable_entry_t *centries;
-      bool ce_is_static;
+        // Class virtual table entries.
+        std::uint8_t no_centries;
+        vtable_entry_t *centries;
+        bool ce_is_static;
 
-      constructor_t constructor;
+        constructor_t constructor;
     };
 
     const vtable_entry_t *find(std::uint32_t hash_id) const;
     const vtable_entry_t *class_find(std::uint32_t hash_id) const;
 
+    std::string _name;
     std::uint32_t _hash_id;
     Reference _super;
     std::uint8_t _obj_properties;
@@ -463,6 +478,7 @@ namespace meat {
     virtual bool is_done() const { return done; };
     virtual void finish() { done = true; };
     virtual void unfinish() { done = false; };
+    virtual void reset() {};
 
     friend class Class;
     friend class BlockContext;
@@ -528,7 +544,7 @@ namespace meat {
       return _locals[index];
     };
 
-    virtual void parameter(uint8_t index, Reference &value) {
+    virtual void parameter(uint8_t index, Reference value) {
       _locals[index] = value;
     };
 
@@ -557,7 +573,7 @@ namespace meat {
     bool continue_trap_set() const;
     bool break_called() const;
     bool continue_called() const;
-    void reset();
+    virtual void reset();
 
   private:
     Reference _origin;
@@ -626,7 +642,6 @@ namespace meat {
     Text(const Text &other);
     Text(Reference cls, uint8_t properties);
     Text(const std::string &value);
-    Text(const char *value);
     virtual ~Text() throw() {}
 
     virtual void serialize(data::Archive &store,

@@ -19,6 +19,38 @@
 
 Library requires: UnitTest
 
+Object subclass: TestObject1 as: {
+  property _init1
+
+  class method new {
+    self newObject
+    context return: self
+  }
+
+  method initialize {
+    super initialize
+    _init1 = [Boolean true]
+  }
+
+  method wasInitialized {
+    context return: [[_init1 isType: Null] not]
+  }
+}
+
+TestObject1 subclass: TestObject2 as: {
+  property _init2
+
+  method initialize {
+    super initialize
+    _init2 = [Boolean true]
+  }
+
+  method wasInitialized {
+    context return: \
+      [[super wasInitialized] and: [[_init2 isType: Null] not]]
+  }
+}
+
 Test.Suite subclass: Test.Object as: {
 
   method setup {
@@ -139,13 +171,21 @@ Test.Suite subclass: Test.Object as: {
     }
 
     self title: "3.1.10 Method initialize" test: {
+      obj1 = [TestObject1 new]
+      [obj1 wasInitialized] isFalse: {
+        self fail: "Failed to call initialize method for new object"
+      }
+      obj2 = [TestObject2 new]
+      [obj2 wasInitialized] isFalse: {
+        self fail: "Failed to call initialize method for new sub object"
+      }
       self pass
     }
 
     self title: "3.1.11 Method weakReference" test: {
       self pass
     }
-    
+
     self title: "3.1.12 Method reference" test: {
       self pass
     }

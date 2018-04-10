@@ -19,7 +19,7 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.68])
-AC_INIT([meat], [0.2.1], [ron.rwsoft@gmail.com])
+AC_INIT([meat], [0.3.0], [ron.rwsoft@gmail.com])
 AM_INIT_AUTOMAKE
 AM_SILENT_RULES
 AC_CONFIG_SRCDIR([src/meat.cpp])
@@ -52,14 +52,16 @@ AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 AC_DEFINE([MEAT_BUILD])
 
 # Checks for programs.
+AC_LANG(C++)
 AC_PROG_CXX
 AC_PROG_CC
-AX_CHECK_COMPILE_FLAG([-std=c++11],
-  [AX_APPEND_FLAG([-std=c++11], CXXFLAGS)],
-  AC_MSG_ERROR(C++11 not supported by compiler))
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AM_CONDITIONAL([LATEXMK], [test x$lmk = xyes])
+
+AX_CHECK_COMPILE_FLAG([-std=c++11],
+      [AX_APPEND_FLAG([-std=c++11], CXXFLAGS)],
+      AC_MSG_ERROR(C++11 not supported by compiler))
 
 # Checks for libraries.
 AC_CHECK_LIB(m, pow)
@@ -68,7 +70,10 @@ case $host_os in
     AC_CHECK_LIB([dl], [dlopen], ,
          [AC_MSG_ERROR([Library dl missing for your platform])])
     ;;
+  freebsd*)
+    ;;
   mingw*)
+	  AC_DEFINE([DLL_EXPORT])
     ;;
   *)
     # Default Case

@@ -95,6 +95,24 @@ Object subclass: Classᶲ as: {
   class function name {
     return new Text(cast<Class>(self).name());
   }
+
+  class function forEach: .class do: block {
+    std::uint8_t local_id = INTEGER(_class);
+    cast<Context>(block).messenger(context);
+
+    Class::iterator it = Class::begin();
+    for (; it != Class::end(); ++it) {
+      cast<BlockContext>(block).set_break_trap();
+      cast<Context>(block).local(local_id) = it->second;
+      execute(block);
+
+      if (cast<BlockContext>(block).break_called()) break;
+      else cast<BlockContext>(block).reset();
+    }
+
+    cast<BlockContext>(block).reset();
+    return null;
+  }
 }
 
 #==============================================================================
@@ -244,39 +262,39 @@ Object subclass: Contextᶲ as: {
     return new meat::Context(properties);
   }
 
-	# 3.3.1
+  # 3.3.1
   class method subclass: name as: def {
     Exception throw: "Cannot subclass an internal Context class"
   }
 
-	# 3.3.2
+  # 3.3.2
   class method newObject {
     Exception throw: "Cannot create a new internal Context object" \
       for: [context uplevel]
   }
 
-	# 3.3.3
+  # 3.3.3
   function messenger {
     return cast<Context>(self).messenger();
   }
 
-	# 3.3.4
+  # 3.3.4
   function localVariables {
     return new meat::Value(cast<Context>(self).locals() - 4);
   }
 
-	# 3.3.5
+  # 3.3.5
   function getLocal: index {
     return cast<Context>(self).local(INTEGER(index));
   }
 
-	# 3.3.6
+  # 3.3.6
   function setLocal: index to: value {
     cast<Context>(self).local(INTEGER(index)) = value;
     return null;
   }
 
-	# 3.3.7
+  # 3.3.7
   function repeat: block {
     cast<Context>(block).messenger(context);
 
@@ -296,24 +314,24 @@ Object subclass: Contextᶲ as: {
     return null;
   }
 
-	# 3.3.8
+  # 3.3.8
   function return {
     cast<Context>(self).finish();
     return null;
   }
 
-	# 3.3.9
+  # 3.3.9
   function return: value {
     cast<Context>(self).result(value); // Set the return value
     cast<Context>(self).finish();      // Tell the context it's done.
     return null;
   }
 
-	# 3.3.10
+  # 3.3.10
   method break {
   }
 
-	# 3.3.11
+  # 3.3.11
   method continue {
   }
 }
@@ -323,19 +341,21 @@ Object subclass: Contextᶲ as: {
 
 Object subclass: BlockContextᶲ as: {
 
-	# 3.4.1
+  # 3.4.1
   function execute {
     cast<BlockContext>(self).messenger(context);
-    execute(self);
     cast<BlockContext>(self).reset();
+    execute(self);
 
     return null;
   }
 
-	# 3.4.2
+  # 3.4.2
   function executeOnBreak: breakBlock {
     cast<BlockContext>(self).set_break_trap();
     cast<BlockContext>(self).messenger(context);
+
+    cast<BlockContext>(self).reset();
     execute(self);
 
     if (cast<BlockContext>(self).break_called()) {
@@ -343,16 +363,16 @@ Object subclass: BlockContextᶲ as: {
       execute(up_context);
     }
 
-    cast<BlockContext>(self).reset();
-
     return null;
   }
 
-	# 3.4.3
+  # 3.4.3
   function executeOnBreak: breakBlock onContinue: continueBlock {
     cast<BlockContext>(self).set_break_trap();
     cast<BlockContext>(self).set_continue_trap();
     cast<BlockContext>(self).messenger(context);
+
+    cast<BlockContext>(self).reset();
     execute(self);
 
     if (cast<BlockContext>(self).break_called()) {
@@ -363,23 +383,21 @@ Object subclass: BlockContextᶲ as: {
       execute(up_context);
     }
 
-    cast<BlockContext>(self).reset();
-
     return null;
   }
 
-	# 3.4.4
+  # 3.4.4
   function executeOnContinue: continueBlock {
     cast<BlockContext>(self).set_continue_trap();
     cast<BlockContext>(self).messenger(context);
+
+    cast<BlockContext>(self).reset();
     execute(self);
 
     if (cast<BlockContext>(self).continue_called()) {
       Reference up_context = message(continueBlock, "execute", context);
       execute(up_context);
     }
-
-    cast<BlockContext>(self).reset();
 
     return null;
   }
@@ -396,7 +414,7 @@ Object subclass: BlockContextᶲ as: {
     return null;
   }
 
-	# 3.4.9
+  # 3.4.9
   function return: value {
     Reference origin = cast<BlockContext>(self).origin();
     Reference up_context = message(origin, "return:", context);
@@ -408,7 +426,7 @@ Object subclass: BlockContextᶲ as: {
     return null;
   }
 
-	# 3.4.10
+  # 3.4.10
   function continue {
     cast<BlockContext>(self).c_continue();
     if (not meat::cast<meat::BlockContext>(self).continue_trap_set()) {
@@ -419,7 +437,7 @@ Object subclass: BlockContextᶲ as: {
     return null;
   }
 
-	# 3.4.11
+  # 3.4.11
   function break {
     cast<BlockContext>(self).c_break();
     if (not cast<BlockContext>(self).break_trap_set()) {
@@ -427,6 +445,11 @@ Object subclass: BlockContextᶲ as: {
       Reference up_context = message(init_ctx, "break", context);
       execute(up_context);
     }
+    return null;
+  }
+
+  function reset {
+    cast<BlockContext>(self).reset();
     return null;
   }
 }
@@ -473,21 +496,22 @@ Object subclass: Exceptionᶲ as: {
     return new meat::Exception(klass, properties);
   }
 
-	# 3.6.1
+  # 3.6.1
   class function try: block {
     cast<Context>(block).messenger(context);
 
     try {
       execute(block);
     } catch (meat::Exception &err) {
+      cast<BlockContext>(block).reset();
     } catch (...) {
+      cast<BlockContext>(block).reset();
     }
-    cast<BlockContext>(block).reset();
 
     return null;
   }
 
-	# 3.6.2
+  # 3.6.2
   class function try: try_block catch: catch_block {
     try {
       cast<meat::Context>(try_block).messenger(context);
@@ -495,15 +519,13 @@ Object subclass: Exceptionᶲ as: {
     } catch (std::exception &err) {
       cast<Context>(catch_block).messenger(context);
       execute(catch_block);
-      cast<BlockContext>(catch_block).reset();
+      cast<BlockContext>(try_block).reset();
     }
-
-    cast<BlockContext>(try_block).reset();
 
     return null;
   }
 
-	# 3.6.3
+  # 3.6.3
   class function try: try_block catch: error do: catch_block {
     try {
       cast<Context>(try_block).messenger(context);
@@ -513,42 +535,40 @@ Object subclass: Exceptionᶲ as: {
       cast<Context>(catch_block).local(INTEGER(error)) = excp;
       cast<Context>(catch_block).messenger(context);
       execute(catch_block);
-      cast<BlockContext>(catch_block).reset();
+      cast<BlockContext>(try_block).reset();
     }
-
-    cast<BlockContext>(try_block).reset();
 
     return null;
   }
 
-	# 3.6.4
+  # 3.6.4
   class function throw {
     Reference ctx = cast<Context>(context).messenger();
     throw Exception(null, ctx);
   }
 
-	# 3.6.5
+  # 3.6.5
   class function throw: message {
     Reference ctx = cast<Context>(context).messenger();
     throw Exception(message, ctx);
   }
 
-	# 3.6.6
-	class function throwFor: ctx {
-		throw Exception(null, ctx);
-	}
+  # 3.6.6
+  class function throwFor: ctx {
+    throw Exception(null, ctx);
+  }
 
-	# 3.6.7
+  # 3.6.7
   class function throw: message for: ctx {
     throw Exception(message, ctx);
   }
 
-	# 3.6.8
+  # 3.6.8
   method message {
     context return: mesg
   }
 
-	# 3.6.9
+  # 3.6.9
   method context {
     context return: cntxt
   }
@@ -574,7 +594,6 @@ Object subclass: Booleanᶲ as: {
     if (self == trueObject) {
       cast<BlockContext>(block).messenger(context);
       execute(block);
-      cast<BlockContext>(block).reset();
     }
     return null;
   }
@@ -583,11 +602,9 @@ Object subclass: Booleanᶲ as: {
     if (self == trueObject) {
       cast<BlockContext>(trueBlock).messenger(context);
       execute(trueBlock);
-      cast<BlockContext>(trueBlock).reset();
     } else {
       cast<BlockContext>(elseBlock).messenger(context);
       execute(elseBlock);
-      cast<BlockContext>(elseBlock).reset();
     }
     return null;
   }
@@ -723,15 +740,15 @@ Object subclass: Numericᶲ as: {
 Numeric subclass: Integerᶲ as: {
 
   constructor {
-    return new meat::Value(klass, properties);
+    return new Value(klass, properties);
   }
 
   class function minValue {
-    return new meat::Value(-2147483647-1);
+    return new Value(-2147483647-1);
   }
 
   class function maxValue {
-    return new meat::Value(2147483647);
+    return new Value(2147483647);
   }
 
   function + other {
@@ -740,71 +757,71 @@ Numeric subclass: Integerᶲ as: {
                                            INTEGER(other),
                                            &res);
     if (overflow)
-      throw meat::Exception("Addition overflow");
-    return new meat::Value(res);
+      throw Exception("Addition overflow");
+    return new Value(res);
   }
 
   function - other {
-    return new meat::Value(INTEGER(self) - INTEGER(other));
+    return new Value(INTEGER(self) - INTEGER(other));
   }
 
   function * other {
-    return new meat::Value(INTEGER(self) * INTEGER(other));
+    return new Value(INTEGER(self) * INTEGER(other));
   }
 
   function / other {
-    return new meat::Value(INTEGER(self) / INTEGER(other));
+    return new Value(INTEGER(self) / INTEGER(other));
   }
 
   function % other {
-    return new meat::Value(INTEGER(self) % INTEGER(other));
+    return new Value(INTEGER(self) % INTEGER(other));
   }
 
   function ^ other {
-    return new meat::Value((double)std::pow(FLOAT(self),
-                                            FLOAT(other)));
+    return new Value((double)std::pow(FLOAT(self),
+                                      FLOAT(other)));
   }
 
   function == other {
     try {
       return Boolean(INTEGER(self) == INTEGER(other));
     } catch (...) {}
-    return meat::Boolean(false);
+    return Boolean(false);
   }
 
   function <> other {
-	  try {
+    try {
       return Boolean(INTEGER(self) != INTEGER(other));
     } catch (...) {}
-    return meat::Boolean(true);
+    return Boolean(true);
   }
 
   function < other {
     try {
       return Boolean(INTEGER(self) < INTEGER(other));
     } catch (...) {}
-    return meat::Boolean(true);
+    return Boolean(true);
   }
 
   function <= other {
     try {
       return Boolean(INTEGER(self) <= INTEGER(other));
     } catch (...) {}
-    return meat::Boolean(true);
+    return Boolean(true);
   }
 
   function > other {
     try {
       return Boolean(INTEGER(self) > INTEGER(other));
     } catch (...) {}
-    return meat::Boolean(true);
+    return Boolean(true);
   }
 
   function >= other {
     try {
       return Boolean(INTEGER(self) >= INTEGER(other));
     } catch (...) {}
-    return meat::Boolean(true);
+    return Boolean(true);
   }
 
   function negative {
@@ -812,42 +829,41 @@ Numeric subclass: Integerᶲ as: {
   }
 
   function absolute {
-    return new meat::Value(std::abs(INTEGER(self)));
+    return new Value(std::abs(INTEGER(self)));
   }
 
   function or: other {
-    return new meat::Value(INTEGER(self) | INTEGER(other));
+    return new Value(INTEGER(self) | INTEGER(other));
   }
 
   function and: other {
-    return new meat::Value(INTEGER(self) & INTEGER(other));
+    return new Value(INTEGER(self) & INTEGER(other));
   }
 
   function xor: other {
-    return new meat::Value(INTEGER(self) ^ INTEGER(other));
+    return new Value(INTEGER(self) ^ INTEGER(other));
   }
 
   function rshift {
-    return new meat::Value(INTEGER(self) >> 1);
+    return new Value(INTEGER(self) >> 1);
   }
 
   function rshift: amount {
-    return new meat::Value(INTEGER(self) >> INTEGER(amount));
+    return new Value(INTEGER(self) >> INTEGER(amount));
   }
 
   function lshift {
-    return new meat::Value(INTEGER(self) << 1);
+    return new Value(INTEGER(self) << 1);
   }
 
   function lshift: amount {
-    return new meat::Value(INTEGER(self) << INTEGER(amount));
+    return new Value(INTEGER(self) << INTEGER(amount));
   }
 
   function timesDo: block {
     std::int32_t limit = INTEGER(self);
     for (std::int_fast32_t c = 0; c < limit; c++) {
-      meat::execute(block);
-      meat::cast<meat::BlockContext>(block).reset();
+      execute(block);
     }
     return null;
   }
@@ -855,7 +871,7 @@ Numeric subclass: Integerᶲ as: {
   function asText {
     std::stringstream result;
     result << INTEGER(self);
-    return new meat::Text(result.str());
+    return new Text(result.str());
   }
 }
 
@@ -865,35 +881,35 @@ Numeric subclass: Integerᶲ as: {
 Numeric subclass: Numberᶲ as: {
 
   constructor {
-    return new meat::Value(klass, properties);
+    return new Value(klass, properties);
   }
 
   function + other {
-    return new meat::Value(FLOAT(self) + FLOAT(other));
+    return new Value(FLOAT(self) + FLOAT(other));
   }
 
   function - other {
-    return new meat::Value(FLOAT(self) - FLOAT(other));
+    return new Value(FLOAT(self) - FLOAT(other));
   }
 
   function * other {
-    return new meat::Value(FLOAT(self) * FLOAT(other));
+    return new Value(FLOAT(self) * FLOAT(other));
   }
 
   function / other {
     if (FLOAT(other) == 0.0)
-      throw meat::Exception("Divide by zero");
+      throw Exception("Divide by zero");
 
-    return new meat::Value(FLOAT(self) / FLOAT(other));
+    return new Value(FLOAT(self) / FLOAT(other));
   }
 
   function % other {
-    return new meat::Value(std::fmod(FLOAT(self), FLOAT(other)));
+    return new Value(std::fmod(FLOAT(self), FLOAT(other)));
   }
 
   function ^ other {
-    return new meat::Value((double)std::pow(FLOAT(self),
-                                            FLOAT(other)));
+    return new Value((double)std::pow(FLOAT(self),
+                                      FLOAT(other)));
   }
 
   function == other {
@@ -939,17 +955,17 @@ Numeric subclass: Numberᶲ as: {
   }
 
   function negative {
-    return new meat::Value(-FLOAT(self));
+    return new Value(-FLOAT(self));
   }
 
   function absolute {
-    return new meat::Value(std::abs(FLOAT(self)));
+    return new Value(std::abs(FLOAT(self)));
   }
 
   function asText {
     std::stringstream result;
     result << (double)FLOAT(self);
-    return new meat::Text(result.str());
+    return new Text(result.str());
   }
 }
 
@@ -959,7 +975,7 @@ Numeric subclass: Numberᶲ as: {
 Object subclass: Textᶲ as: {
 
   constructor {
-    return new meat::Text(klass, properties);
+    return new Text(klass, properties);
   }
 
   # 3.11.1
@@ -1209,7 +1225,7 @@ Object subclass: Textᶲ as: {
 Object subclass: Listᶲ as: {
 
   constructor {
-    return new meat::List(klass, properties);
+    return new List(klass, properties);
   }
 
   # 3.12.1
@@ -1227,7 +1243,7 @@ Object subclass: Listᶲ as: {
     }
   }
 
-	# 3.12.3
+  # 3.12.3
   function set: index to: value {
     try {
       cast<List>(self).at(INTEGER(index) - 1) = value;
@@ -1237,16 +1253,16 @@ Object subclass: Listᶲ as: {
     return null;
   }
 
-	# 3.12.4
+  # 3.12.4
   function at: index insert: value {
     cast<List>(self).insert(cast<List>(self).begin() + (INTEGER(index) - 1),
-		                        value);
+                            value);
     return null;
   }
 
-	# 3.12.5
+  # 3.12.5
   function remove: value {
-		List::iterator it = cast<List>(self).begin();
+    List::iterator it = cast<List>(self).begin();
     while (it != cast<List>(self).end()) {
       if (*it == value)
         cast<List>(self).erase(it);
@@ -1255,20 +1271,20 @@ Object subclass: Listᶲ as: {
     return null;
   }
 
-	# 3.12.6
+  # 3.12.6
   function removeAt: index {
     cast<List>(self).erase(cast<List>(self).begin() + (INTEGER(index) - 1));
     return null;
   }
 
-	# 3.12.7
+  # 3.12.7
   function removeFrom: start to: end {
     cast<List>(self).erase(cast<List>(self).begin() + (INTEGER(start) - 1),
                            cast<List>(self).begin() + (INTEGER(end) - 1));
     return null;
   }
 
-	# 3.12.8
+  # 3.12.8
   function append: value {
     if (value->is_type(meat::Class::resolve("List"))) {
       cast<List>(self).insert(cast<List>(self).end(),
@@ -1280,36 +1296,36 @@ Object subclass: Listᶲ as: {
     return null;
   }
 
-	# 3.12.9
+  # 3.12.9
   function push: value {
-	  cast<List>(self).push_back(value);
+    cast<List>(self).push_back(value);
     return null;
   }
 
-	# 3.12.10
+  # 3.12.10
   function pushFront: value {
-	  cast<List>(self).push_front(value);
+    cast<List>(self).push_front(value);
     return null;
   }
 
-	# 3.12.11
+  # 3.12.11
   function pop {
-	  cast<List>(self).pop_back();
+    cast<List>(self).pop_back();
     return null;
   }
 
-	# 3.12.12
+  # 3.12.12
   function popFront {
-	  cast<List>(self).pop_back();
+    cast<List>(self).pop_back();
     return null;
   }
 
-	# 3.12.13
+  # 3.12.13
   function isEmpty {
-		return Boolean(cast<List>(self).empty());
+    return Boolean(cast<List>(self).empty());
   }
 
-	# 3.12.14
+  # 3.12.14
   function swap: first with: second {
     try {
       Reference temp = cast<List>(self).at(INTEGER(first) - 1);
@@ -1322,56 +1338,54 @@ Object subclass: Listᶲ as: {
     return null;
   }
 
-	# 3.12.15
+  # 3.12.15
   function last {
     return cast<List>(self).back();
   }
 
-	# 3.12.16
+  # 3.12.16
   function front {
     return cast<List>(self).front();
   }
 
-	# 3.12.17
+  # 3.12.17
   function clear {
-	  cast<List>(self).clear();
+    cast<List>(self).clear();
     return null;
   }
 
-	# 3.12.18
+  # 3.12.18
   function entries {
     return new Value((int32_t)(cast<List>(self).size()));
   }
 
-	# 3.12.19
-  function forEach: item do: block {
-		std::uint8_t local_id = INTEGER(item);
+  # 3.12.19
+  function forEach: .item do: block {
+    std::uint8_t local_id = INTEGER(_item);
     cast<Context>(block).messenger(context);
 
-    List::iterator it = cast<List>(self).begin();
-    for (; it != cast<List>(self).end(); it++) {
+    for (auto &item: cast<List>(self)) {
       cast<BlockContext>(block).set_break_trap();
-      cast<Context>(block).local(local_id) = *it;
+      cast<Context>(block).local(local_id) = item;
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
       else cast<BlockContext>(block).reset();
     }
-    cast<BlockContext>(block).reset();
 
     return null;
   }
 
-	# 3.12.20
-	function sort {
-	  //std::sort(cast<List>(self).begin(), cast<List>(self).end());
-	  return null;
-	}
+  # 3.12.20
+  function sort {
+    //std::sort(cast<List>(self).begin(), cast<List>(self).end());
+    return null;
+  }
 
-	# 3.12.21
+  # 3.12.21
   function copy {
-		Reference new_list = new List(cast<List>(self));
-	  return new_list;
+    Reference new_list = new List(cast<List>(self));
+    return new_list;
   }
 }
 
@@ -1381,7 +1395,7 @@ Object subclass: Listᶲ as: {
 Object subclass: Setᶲ as: {
 
   constructor {
-    return new meat::Set(klass, properties);
+    return new Set(klass, properties);
   }
 
   class method new {
@@ -1425,7 +1439,7 @@ Object subclass: Setᶲ as: {
   }
 
   function entries {
-    return new meat::Value((std::int32_t)cast<Set>(self).size());
+    return new Value((std::int32_t)cast<Set>(self).size());
   }
 
   function forEach: item do: block {
@@ -1450,11 +1464,10 @@ Object subclass: Setᶲ as: {
   }
 
   function copy {
-	  Reference new_set = new Set(cast<Set>(self));
+    Reference new_set = new Set(cast<Set>(self));
     return new_set;
   }
 }
-
 
 #==============================================================================
 # 3.14 Index Class
@@ -1462,7 +1475,7 @@ Object subclass: Setᶲ as: {
 Object subclass: Indexᶲ as: {
 
   constructor {
-    return new meat::Index(klass, properties);
+    return new Index(klass, properties);
   }
 
   class method new {
@@ -1470,22 +1483,22 @@ Object subclass: Indexᶲ as: {
     context return: self
   }
 
-	# 3.14.1
+  # 3.14.1
   function get: key {
-		if (cast<Index>(self).find(key) != cast<Index>(self).end())
+    if (cast<Index>(self).find(key) != cast<Index>(self).end())
       return cast<Index>(self)[key];
     throw Exception("Invalid key in index");
   }
 
-	# 3.14.2
+  # 3.14.2
   function set: key to: value {
     cast<Index>(self)[key] = value;
     return null;
   }
 
-	# 3.14.3
+  # 3.14.3
   function has: key {
-		return Boolean(cast<Index>(self).find(key) !=
+    return Boolean(cast<Index>(self).find(key) !=
                    cast<Index>(self).end());
   }
 
@@ -1496,7 +1509,7 @@ Object subclass: Indexᶲ as: {
 
   function entries {
     std::int32_t size = cast<Index>(self).size();
-    return new meat::Value(size);
+    return new Value(size);
   }
 
   function isEmpty {
@@ -1504,7 +1517,7 @@ Object subclass: Indexᶲ as: {
   }
 
   function copy {
-		Reference new_index = new Index(cast<Index>(self));
+    Reference new_index = new Index(cast<Index>(self));
     return new_index;
   }
 }
@@ -1519,7 +1532,7 @@ Object subclass: Applicationᶲ as: {
   }
 
   class function parameter: index {
-		std::int32_t idx = INTEGER(index);
+    std::int32_t idx = INTEGER(index);
 
     if (idx > arg_count() or idx <= 0)
       throw meat::Exception("Parameter index out of range");
@@ -1564,6 +1577,47 @@ Object subclass: Applicationᶲ as: {
 }
 
 #==============================================================================
+# 3.15 Archive Class
+
+Object subclass: Archiveᶲ as: {
+
+  # 3.15.1
+  class function open: filename {
+    return new data::Archive(cast<Text>(filename));
+  }
+
+  # 3.15.2
+  class function create: filename {
+    return new data::Archive(cast<Text>(filename), true);
+  }
+
+  # 3.15.3
+  function requires: libraryName {
+    data::Archive &archive_obj = cast<data::Archive>(self);
+    data::Library::import(cast<Text>(libraryName).c_str());
+    archive_obj.add_import(cast<Text>(libraryName).c_str());
+    return null;
+  }
+
+  # 3.15.4
+  function getObject {
+    return cast<data::Archive>(self).get_object();
+  }
+
+  # 3.15.5
+  function setObject: value {
+    cast<data::Archive>(self).set_object(value);
+    return null;
+  }
+
+  # 3.15.6
+  function sync {
+    cast<data::Archive>(self).sync();
+    return null;
+  }
+}
+
+#==============================================================================
 # Library Class
 
 Object subclass: Libraryᶲ as: {
@@ -1575,73 +1629,37 @@ Object subclass: Libraryᶲ as: {
 #endif
 
     data::Library::import(cast<Text>(libraryName));
-		return null;
+    return null;
   }
 
-	class function requires: libraryName {
+  class function requires: libraryName {
 #ifdef DEBUG
-		std::cout << "DEBUG: Importing library " << cast<Text>(libraryName)
-  	          << std::endl;
+    std::cout << "DEBUG: Importing library " << cast<Text>(libraryName)
+              << std::endl;
 #endif /* DEBUG */
 
-		if (compiler() != NULL)
-			compiler()->import(cast<Text>(libraryName), context);
-		else
-		  throw Exception("Method Library requires: compiler not loaded");
+    if (compiler() != NULL)
+      compiler()->import(cast<Text>(libraryName), context);
+    else
+      throw Exception("Method \"Library requires:\" compiler not loaded");
 
-		return null;
-	}
-
-	class function include: cpp_includes {
-		if (compiler() != NULL)
-		  compiler()->include(cast<Text>(cpp_includes));
-		else
-		  throw Exception("Method Library include: compiler not loaded");
-
-		return null;
-	}
-
-	class function setApplicationClass: theClass {
-	  if (compiler() != NULL)
-		  compiler()->set_application_class(theClass);
-		else
-		  throw Exception("Method Library setApplicationClass: compiler not loaded");
-		return null;
-	}
-}
-
-#==============================================================================
-# Archive Class
-
-Object subclass: Archiveᶲ as: {
-
-  # Only opens an existing archive as readonly.
-	class function open: filename {
-		return new data::Archive(cast<Text>(filename));
-	}
-
-	class function create: filename {
-		return new data::Archive(cast<Text>(filename), true);
-	}
-
-	function requires: libraryName {
-		data::Archive &archive_obj = cast<data::Archive>(self);
-    data::Library::import(cast<Text>(libraryName).c_str());
-    archive_obj.add_import(cast<Text>(libraryName).c_str());
     return null;
-	}
+  }
 
-	function getObject {
-		return cast<data::Archive>(self).get_object();
-	}
+  class function include: cpp_includes {
+    if (compiler() != NULL)
+      compiler()->include(cast<Text>(cpp_includes));
+    else
+      throw Exception("Method Library include: compiler not loaded");
 
-	function setObject: value {
-		cast<data::Archive>(self).set_object(value);
-		return null;
-	}
+    return null;
+  }
 
-	function sync {
-		cast<data::Archive>(self).sync();
-		return null;
-	}
+  class function setApplicationClass: theClass {
+    if (compiler() != NULL)
+      compiler()->set_application_class(theClass);
+    else
+      throw Exception("Method Library setApplicationClass: compiler not loaded");
+    return null;
+  }
 }

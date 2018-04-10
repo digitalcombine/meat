@@ -112,7 +112,7 @@ bool meat::Object::is_type(Reference cls) const {
   return false;
 }
 
-bool meat::Object::is_type(const char *class_name) const {
+bool meat::Object::is_type(const std::string &class_name) const {
   return is_type(meat::Class::resolve(class_name));
 }
 
@@ -188,18 +188,24 @@ static class_registry_t &class_registry() {
   return classes;
 }
 
+static class_registry_t &dev_class_registry() {
+  static class_registry_t dev_classes;
+
+  return dev_classes;
+}
+
 /**********************
  * meat::Class::Class *
  **********************/
 
-meat::Class::Class(const char *parent, std::uint8_t obj_props)
+meat::Class::Class(const std::string &parent, std::uint8_t obj_props)
   : Object(ClassClass(), 0), _hash_id(0), _obj_properties(obj_props),
     library(NULL), _bytecode_size(0), _bytecode(0), _bytecode_static(true) {
 
   _super = resolve(parent);
 }
 
-meat::Class::Class(const char *parent, std::uint8_t cls_props,
+meat::Class::Class(const std::string &parent, std::uint8_t cls_props,
                    std::uint8_t obj_props)
   : Object(ClassClass(), cls_props), _hash_id(0),
     _obj_properties(obj_props), library(NULL), _bytecode_size(0), _bytecode(0),
@@ -264,6 +270,21 @@ meat::Reference meat::Class::new_object() {
   }
 
   throw Exception(std::string("Unable to create new object for ") + name());
+}
+
+/*********************
+ * meat::Class::name *
+ *********************/
+
+std::string meat::Class::name() const {
+  if (not _name.empty())
+    return _name;
+  return lookup(_hash_id);
+}
+
+void meat::Class::name(const std::string &new_name) {
+  _name = new_name;
+  _hash_id = hash(_name);
 }
 
 /********************************
@@ -451,12 +472,12 @@ void meat::Class::record(Reference &cls, bool replace) {
   std::uint32_t hash_id = cast<Class>(cls)._hash_id;
 
 #ifdef DEBUG
-  std::cout << "CLASS: Recording class as " << std::hex
-            << std::showbase << hash_id << std::endl;
+  std::cout << "CLASS: Recording class as "
+            << itohex(hash_id) << std::endl;
 #endif
 
   // Check if the class has already been recorded.
-  class_registry_t &classes = class_registry();
+  auto &classes = class_registry();
   if (not replace && classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cast<Class>(cls).name()) +
                     " already registered.");
@@ -467,60 +488,92 @@ void meat::Class::record(Reference &cls, bool replace) {
     cast<Class>(cls).vtable.link(cast<Class>(cast<Class>(cls)._super));
 }
 
-void meat::Class::record(Class *cls, const char *id, bool replace) {
+void meat::Class::record(Class *cls, const std::string &id, bool replace) {
   std::uint32_t hash_id = hash(id);
 
 #ifdef DEBUG
-  std::cout << "CLASS: Recording class " << id << " as id " << std::hex
-            << std::showbase << hash_id << std::endl;
+  std::cout << "CLASS: Recording class " << id << " as id "
+            << itohex(hash_id) << std::endl;
 #endif
 
   // Check if the class has already been recorded.
-  class_registry_t &classes = class_registry();
-  if (not replace && classes.find(hash_id) != classes.end()) {
+  auto &classes = class_registry();
+  if (not replace and classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cls->name()) +
                     " already registered.");
   }
 
   classes[hash_id] = cls;
-  cls->_hash_id = hash_id;
+  //cls->_hash_id = hash_id;
+  cls->name(id);
   if (!cls->_super.is_null())
     cls->vtable.link(cast<Class>(cls->_super));
 }
 
-void meat::Class::record(Reference &cls, const char *id, bool replace) {
+void meat::Class::record(Reference &cls, const std::string &id, bool replace) {
   std::uint32_t hash_id = hash(id);
   Class &thecls = cast<Class>(cls);
 
 #ifdef DEBUG
-  std::cout << "CLASS: Recording class " << id << " as id " << std::hex
-            << std::showbase << hash_id << std::endl;
+  std::cout << "CLASS: Recording class " << id << " as id "
+            << itohex(hash_id) << std::endl;
 #endif
 
   // Check if the class has already been recorded.
-  class_registry_t &classes = class_registry();
-  if (not replace && classes.find(hash_id) != classes.end()) {
+  auto &classes = class_registry();
+  if (not replace and classes.find(hash_id) != classes.end()) {
     throw Exception((std::string("Class ") + cast<Class>(cls).name()) +
                     " already registered.");
   }
 
   classes[hash_id] = cls;
-  thecls._hash_id = hash_id;
+  //thecls._hash_id = hash_id;
+  thecls.name(id);
+  if (!thecls._super.is_null())
+    thecls.vtable.link(cast<Class>(thecls._super));
+}
+
+/**************************************
+ * meat::Class::record_compiled_class *
+ **************************************/
+
+void meat::Class::record_compiled_class(Reference cls, const std::string &id) {
+  std::uint32_t hash_id = hash(id);
+  Class &thecls = cast<Class>(cls);
+
+#ifdef DEBUG
+  std::cout << "CLASS: Recording development class " << id << " as id "
+            << itohex(hash_id) << std::endl;
+#endif
+
+  // Check if the class has already been recorded.
+  auto &classes = dev_class_registry();
+  if (classes.find(hash_id) != classes.end()) {
+    throw Exception(std::string("Development class ") + id
+                    + " already registered.");
+  }
+
+  classes[hash_id] = cls;
+  //thecls._hash_id = hash_id;
+  thecls.name(id);
   if (!thecls._super.is_null())
     thecls.vtable.link(cast<Class>(thecls._super));
 }
 
 /*************************
- * meat::Class::unrecord *`
+ * meat::Class::unrecord *
  *************************/
 
-void meat::Class::unrecord(Reference &cls) {
+void meat::Class::unrecord(Reference &cls, bool compiled) {
 
 #ifdef DEBUG
   std::cout << "CLASS: Unrecording class " << cast<Class>(cls).name()
             << std::endl;
 #endif
-  class_registry().erase(cast<Class>(cls)._hash_id);
+  if (compiled)
+    dev_class_registry().erase(cast<Class>(cls)._hash_id);
+  else
+    class_registry().erase(cast<Class>(cls)._hash_id);
 }
 
 /***********************
@@ -539,30 +592,38 @@ void meat::Class::relink() {
  * meat::Class::resolve *
  ************************/
 
-meat::Reference &meat::Class::resolve(const std::string &id) {
-  std::uint32_t hash_id = hash(id.c_str());
+meat::Reference &meat::Class::resolve(const std::string &id, bool compiled) {
+  auto &dev_classes = dev_class_registry();
+  std::uint32_t hash_id = hash(id);
 
-  class_registry_t &classes = class_registry();
-  if (classes.find(hash_id) == classes.end()) {
-    throw Exception((std::string("Class ") + id) +
-                     " was not found.");
-  }
+#ifdef DEBUG
+  std::clog << "DEBUG: resolving class " << id << std::endl;
+#endif
 
-  return classes[hash_id];
+  if (not compiled or dev_classes.find(hash_id) == dev_classes.end()) {
+    auto &classes = class_registry();
+
+    if (classes.find(hash_id) == classes.end()) {
+      throw Exception(std::string("Resolving class ") + id + " failed.");
+    } else
+      return classes[hash_id];
+  } else
+    return dev_classes[hash_id];
 }
 
-meat::Reference &meat::Class::resolve(std::uint32_t hash_id) {
-  class_registry_t &classes = class_registry();
-  std::stringstream msg;
+meat::Reference &meat::Class::resolve(std::uint32_t hash_id, bool compiled) {
+  auto &dev_classes = dev_class_registry();
 
-  msg << "Resolving class 0x";
-  msg << std::setw(8) << std::setfill('0') << std::setbase(16);
-  msg << hash_id << " failed.";
-  if (classes.find(hash_id) == classes.end()) {
-    throw Exception(msg.str());
-  }
+  if (not compiled or dev_classes.find(hash_id) == dev_classes.end()) {
+    auto &classes = class_registry();
 
-  return classes[hash_id];
+    if (classes.find(hash_id) == classes.end()) {
+      throw Exception(std::string("Resolving class ") +
+                      itohex(hash_id) + " failed.");
+    } else
+      return classes[hash_id];
+  } else
+    return dev_classes[hash_id];
 }
 
 /***************************
@@ -570,8 +631,18 @@ meat::Reference &meat::Class::resolve(std::uint32_t hash_id) {
  ***************************/
 
 bool meat::Class::have_class(const std::string &id) {
-  class_registry_t &classes = class_registry();
-  return (classes.find(hash(id.c_str())) != classes.end());
+  auto &dev_classes = dev_class_registry();
+  auto &classes = class_registry();
+  return (dev_classes.find(hash(id)) != dev_classes.end() or
+          classes.find(hash(id)) != classes.end());
+}
+
+meat::Class::iterator meat::Class::begin() {
+  return class_registry().begin();
+}
+
+meat::Class::iterator meat::Class::end() {
+  return class_registry().end();
 }
 
 /*********************
@@ -1323,10 +1394,6 @@ meat::Text::Text(const std::string &value)
   : std::string(value), Object(Class::resolve("Text")) {
 }
 
-meat::Text::Text(const char *value)
-  : std::string(value), Object(Class::resolve("Text")) {
-}
-
 /*************************
  * meat::Text::serialize *
  *************************/
@@ -1378,10 +1445,8 @@ void meat::List::serialize(data::Archive &store,
   store << (std::uint32_t)size();
 
   // Add all the list entries to the store.
-  for (unsigned int c = 0; c < size(); c++) {
-    Reference obj = at(c);
-    store << store.add_property(obj);
-  }
+  for (auto &entry: *this)
+    store << store.add_property(entry);
 }
 
 /***************************
@@ -1431,9 +1496,8 @@ void meat::Set::serialize(data::Archive &store,
   store << (std::uint32_t)size();
 
   // Add all the list entries to the store.
-  meat::Set::const_iterator it = begin();
-  for (; it != end(); ++it)
-    store << store.add_property(*it);
+  for (auto &entry: *this)
+    store << store.add_property(entry);
 }
 
 /**************************
@@ -1489,12 +1553,9 @@ void meat::Index::serialize(data::Archive &store,
   store << (std::uint32_t)size();
 
   // Add all the index entries to the store.
-  for (const_iterator it = begin(); it != end(); it++) {
-    Reference key = it->first;
-    Reference value = it->second;
-
-    store << store.add_property(key);
-    store << store.add_property(value);
+  for (auto &entry: *this) {
+    store << store.add_property(entry.first);
+    store << store.add_property(entry.second);
   }
 }
 

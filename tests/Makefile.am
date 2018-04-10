@@ -14,7 +14,7 @@ EXTRA_DIST = UnitTest.meat Test.Characters.meat \
 			 Test.Integer.meat Test.Number.meat \
 			 Test.Text.meat Test.Index.meat Test.List.meat Test.Data.meat \
 			 Test.Application.meat Test.Compiler.meat \
-			 tests.meat data.meat \
+			 tests.meat data.meat hello.meat \
 			 builtin.meat grinder.meat \
 			 fix-builtin.pl fix-grinder.pl
 CLEANFILES = UnitTest.mlib Test.Characters.mlib \
@@ -48,6 +48,7 @@ Test.Numeric.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Integer.mlib: UnitTest.mlib $(MEATDEPS)
 Test.List.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Application.mlib: UnitTest.mlib $(MEATDEPS)
+Test.Compiler.mlib: UnitTest.mlib $(MEATDEPS)
 builtin.cpp: $(MEATDEPS)
 grinder.cpp: $(MEATDEPS)
 
@@ -65,6 +66,7 @@ tests.mlib: Test.Integer.mlib
 tests.mlib: Test.Text.mlib
 tests.mlib: Test.List.mlib
 tests.mlib: Test.Application.mlib
+tests.mlib: Test.Compiler.mlib
 tests.mlib: builtin.cpp grinder.cpp
 tests.mlib: tests.meat
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ tests.meat

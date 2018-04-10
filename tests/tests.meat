@@ -30,6 +30,7 @@ Library requires: "Test.Integer"
 Library requires: "Test.Text"
 Library requires: "Test.List"
 Library requires: "Test.Application"
+Library requires: "Test.Compiler"
 
 Application subclass: Tests as: {
 
@@ -48,6 +49,7 @@ Application subclass: Tests as: {
 		summary addSuite: [Test.List new]
 		summary addSuite: [Test.Characters new]
 		summary addSuite: [Test.Application new]
+		summary addSuite: [Test.Compiler new]
 
 		context return: [summary runAndSummarize]
 	}

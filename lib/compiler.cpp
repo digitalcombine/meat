@@ -126,25 +126,39 @@ std::ostream &meat::grinder::operator << (std::ostream &out,
  * meat::grinder::Token Class
  */
 
-/********************************
+/*******************************
  * meat::grinder::Token::Token *
- ********************************/
+ *******************************/
 
 meat::grinder::Token::Token(const std::string &value,
                             meat::grinder::Token::token_t value_type,
                             const Location &position)
-  : value_type(value_type), value(value), _position(position) {
+  : value_type(value_type), value(value), i_value(0), d_value(0.0),
+  _position(position) {
+
+  if (this->value_type == Token::WORD) {
+    if (Utils::is_integer(value, i_value)) {
+      this->value_type = Token::INTEGER;
+    } else if (Utils::is_float(value, d_value)) {
+      this->value_type = Token::NUMBER;
+    }
+  }
+
+#ifdef DEBUG
+  std::cout << "DEBUG: Token(" << _position << ") " << value << std::endl;
+#endif
+
   subst();
 }
 
 meat::grinder::Token::Token(const Token &other)
-  : value_type(other.value_type), value(other.value),
-    _position(other._position) {
+  : value_type(other.value_type), value(other.value), i_value(other.i_value),
+    d_value(other.d_value), _position(other._position) {
 }
 
-/*********************************
+/********************************
  * meat::grinder::Token::~Token *
- *********************************/
+ ********************************/
 
 meat::grinder::Token::~Token() throw() {
 }
@@ -154,23 +168,22 @@ meat::grinder::Token::~Token() throw() {
  *******************************/
 
 void meat::grinder::Token::subst() {
-#ifdef DEBUG
-  //std::cout << "DEBUG: subst " << value << std::endl;
-#endif
   switch (value_type) {
   case LITRL_STRING:
     for (size_t offset = value.find("\\'");
          offset != value.npos;
-         offset = value.find("\\'", offset)) {
+         offset = value.find("\\'", offset + 1)) {
       value.replace(offset, 2, "'");
     }
-#ifdef DEBUG
-    //std::cout << "DEBUG:  -> " << value << std::endl;
-#endif
   case SUBST_STRING:
+
+#ifdef DEBUG
+  std::cout << "DEBUG: subst " << value << std::endl;
+#endif
+
     for (size_t offset = value.find("\\");
          offset != value.npos;
-         offset = value.find("\\", offset)) {
+         offset = value.find("\\", offset + 1)) {
       switch (value[offset + 1]) {
       case '"':
       case '\\':
@@ -178,7 +191,7 @@ void meat::grinder::Token::subst() {
       case '[':
       case ']':
       case '?':
-        value.replace(offset, 2, &value[offset + 1]);
+        value.replace(offset, 2, 1, value[offset + 1]);
         break;
       case 'b':
         value.replace(offset, 2, "\b");
@@ -199,6 +212,9 @@ void meat::grinder::Token::subst() {
         value.replace(offset, 2, "\v");
         break;
       }
+#ifdef DEBUG
+      std::cout << "DEBUG:  -> " << value << std::endl;
+#endif
     }
     break;
   default:
@@ -253,12 +269,37 @@ bool meat::grinder::Token::operator ==(const std::string &value) const {
   return (this->value == value);
 }
 
+/************************************************
+ * meat::grinder::Token::operator std::string & *
+ ************************************************/
+
+meat::grinder::Token::operator std::string () const {
+  std::stringstream out;
+
+  if (value_type == INTEGER) {
+    out << (int)i_value;
+    return out.str();
+  } else if (value_type == NUMBER) {
+    out << (double)d_value;
+    return out.str();
+  } else
+    return value;
+}
+
+/***********************************************
+ * meat::grinder::Token::operator std::int32_t *
+ ***********************************************/
+
+meat::grinder::Token::operator std::int32_t () const {
+  return i_value;
+}
+
 /*****************************************
  * meat::grinder::Token::operator double *
  *****************************************/
 
-meat::grinder::Token::operator double () {
-  return std::atof(value.c_str());
+meat::grinder::Token::operator double () const {
+  return d_value;
 }
 
 /******************************************************************************
@@ -274,7 +315,15 @@ meat::grinder::SyntaxException::SyntaxException(const Token &token,
                                message);
 }
 
-meat::grinder::SyntaxException::~SyntaxException() noexcept {
+meat::grinder::SyntaxException::~SyntaxException() throw() {
+}
+
+unsigned int meat::grinder::SyntaxException::line() const {
+  return 0;
+}
+
+unsigned int meat::grinder::SyntaxException::character() const {
+  return 0;
 }
 
 /******************************************************************************
@@ -422,9 +471,9 @@ void meat::grinder::Tokenizer::permit(Token::token_t id) {
   if (expect(id)) next();
   else
     throw SyntaxException(tokens.front(),
-                          (const std::string &)tokens.front().position() +
+                          (std::string)tokens.front().position() +
                           ": Got unexpected value of " +
-                          (std::string &)tokens.front());
+                          (std::string)tokens.front());
 }
 
 void meat::grinder::Tokenizer::permit(Token::token_t id,
@@ -432,9 +481,9 @@ void meat::grinder::Tokenizer::permit(Token::token_t id,
   if (expect(id, value)) next();
   else
     throw SyntaxException(tokens.front(),
-                          (const std::string &)tokens.front().position() +
+                          (std::string)tokens.front().position() +
                           ": Got unexpected value of " +
-                          (std::string &)tokens.front());
+                          (std::string)tokens.front());
 }
 
 /**********************************
@@ -462,18 +511,19 @@ bool meat::grinder::Tokenizer::is_more() {
 std::string meat::grinder::Tokenizer::to_string() const {
   std::string result;
 
-  std::deque<Token>::const_iterator it;
-  for (it = tokens.begin(); it != tokens.end(); ++it) {
-    switch (it->type()) {
+  for (auto &token: tokens) {
+    switch (token.type()) {
     case Token::WORD:
-      result += (std::string)(*it) + " "; break;
+    case Token::INTEGER:
+    case Token::NUMBER:
+      result += (std::string)(token) + " "; break;
     case Token::SUBST_STRING:
     case Token::LITRL_STRING:
-      result += std::string("'") + (std::string)(*it) + "' "; break;
+      result += std::string("'") + (std::string)(token) + "' "; break;
     case Token::COMMAND:
-      result += std::string("[") + (std::string)(*it) + "] "; break;
+      result += std::string("[") + (std::string)(token) + "] "; break;
     case Token::BLOCK:
-      result += std::string("{") + (std::string)(*it) + "} "; break;
+      result += std::string("{") + (std::string)(token) + "} "; break;
     case Token::EOL:
       result += "\u21b5\n"; break;
     };
@@ -553,7 +603,7 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
       unsigned int count = 1; // Flag for matching up brackets.
 
 #ifdef DEBUG
-      //std::cout << "DEBUG:  found token at " << t_begin << std::endl;
+      //std::cout << "TOKENIZER:  found token at " << t_begin << std::endl;
 #endif
       position.offset(t_begin);
 
@@ -661,8 +711,8 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
           }
 
           // An escaped double quote.
-          if (command[t_end] == '\\' && command[t_end + 1] == '"')
-            t_end += 2;
+          if (command[t_end] == '"' && command[t_end - 1] == '\\')
+            t_end += 1;
         }
 
         tokens.push_back(Token(command.substr(t_begin + 1,
@@ -691,8 +741,8 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
             break;
           }
 
-          if (command[t_end] == '\\' && command[t_end + 1] == '\'')
-            t_end += 2;
+          if (command[t_end] == '\'' && command[t_end - 1] == '\\')
+            t_end += 1;
         }
 
         tokens.push_back(Token(command.substr(t_begin + 1,
@@ -711,10 +761,9 @@ void meat::grinder::Tokenizer::parse_line(const std::string &line,
         }
 
         tokens.push_back(Token(command.substr(t_begin,
-                                              t_end - t_begin),
+                                           t_end - t_begin),
                                Token::WORD,
                                position));
-
         break;
       }
 

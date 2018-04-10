@@ -203,61 +203,14 @@ namespace meat {
 
       private:
         std::deque<std::string> local_names;
-        //std::deque<Node *> commands;
 
         LocalVariable local_var;
 
         std::uint8_t temp_counter;
       };
 
-      /** Represents a value with in the interpreter. The value can be a
-       * constant, local variable, code block or an object property.
+      /**
        */
-      class Value : public Node {
-      public:
-        typedef enum {
-          UNKNOWN,
-          STRING_CONST,
-          FLOAT_CONST,
-          INT_CONST,
-          LOCAL_VARIABLE,
-          BLOCK_PARAMETER,
-          OBJECT_PROPERTY,
-          CLASS_PROPERTY,
-          CLASS_REFERENCE
-        } value_type_t;
-
-        Value(const std::string &value, bool string_constant = false);
-        virtual ~Value() throw();
-
-        value_type_t get_type() const;
-        std::uint8_t get_index() const { return index; }
-
-        /** Resolves the value to...
-         */
-        void resolve();
-
-        virtual void gen_bytecode(bool prelim);
-        virtual LocalVariable gen_result(bool prelim);
-
-        virtual bool is_value() { return true; }
-
-        const std::string &get_value() const { return value; }
-
-        void make_local();
-        void make_block_param(Block *block);
-
-      private:
-        value_type_t vtype;
-        std::string value;
-
-        LocalVariable block_param;
-
-        std::uint8_t index;
-        std::int32_t int_value;
-        double flt_value;
-      };
-
       class Identifier : public Node {
       public:
         typedef enum {
@@ -270,10 +223,12 @@ namespace meat {
         } ident_type_t;
 
         Identifier(const std::string &value);
-        ~Identifier() noexcept;
+        virtual ~Identifier() throw();
 
         void new_local();
         void block_parameter(Block *block);
+
+        virtual bool is_value() { return true; }
 
         ident_type_t type() const { return _type; }
         std::uint8_t index() const { return _index; }
@@ -296,7 +251,7 @@ namespace meat {
         Constant(const std::string &value);
         Constant(std::int32_t value);
         Constant(double value);
-        ~Constant() noexcept;
+        virtual ~Constant() throw();
 
         virtual void gen_bytecode(bool prelim);
         virtual LocalVariable gen_result(bool prelim);

@@ -27,29 +27,30 @@
 Library include: {
 #include "compiler.h"
 }
+Library requires: Console
 
 #==============================================================================
 # Grinder.SyntaxException Class
 
 Exception subclass: Grinder.SyntaxExceptionᶲ as: {
 
-	function line {
-		return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).line()));
-	}
+  function line {
+    return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).line()));
+  }
 
-	function character {
-		return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).character()));
-	}
+  function character {
+    return new Value((std::int32_t)(cast<grinder::SyntaxException>(self).character()));
+  }
 
-	class method throw {
-		Exception throw
-	}
+  class method throw {
+    Exception throw
+  }
 
-	class method throw: message {
-		Exception throw: message
-	}
+  class method throw: message {
+    Exception throw: message
+  }
 
-	class method throw: message for: ctx {
+  class method throw: message for: ctx {
     Exception throw: message for: ctx
   }
 }
@@ -80,15 +81,18 @@ Object subclass: Grinder.Libraryᶲ as: {
   class function new: libraryName {
     Reference new_object = cast<meat::Class>(self).new_object();
 
+    auto ctx = message(new_object, "initialize", context);
+    execute(ctx);
+
     cast<grinder::Library>(new_object).property(0) = libraryName;
     cast<grinder::Library>(new_object).register_as(cast<Text>(libraryName));
 
     return new_object;
   }
 
-  method import: libraryName {
+  method requires: libraryName {
     Library import: libraryName
-    requiredLibraries append: libraryName
+    requiredLibraries insert: libraryName
   }
 
   method removeImport: libraryName {
@@ -175,7 +179,12 @@ Object subclass: Grinder.Classᶲ as: {
   class method from: aClass subclass: name {
     self newObject
     className = name
-    superClass = [aClass name]
+    #[aClass isType: Class] isTrue: {
+      superClass = [aClass name]
+    #} else: {
+    #  superClass = [aClass asText]
+    #}
+    #Console writeLn: ["[DEBUG] " + superClass]
     context return: self
   }
 
@@ -204,7 +213,7 @@ Object subclass: Grinder.Classᶲ as: {
   }
 
   function addMethod: theMethod {
-	  if (theMethod->is_type("Grinder.Method")) {
+    if (theMethod->is_type("Grinder.Method")) {
       cast<grinder::Class>(self).add_method(theMethod);
     } else {
       throw meat::Exception("Attempting to add a non Grinder.Method to a "
@@ -224,7 +233,7 @@ Object subclass: Grinder.Classᶲ as: {
 
   function addClassMethod: theMethod {
     if (theMethod->is_type("Grinder.Method")) {
-      cast<grinder::Class>(self).add_method(theMethod);
+      cast<grinder::Class>(self).add_class_method(theMethod);
     } else {
       throw meat::Exception("Attempting to add a non Grinder.Method to a "
                             "Grinder.Class");
@@ -262,6 +271,62 @@ Object subclass: Grinder.Methodᶲ as: {
 
   class method new: name {
     self newObject
+    [name isType: List] isTrue: {
+      count = 0
+      methodName = [List new]
+      name forEach: .part do: {
+        [[count % 2] == 0] isTrue: {
+          methodName push: [.part asText]
+        } else: {
+          parameters push: [.part asText]
+        }
+        count = [count + 1]
+      }
+
+      # Validate the method name
+      [[parameters entries] == 0] isTrue: {
+        mName = [methodName get: 1]
+        [[mName getCharAt: [mName length]] == ':'] isTrue: {
+          Exception throw: [["\":\" at end of method name, " + mName] + \
+                            ", without parameters"]
+        }
+      } else: {
+        [[parameters entries] == 1] isTrue: {
+          mName = [methodName get: 1]
+
+          # Operators that don't need the : character.
+          [mName == '=='] isTrue: { context break }
+          [mName == '<>'] isTrue: { context break }
+          [mName == '+'] isTrue: { context break }
+          [mName == '-'] isTrue: { context break }
+          [mName == '*'] isTrue: { context break }
+          [mName == '/'] isTrue: { context break }
+          [mName == '%'] isTrue: { context break }
+          [mName == '^'] isTrue: { context break }
+          [mName == '<'] isTrue: { context break }
+          [mName == '<='] isTrue: { context break }
+          [mName == '>'] isTrue: { context break }
+          [mName == '>='] isTrue: { context break }
+
+          # Other names need the : character before the parameter.
+          [[mName getCharAt: [mName length]] <> ':'] isTrue: {
+            Exception throw: [["Missing \":\" in method name, " + \
+                               mName] + ", before a parameter"]
+          }
+        } else: {
+          # Make sure there's a : before each parameter.
+          methodName forEach: .part do: {
+            [[.part getCharAt: [.part length]] <> ':'] isTrue: {
+              Exception throw: [["Missing \":\" in method name, " + \
+                                 .part] + ", before a parameter"]
+            }
+          }
+        }
+      }
+    } else: {
+      Exception throw: "Grinder.Method name needs to be in a List"
+    }
+
     methodName = name
     context return: self
   }
@@ -291,11 +356,11 @@ Object subclass: Grinder.Methodᶲ as: {
   }
 
   function isNative {
-	  return meat::Boolean(cast<grinder::Method>(self).is_cpp());
+    return meat::Boolean(cast<grinder::Method>(self).is_cpp());
   }
 
   function isNative: value {
-	  if (meat::Boolean(value))
+    if (meat::Boolean(value))
       cast<grinder::Method>(self).is_cpp(true);
     else if (not meat::Boolean(value))
       cast<grinder::Method>(self).is_cpp(false);

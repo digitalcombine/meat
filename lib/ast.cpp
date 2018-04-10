@@ -231,10 +231,8 @@ Block::Block() : temp_counter(0) {
 }
 
 Block::~Block() noexcept {
-  std::deque<Node *>::iterator it;
-  for (it = _nodes.begin(); it != _nodes.end(); it++) {
-    delete *it;
-  }
+  for (auto &node: _nodes)
+    delete node;
 }
 
 /**********************************
@@ -291,16 +289,20 @@ LocalVariable Block::anon_local() {
  * meat::grinder::ast::Method Class
  */
 
+/**************************************
+ * meat::grinder::ast::Method::Method *
+ **************************************/
+
 Method::Method(const meat::List &properties, int p_offset,
                const meat::List &class_properties, int cp_offset) {
-
-  List::const_iterator it;
-  for (it = properties.begin(); it != properties.end(); it++)
-    this->properties.push_back(cast<const Text>(*it));
+  // Add the properties to the method for easier resolution.
+  for (auto &property_name: properties)
+    this->properties.push_back(cast<const Text>(property_name));
   this->p_offset = p_offset;
 
-  for (it = class_properties.begin(); it != class_properties.end(); it++)
-    this->class_properties.push_back(cast<const Text>(*it));
+  // Add the class properties to the method for easier resolution.
+  for (auto &property_name: class_properties)
+    this->class_properties.push_back(cast<const Text>(property_name));
   this->cp_offset = cp_offset;
 
   local("self");
@@ -354,10 +356,8 @@ LocalVariable Method::gen_result(bool prelim) {
 }
 
 void Method::append_bytecode(std::vector<uint8_t> &bc) {
-  std::vector<uint8_t>::iterator it;
-  for (it = this->bc.begin(); it != this->bc.end(); it++) {
-    bc.push_back(*it);
-  }
+  for (auto &byte: this->bc)
+    bc.push_back(byte);
 }
 
 std::int16_t Method::resolve_property(const std::string &name) const {
@@ -463,16 +463,20 @@ ContextBlock::ContextBlock() {
 }
 
 ContextBlock::~ContextBlock() throw() {
-  std::deque<Node *>::iterator it;
-  /*for (it = commands.begin(); it != commands.end(); it++) {
-    delete *it;
-  }*/
 }
+
+/**************************************************
+ * meat::grinder::ast::ContextBlock::gen_bytecode *
+ **************************************************/
 
 void ContextBlock::gen_bytecode(bool prelim) {
   throw Exception("Can't generate a code block without a local variable"
       " destination");
 }
+
+/************************************************
+ * meat::grinder::ast::ContextBlock::gen_result *
+ ************************************************/
 
 LocalVariable ContextBlock::gen_result(bool prelim) {
   uint16_t bc_mark;
@@ -493,13 +497,12 @@ LocalVariable ContextBlock::gen_result(bool prelim) {
     bytecode((uint16_t)0);
   }
 
-  std::deque<Node *>::iterator it;
-  for (it = _nodes.begin(); it != _nodes.end(); it++) {
-    (*it)->gen_bytecode(prelim);
+  for (auto &node: _nodes) {
+    node->gen_bytecode(prelim);
     temp_counter = 0;
   }
 
-  if (!prelim) {
+  if (not prelim) {
 #ifdef DEBUG
     std::cout << "BC: CTXEND" << std::endl;
 #endif
@@ -540,235 +543,6 @@ std::uint8_t ContextBlock::local_count() const {
 }
 
 /******************************************************************************
- * AST Value Class Node
- */
-
-Value::Value(const std::string &value, bool string_constant)
-  : vtype(UNKNOWN), value(value) {
-
-  if (string_constant) vtype = STRING_CONST;
-}
-
-Value::~Value() throw() {
-}
-
-Value::value_type_t Value::get_type() const {
-  return vtype;
-}
-
-void Value::resolve() {
-  if (vtype == UNKNOWN) {
-    int16_t local_idx;
-
-    if (not Utils::is_integer(value, int_value) and
-        not Utils::is_float(value, flt_value)) {
-
-      if ((local_idx = resolve_property(value)) != -1) {
-#ifdef DEBUG
-        std::cout << "STAGE: Resolved property " << value << " as "
-                  << std::dec << local_idx << std::endl;
-#endif
-        vtype = OBJECT_PROPERTY;
-        index = local_idx;
-      } else if ((local_idx = resolve_class_property(value)) != -1) {
-#ifdef DEBUG
-        std::cout << "STAGE: Resolved class property " << value << std::endl;
-#endif
-        vtype = CLASS_PROPERTY;
-        index = local_idx;
-      } else {
-        //set_result_dest(resolve_local(value));
-        LocalVariable source = resolve_local(value);
-        if (not source.name().empty()) {
-#ifdef DEBUG
-          std::cout << "STAGE: Resolved local " << source.name()
-                    << " as " << (unsigned int)source.index() << std::endl;
-#endif
-          vtype = LOCAL_VARIABLE;
-          index = source.index();
-          if (not result_set)
-            set_result_dest(source);
-        }
-      }
-    }
-  }
-}
-
-void Value::gen_bytecode(bool prelim) {
-  throw Exception("Unable to generate a value without a local variable"
-                  " destination");
-}
-
-LocalVariable Value::gen_result(bool prelim) {
-  if (prelim) {
-    // First state in compilation, attempt to optimize assignment.
-
-    if (vtype == STRING_CONST) {
-#ifdef DEBUG
-      std::cout << "STAGE: String constant \"" << value << "\""
-                << std::endl;
-#endif
-      set_result_dest();
-    } else if (vtype == UNKNOWN) {
-      int16_t local_idx;
-
-      if (Utils::is_integer(value, int_value)) {
-        vtype = INT_CONST;
-        set_result_dest();
-      } else if (Utils::is_float(value, flt_value)) {
-        vtype = FLOAT_CONST;
-        set_result_dest();
-      } else if ((local_idx = resolve_property(value)) != -1) {
-#ifdef DEBUG
-        std::cout << "STAGE: Resolved property " << value << std::endl;
-#endif
-        vtype = OBJECT_PROPERTY;
-        index = local_idx;
-        set_result_dest();
-      } else if ((local_idx = resolve_class_property(value)) != -1) {
-#ifdef DEBUG
-        std::cout << "STAGE: Resolved class property " << value << std::endl;
-#endif
-        vtype = CLASS_PROPERTY;
-        index = local_idx;
-        set_result_dest();
-      } else {
-        LocalVariable source = resolve_local(value);
-        if (not source.name().empty()) {
-#ifdef DEBUG
-          std::cout << "STAGE: Resolved local " << source.name()
-                    << " as " << std::dec << (unsigned int)source.index()
-                    << std::endl;
-#endif
-          vtype = LOCAL_VARIABLE;
-          index = source.index();
-          if (not result_set)
-            set_result_dest(source);
-        } else {
-          result_set = false;
-          if (meat::Class::have_class(value.c_str())) {
-#ifdef DEBUG
-            std::cout << "STAGE: Resolved class " << value << std::endl;
-#endif
-            vtype = CLASS_REFERENCE;
-            set_result_dest();
-          } else {
-#ifdef DEBUG
-            std::cout << "STAGE: " << value << " is unresolved." << std::endl;
-#endif
-          }
-        }
-      }
-    }
-  } else {
-    // The actual byte code generation.
-
-    switch (vtype) {
-    case STRING_CONST: {
-#ifdef DEBUG
-      std::cout << "BC: STR " << result.name()
-                << " \"" << value << "\"" << std::endl;
-#endif
-      bytecode(bytecode::ASSIGN_CONST_TXT);
-      bytecode(result.index());
-      for (unsigned int c = 0; c < value.size(); c++)
-        bytecode((uint8_t)value[c]);
-      bytecode((uint8_t)0);
-      return result;
-    }
-    case INT_CONST: {
-#ifdef DEBUG
-      std::cout << "BC: INT " << result.name()
-                << " \"" << std::dec << (int)int_value << "\"" << std::endl;
-#endif
-      bytecode(bytecode::ASSIGN_CONST_INT);
-      bytecode(result.index());
-      bytecode((int32_t)int_value);
-      return result;
-    }
-    case FLOAT_CONST: {
-#ifdef DEBUG
-      std::cout << "BC: NUM " << result.name()
-                << " \"" << (float)flt_value << "\"" << std::endl;
-#endif
-      bytecode(bytecode::ASSIGN_CONST_NUM);
-      bytecode(result.index());
-      bytecode((float_t)flt_value);
-      return result;
-    }
-    case BLOCK_PARAMETER:
-#ifdef DEBUG
-      std::cout << "BC: INT " << result.name()
-                << " \"" << std::dec << (int)int_value << "\"" << std::endl;
-#endif
-      bytecode(bytecode::ASSIGN_CONST_INT);
-      bytecode(result.index());
-      bytecode((int32_t)block_param.index());
-      return result;
-    case OBJECT_PROPERTY: {
-#ifdef DEBUG
-      std::cout << "BC: PROP " << result.name() << " "
-                << std::dec << (unsigned int)index << std::endl;
-#endif
-      bytecode(bytecode::ASSIGN_PROP);
-      bytecode(result.index());
-      bytecode((uint8_t)index);
-      return result;
-    }
-    case CLASS_PROPERTY: {
-#ifdef DEBUG
-      std::cout << "BC: CLASS PROP " << result.name() << " "
-                << std::dec << (unsigned int)index << std::endl;
-#endif
-      bytecode(bytecode::ASSIGN_CLASS_PROP);
-      bytecode(result.index());
-      bytecode((uint8_t)index);
-      return result;
-    }
-    case CLASS_REFERENCE:
-#ifdef DEBUG
-      std::cout << "BC: CLASS " << result.name() << " "
-                << std::hex << value << std::endl;
-#endif
-      bytecode(bytecode::ASSIGN_CLASS);
-      bytecode(result.index());
-      bytecode((uint32_t)hash(value.c_str()));
-      return result;
-    case LOCAL_VARIABLE:
-      if (result.name() != value) {
-#ifdef DEBUG
-        std::cout << "BC: MOV " << result.name() << " " << std::dec
-                  << value << std::endl;;
-#endif
-        bytecode(meat::bytecode::ASSIGN);
-        bytecode(result.index());
-        bytecode(index);
-      }
-      break;
-    default:
-      throw Exception(std::string("Unknown result destination in assignment"
-                                  " for ") + value);
-    }
-  }
-
-  return result;
-}
-
-void Value::make_local() {
-  result = local(value);
-  result_set = true;
-  vtype = LOCAL_VARIABLE;
-  index = result.index();
-}
-
-void Value::make_block_param(Block *block) {
-  result = anon_local();
-  result_set = true;
-  block_param = block->local(value);
-  vtype = BLOCK_PARAMETER;
-}
-
-/******************************************************************************
  * meat::grinder::ast::Identifier Class
  */
 
@@ -805,6 +579,10 @@ void Identifier::new_local() {
  ***************************************************/
 
 void Identifier::block_parameter(Block *block) {
+  //if (_type == UNKNOWN and not result_set) {
+  if (_name[0] != '.')
+    throw Exception(std::string("Identifier ") + _name +
+                    " is not a block parameter.");
   result = anon_local();
   result_set = true;
   _parameter = block->local(_name);
@@ -905,7 +683,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
       return result;
     case OBJECT_PROPERTY: {
 #ifdef DEBUG
-      std::cout << "BC: PROP " << result.name() << " "
+      std::cout << "BC: PROP " << (unsigned int)result.index() << " "
                 << std::dec << (unsigned int)_index << std::endl;
 #endif
       bytecode(bytecode::ASSIGN_PROP);
@@ -955,25 +733,38 @@ LocalVariable Identifier::gen_result(bool prelim) {
  * meat::grinder::ast::Constant Class
  */
 
-Constant::Constant(const std::string &value)
-  : _type(TEXT), _text(value) {
+/******************************************
+ * meat::grinder::ast::Constant::Constant *
+ ******************************************/
+
+Constant::Constant(const std::string &value) : _type(TEXT), _text(value) {
 }
 
-Constant::Constant(std::int32_t value)
-  : _type(INTEGER) {
+Constant::Constant(std::int32_t value) : _type(INTEGER) {
   _value.integer = value;
 }
 
-Constant::Constant(double value)
-  : _type(NUMBER) {
+Constant::Constant(double value) : _type(NUMBER) {
   _value.number = value;
 }
+
+/*******************************************
+ * meat::grinder::ast::Constant::~Constant *
+ *******************************************/
 
 Constant::~Constant() noexcept {
 }
 
+/**********************************************
+ * meat::grinder::ast::Constant::gen_bytecode *
+ **********************************************/
+
 void Constant::gen_bytecode(bool prelim) {
 }
+
+/********************************************
+ * meat::grinder::ast::Constant::gen_result *
+ ********************************************/
 
 LocalVariable Constant::gen_result(bool prelim) {
   if (prelim) {
@@ -1006,7 +797,7 @@ LocalVariable Constant::gen_result(bool prelim) {
     case NUMBER: {
 #ifdef DEBUG
       std::cout << "BC: NUM " << result.name()
-                << " \"" << (float)_value.number << "\"" << std::endl;
+                << " \"" << (double)_value.number << "\"" << std::endl;
 #endif
       bytecode(bytecode::ASSIGN_CONST_NUM);
       bytecode(result.index());
@@ -1126,23 +917,37 @@ Message::Message(Node *who, const std::string &name)
   : who(who), _method(name) {
 }
 
+/*****************************************
+ * meat::grinder::ast::Message::~Message *
+ *****************************************/
+
 Message::~Message() throw() {
   delete who;
 
-  std::deque<Node *>::iterator param_it;
-  for (param_it = params.begin(); param_it != params.end(); param_it++) {
-    delete (*param_it);
-  }
+  for (auto &node: params)
+    delete node;
 }
+
+/***************************************
+ * meat::grinder::ast::Message::method *
+ ***************************************/
 
 void Message::method(const std::string &name) {
   _method = name;
 }
 
+/******************************************
+ * meat::grinder::ast::Message::add_param *
+ ******************************************/
+
 void Message::add_param(Node *param) {
   params.push_back(param);
   param->scope(_scope);
 }
+
+/**********************************************
+ * meat::grinder::ast::Message::message_super *
+ **********************************************/
 
 void Message::message_super(bool to_super) {
   super = to_super;
@@ -1158,32 +963,34 @@ void Message::scope(Block *block) {
   who->scope(block); // Set the scope for the messaged object.
 
   // Set the scope for our parameters.
-  std::deque<Node *>::iterator it = params.begin();
-  for (; it != params.end(); ++it)
-    (*it)->scope(block);
+  for (auto &node: params)
+    node->scope(block);
 }
+
+/*********************************************
+ * meat::grinder::ast::Message::gen_bytecode *
+ *********************************************/
 
 void Message::gen_bytecode(bool prelim) {
   LocalVariable who_var = who->gen_result(prelim);
 
   std::deque<LocalVariable> param_idxs;
-  std::deque<Node *>::iterator it;
-  for (it = params.begin(); it != params.end(); it++) {
+
+  for (auto it = params.begin(); it != params.end(); it++) {
 
     if ((*it)->is_block() and it != params.begin()) {
-      std::deque<Node *>::iterator param_it = it;
 
-      for  (;; param_it--) {
+      for  (auto param_it = it;; param_it--) {
 
-        if (param_it == it)
-          continue;
-
-        if ((*param_it)->is_block())
-          break;
+        if (param_it == it) continue;
+        if ((*param_it)->is_block()) break;
 
         if ((*param_it)->is_value()) {
-          if (((Value *)(*param_it))->get_type() == Value::UNKNOWN)  {
-            ((Value *)(*param_it))->make_block_param((Block *)*it);
+          /*if (((Identifier *)(*param_it))->type() == Identifier::BLOCK_PARAMETER)  {
+            ((Identifier *)(*param_it))->block_parameter((Block *)*it);
+            }*/
+          if (((Identifier *)(*param_it))->type() == Identifier::UNKNOWN)  {
+            ((Identifier *)(*param_it))->block_parameter((Block *)*it);
           }
         }
 
@@ -1215,11 +1022,11 @@ void Message::gen_bytecode(bool prelim) {
     bytecode(who_var.index());
     bytecode((uint32_t)hash(_method));
     bytecode((uint8_t)param_idxs.size());
-    for (uint16_t c = 0; c < param_idxs.size(); c++) {
+    for (auto &local: param_idxs) {
 #ifdef DEBUG
-      std::cout << " " << param_idxs[c].name();
+      std::cout << " " << local.name();
 #endif
-      bytecode(param_idxs[c].index());
+      bytecode(local.index());
     }
 
 #ifdef DEBUG
@@ -1228,21 +1035,20 @@ void Message::gen_bytecode(bool prelim) {
   }
 }
 
+/*******************************************
+ * meat::grinder::ast::Message::gen_result *
+ *******************************************/
+
 LocalVariable Message::gen_result(bool prelim) {
   LocalVariable who_var = who->gen_result(prelim);
 
   std::deque<LocalVariable> param_idxs;
-  std::deque<Node *>::iterator it;
-  for (it = params.begin(); it != params.end(); it++) {
-    param_idxs.push_back((*it)->gen_result(prelim));
-  }
+  for (auto &node: params)
+    param_idxs.push_back(node->gen_result(prelim));
 
-  if (prelim) {
-    //result = add_temp_local();
-    set_result_dest();
-  }
+  if (prelim) set_result_dest();
 
-  if (!prelim) {
+  if (not prelim) {
     LocalVariable lindex;
 
     if (super) {
@@ -1266,11 +1072,11 @@ LocalVariable Message::gen_result(bool prelim) {
     bytecode((uint32_t)hash(_method));
     bytecode((uint8_t)param_idxs.size());
 
-    for (uint16_t c = 0; c < param_idxs.size(); c++) {
+    for (auto &local: param_idxs) {
 #ifdef DEBUG
-      std::cout << " " << param_idxs[c].name();
+      std::cout << " " << local.name();
 #endif
-      bytecode(param_idxs[c].index());
+      bytecode(local.index());
     }
 
 #ifdef DEBUG

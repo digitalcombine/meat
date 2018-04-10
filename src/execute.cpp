@@ -419,6 +419,8 @@ meat::Reference meat::execute(Reference context) {
           return cast<Context>(old_ctx).result();
         }
 
+        cast<Context>(old_ctx).reset();
+
         if (not cast<Context>(context).is_done()) {
           ip = cast<Context>(context)._ip;
           code = cast<Class>(cast<Context>(context).klass()).bytecode();

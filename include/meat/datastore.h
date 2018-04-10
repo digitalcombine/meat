@@ -27,7 +27,7 @@
 #ifndef _MEAT_DATASTORE_H
 #define _MEAT_DATASTORE_H
 
-#if defined (__linux__)
+#if defined (__linux__) || defined(__FreeBSD__)
 typedef void *nativelib_t;
 #elif defined (_WIN32) || defined (_WIN64)
 typedef HMODULE nativelib_t;
@@ -57,7 +57,12 @@ namespace meat {
      */
     class DECLSPEC Library {
     public:
-      static Library *create(const std::string &name);
+      /**
+       */
+      static Library *create(const std::string &name, bool compiled = false);
+
+      /**
+       */
       static Library *import(const std::string &name);
 
       /** If the library has an application
@@ -67,7 +72,7 @@ namespace meat {
       static Library *get(const std::string &name);
       static void unload(const std::string &name);
 
-      /** Unload all libraries.
+      /** Unload all the libraries.
        */
       static void unload();
 
@@ -101,17 +106,23 @@ namespace meat {
 
       const std::string &name() { return _name; }
 
+      /**
+       */
       void set_symbols(std::uint8_t *symbols,
                        meat::alloc_t sym_alloc);
+
+      /**
+       */
       void clear_symbols();
+
+      /** Attempt to resolve the hash_id to
+       */
       std::string lookup(std::uint32_t hash_id) const;
 
       const std::deque<Reference> &get_classes() const { return classes; }
 
     protected:
-      /**
-       * @todo Imports and includes should be moved to the Grinder.Library
-       *       class.
+      /** Reference to all the classes in the library.
        */
       std::deque<Reference> classes;
 
@@ -121,7 +132,11 @@ namespace meat {
 
     private:
       std::string _name;
-      bool is_new;
+      /** Flag for libraries created by the Grinder library. These libraries
+       * don't get registered as a loaded library and classes get registered
+       * seperately from normally loaded libraries.
+       */
+      bool _developing;
 
       std::map<std::uint32_t, const char *> syms_table;
       bool syms_free;
@@ -132,7 +147,7 @@ namespace meat {
       nativelib_t dlhandle;
       Reference application;
 
-      Library(const std::string &name);
+      Library(const std::string &name, bool compiled = false);
 
       void import_from_archive(const std::string &name);
       void import_from_native(const std::string &filename,

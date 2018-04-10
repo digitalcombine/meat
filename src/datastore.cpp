@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
+#include <cmath>
 #include <unistd.h>
 
 #ifdef TESTING
@@ -125,11 +126,19 @@ static std::map<std::string, meat::data::Library *> &get_libraries() {
  * meat::data::Library::Library *
  ********************************/
 
-meat::data::Library::Library(const std::string &name)
-  : syms_free(false), syms_size(0), symbols(NULL),
-    is_native(false), dlhandle(0) {
-  this->_name = name;
-  this->is_new = false;
+meat::data::Library::Library(const std::string &name, bool compiled)
+  : _name(name), _developing(compiled), syms_free(false), syms_size(0),
+    symbols(NULL), is_native(false), dlhandle(0) {
+
+  if (not _developing) {
+    auto lib = get_libraries().find(name);
+    if (lib != get_libraries().end())
+      throw meat::Exception(std::string("Library ") + name +
+                            " is already loaded.");
+
+    // Register the library.
+    get_libraries()[_name] = this;
+  }
 }
 
 /*********************************
@@ -147,9 +156,8 @@ meat::data::Library::~Library() throw() {
    * using them any more.
    */
   if (_name != "__builtin__") {
-    std::deque<Reference>::iterator it;
-    for (it = classes.begin(); it != classes.end(); it++)
-      Class::unrecord(*it);
+    for (auto it = classes.begin(); it != classes.end(); it++)
+      Class::unrecord(*it, _developing);
   }
 
   clear_symbols();
@@ -161,17 +169,16 @@ meat::data::Library::~Library() throw() {
  * meat::data::Library::create *
  *******************************/
 
-meat::data::Library *meat::data::Library::create(const std::string &name) {
-  Library *new_lib = new Library(name);
-  new_lib->_name = name;
+meat::data::Library *meat::data::Library::create(const std::string &name,
+                                                 bool compiled) {
+  // Check to see if we have already imported the library.
+  if (not compiled) {
+    //auto lib = get_libraries().find(name);
+    //if (lib != get_libraries().end()) // XXX Throw an exception here!!!
+    //  return lib->second;
+  }
 
-  // The __builtin__ library is special ;)
-  if (new_lib->_name == "__builtin__")
-    new_lib->is_new = false;
-  else
-    new_lib->is_new = true;
-
-  get_libraries()[name] = new_lib;
+  Library *new_lib = new Library(name, compiled);
 
   return new_lib;
 }
@@ -182,16 +189,13 @@ meat::data::Library *meat::data::Library::create(const std::string &name) {
 
 meat::data::Library *meat::data::Library::import(const std::string &name) {
   // Check to see if we have already imported the library.
-  std::map<std::string, Library *>::iterator lib = get_libraries().find(name);
+  auto lib = get_libraries().find(name);
   if (lib != get_libraries().end())
     return lib->second;
 
   // Load the library.
   Library *imported_lib = new Library(name);
   imported_lib->import();
-
-  // Register the library.
-  get_libraries()[name] = imported_lib;
 
   return imported_lib;
 }
@@ -205,11 +209,9 @@ meat::Reference meat::data::Library::execute(const std::string &name) {
   imported_lib->import_from_archive(name);
 
   if (not imported_lib->application.is_null()) {
-    get_libraries()[name] = imported_lib;
-
     // Message the application and get things rolling.
-    meat::Reference context = meat::message(imported_lib->application,
-                                            "entry", meat::Null());
+    auto context = meat::message(imported_lib->application,
+                                 "entry", meat::Null());
     return meat::execute(context);
   }
   throw meat::Exception(std::string("Library ") + name +
@@ -222,8 +224,7 @@ meat::Reference meat::data::Library::execute(const std::string &name) {
 
 meat::data::Library *
 meat::data::Library::get(const std::string &name) {
-  std::map<std::string, meat::data::Library *>::iterator it =
-    get_libraries().find(name);
+  auto it = get_libraries().find(name);
   if (it != get_libraries().end()) {
     return it->second;
   }
@@ -240,8 +241,7 @@ void meat::data::Library::unload(const std::string &name) {
   std::cout << "LIBRARY: Unloading " << name << std::endl;
 #endif
 
-  std::map<std::string, meat::data::Library *>::iterator it =
-    get_libraries().find(name);
+  auto it = get_libraries().find(name);
   if (it != get_libraries().end()) {
     delete it->second;
     get_libraries().erase(it);
@@ -249,9 +249,9 @@ void meat::data::Library::unload(const std::string &name) {
 }
 
 void meat::data::Library::unload() {
-  std::map<std::string, meat::data::Library *>::iterator it =
-    get_libraries().begin();
-  for (; it != get_libraries().end(); ++it) {
+
+  // Unload all libraries except the __builtin__ library.
+  for (auto it = get_libraries().begin(); it != get_libraries().end(); ++it) {
     if (it->second->_name != "__builtin__")
       delete it->second;
   }
@@ -269,19 +269,18 @@ void meat::data::Library::import() {
 #endif
 
   // First see if the library is already loaded.
-  std::map<std::string, Library *>::iterator lib = get_libraries().find(_name);
+  /*std::map<std::string, Library *>::iterator lib = get_libraries().find(_name);
   if (lib != get_libraries().end()) {
     return;
-  }
+  }*/
 
   /*  Search the path for the library. This code needs a serious review and
    * may be prone to many unexpected errors.
    */
   std::ifstream lib_file;
-  std::deque<std::string>::iterator it = get_path().begin();
 
   bool found = false;
-  for (; it != get_path().end(); it++) {
+  for (auto it = get_path().begin(); it != get_path().end(); it++) {
     if (fexists(((*it) + (this->_name + ".mlib")).c_str())) {
       import_from_archive((*it) + (this->_name + ".mlib"));
       found = true;
@@ -308,9 +307,8 @@ void meat::data::Library::import() {
  *************************************/
 
 void meat::data::Library::init_classes() {
-  std::deque<Reference>::iterator class_it = classes.begin();
-  for (; class_it != classes.end(); ++class_it) {
-    Reference context = message(*class_it, "initialize", meat::Null());
+  for (auto it = classes.begin(); it != classes.end(); ++it) {
+    auto context = message(*it, "initialize", meat::Null());
     meat::execute(context);
   }
 }
@@ -328,17 +326,20 @@ void meat::data::Library::add_path(const std::string &name) {
  ****************************/
 
 void meat::data::Library::add(Class *cls, const std::string &id) {
-  if (!cls->is_class()) {
+  if (not cls->is_class())
     throw meat::Exception("Only classes can be added to library files.");
-  }
 
 #ifdef DEBUG
   std::cout << "LIBRARY: Adding class " << id << std::endl;
 #endif /* DEBUG */
   Reference newcls = cls;
   classes.push_back(newcls);
-  if (_name != "__builtin__")
-    Class::record(newcls, id.c_str());
+  if (_name != "__builtin__") {
+    if (_developing)
+      Class::record_compiled_class(newcls, id);
+    else
+      Class::record(newcls, id);
+  }
   cls->library = this;
 }
 
@@ -352,8 +353,7 @@ void meat::data::Library::clear() {
    * using them any more.
    */
   if (_name != "__builtin__") {
-    std::deque<Reference>::iterator it;
-    for (it = classes.begin(); it != classes.end(); it++)
+    for (auto it = classes.begin(); it != classes.end(); it++)
       Class::unrecord(*it);
   }
   classes.clear();
@@ -381,13 +381,13 @@ void *meat::data::Library::dlsymbol(const std::string &name) {
   if (dlhandle) {
     void *result = dl_symbol(dlhandle, name.c_str());
     if (!result) {
-      throw Exception(std::string("Unable to load DL symbol ") + name +
-                      " from library " + this->_name);
+      throw Exception(std::string("Unable to load DL symbol \"") + name +
+                      "\" from library " + this->_name);
     }
     return result;
   }
-  throw Exception(std::string("Unable to load DL symbol from non-native "
-                              "library ") + this->_name);
+  throw Exception(std::string("Unable to load DL symbol \"") + name +
+                              "\" from non-native library " + this->_name);
 }
 
 /************************************
@@ -442,8 +442,7 @@ void meat::data::Library::clear_symbols() {
  *******************************/
 
 std::string meat::data::Library::lookup(std::uint32_t hash_id) const {
-  std::map<std::uint32_t, const char *>::const_iterator it =
-    syms_table.find(hash_id);
+  auto it = syms_table.find(hash_id);
   if (it != syms_table.end()) {
     return it->second;
   }
@@ -781,7 +780,7 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
    */
   if (not data_stream.is_open())
     throw meat::Exception((std::string("Internal read error on archive ") +
-                            this->name).c_str());
+                           this->name).c_str());
 
 #ifdef DEBUG
   std::cout << "ARCHIVE: get_object(" << std::dec

@@ -632,9 +632,11 @@ bool meat::grinder::Utils::is_integer(const std::string &value,
 
   // Check for numeric sign.
   if (value[c] == '-') {
+    if (value.length() == 1) return false;
     neg = true;
     c++;
   } else if (value[c] == '+') {
+    if (value.length() == 1) return false;
     c++;
   }
 

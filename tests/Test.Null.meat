@@ -41,7 +41,7 @@ Test.Suite subclass: Test.Null as: {
 
     self title: "3.5.2 Class method subClass: as:" test: {
       Exception try: {
-        Null subClass: Null2 as: { }
+        Null subclass: "Null2" as: { }
       } catch: {
         self pass
       }

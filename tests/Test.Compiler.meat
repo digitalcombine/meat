@@ -17,17 +17,25 @@
 # You should have received a copy of the GNU General Public License
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
-Library import: UnitTest
-Library import: Grinder
+Library requires: UnitTest
+Library requires: Grinder
 
-Test subclass: Test.Compiler as: {
+Test.Suite subclass: Test.Compiler as: {
 
-	method initialize {
-		super initialize
-		self setTitle: "Compiler functionallity"
-	}
+	method setup {
+	  self title: "4 Grinder"
 
-	method execute {
-		self pass
+		self title: "Method Name Validation" test: {
+		  mName = [List new]
+			mName push: "hello"
+			theMethod = [Grinder.Method new: mName]
+
+			mName = [List new]
+			mName push: "+"
+			mName push: "other"
+			theMethod = [Grinder.Method new: mName]
+
+			self pass
+		}
 	}
 }

@@ -18,7 +18,7 @@
  */
 
 #if __cplusplus < 201103L
-#error This file requires compiler and library support for the ISO C++ 2011 standard.
+//#error This file requires compiler and library support for the ISO C++ 2011 standard.
 #else
 
 #ifndef __GNUC__

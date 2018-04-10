@@ -86,8 +86,10 @@ namespace meat {
         WORD         = 0x00,
         SUBST_STRING = 0x01,
         LITRL_STRING = 0x02,
-        COMMAND      = 0x03,
-        BLOCK        = 0x04,
+        INTEGER      = 0x03,
+        NUMBER       = 0x04,
+        COMMAND      = 0x05,
+        BLOCK        = 0x06,
         EOL          = 0xff
       } token_t;
 
@@ -130,16 +132,23 @@ namespace meat {
 
       /** Cast the token as a constant string.
        */
-      operator const std::string &() const { return value; };
+      operator std::string () const;
 
-      /** Convert the token to a float_t if possible. If the token could not
+      /** Convert the token to a double if possible. If the token could not
        * be converted then 0.0f is returned.
        */
-      operator double ();
+      operator std::int32_t () const;
+
+      /** Convert the token to a double if possible. If the token could not
+       * be converted then 0.0f is returned.
+       */
+      operator double () const;
 
     private:
       token_t value_type; /**< The type of token parsed */
       std::string value;  /**< The value of the token. */
+      std::int32_t i_value;
+      double d_value;
       Location _position; /**< Location of the token in the original text. */
     };
 
@@ -148,7 +157,7 @@ namespace meat {
     class DECLSPEC SyntaxException : public meat::Exception {
     public:
       SyntaxException(const Token &token, const std::string &message);
-      virtual ~SyntaxException() noexcept;
+      virtual ~SyntaxException() throw();
 
       unsigned int line() const;
       unsigned int character() const;
@@ -347,6 +356,7 @@ namespace meat {
       virtual void set_application_class(meat::Reference klass);
 
       void compile();
+
       /** Actually create the new library file.
        * XXX Rename to compile
        */
@@ -469,7 +479,7 @@ namespace meat {
       ast::Message *message();
       ast::Assignment *assignment();
       ast::ContextBlock *block();
-      ast::Value *text_constant();
+      ast::Constant *constant();
 
     private:
       /** Reference to the class that contains the method */
