@@ -1,8 +1,9 @@
 #                                                           -*- Makefile.am -*-
 
-TESTS = tests.mlib hello.mlib
-LOG_COMPILER = @top_srcdir@/bin/meat
-AM_LOG_FLAGS = -i ../lib/.libs/
+TESTS = tests.mlib hello.mlib memory-tests parser-tests
+TEST_EXTENSIONS = .mlib
+MLIB_LOG_COMPILER = @top_srcdir@/bin/meat
+AM_MLIB_LOG_FLAGS = -i ../lib/.libs/
 
 SUFFIXES = .meat .mlib
 
@@ -27,6 +28,20 @@ CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 			 Test.Application.mlib Test.Compiler.mlib \
 			 builtin.cpp grinder.cpp \
 			 data.mar tests.mapp hello.mlib libtests.mlib
+
+check_PROGRAMS = memory-tests parser-tests
+
+memory_tests_SOURCES = memory-tests.cpp @top_srcdir@/bin/testsuite.cpp
+memory_tests_CPPFLAGS = -I@top_srcdir@/include
+memory_tests_LDADD = @top_srcdir@/src/libmeat.la
+memory_tests_LDFLAGS = -rdynamic
+
+parser_tests_SOURCES = parser-tests.cpp @top_srcdir@/bin/testsuite.cpp \
+	@top_srcdir@/bin/testing.cpp @top_srcdir@/bin/misc.cpp
+parser_tests_CPPFLAGS = -I@top_srcdir@/include -I@top_srcdir@/lib
+parser_tests_LDADD = @top_srcdir@/lib/Grinder.la
+parser_tests_LDFLAGS = -rdynamic
+
 MEATDEPS = @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat \
 	@top_srcdir@/src/libmeat.la
 

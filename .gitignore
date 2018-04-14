@@ -39,7 +39,8 @@ Makefile.in
 /tests/builtin.cpp
 /tests/Datastore.cpp
 /tests/grinder.cpp
-/tests/memory_tests
+/tests/memory-tests
+/tests/parser-tests
 /docs/*.pdf
 /docs/*.aux
 /docs/*.log
@@ -61,6 +62,3 @@ Makefile.in
 meat-*.tar.gz
 /tests/*.log
 /tests/*.trs
-/src/*.log
-/src/*.trs
-/src/memory-tests

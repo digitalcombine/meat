@@ -20,7 +20,7 @@
 
 AC_PREREQ([2.68])
 AC_INIT([meat], [0.3.0], [ron.rwsoft@gmail.com])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AM_SILENT_RULES
 AC_CONFIG_SRCDIR([src/meat.cpp])
 AC_CONFIG_MACRO_DIR([m4])

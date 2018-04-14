@@ -56,6 +56,9 @@ namespace meat {
       Location(const Location &other);
       virtual ~Location() throw();
 
+      unsigned int line() const { return _line; }
+      unsigned int offset() const { return _offset; }
+
       void inc_line();
       void inc_offset(std::uint32_t amount = 1);
       void offset(std::uint32_t position);
@@ -157,6 +160,7 @@ namespace meat {
     class DECLSPEC SyntaxException : public meat::Exception {
     public:
       SyntaxException(const Token &token, const std::string &message);
+      SyntaxException(const SyntaxException &other);
       virtual ~SyntaxException() throw();
 
       unsigned int line() const;
@@ -248,8 +252,8 @@ namespace meat {
 
       std::istringstream strs;
 
-      //Location start;
-      Location position;
+      Location current_token;
+      Location current_line;
 
       /** Flags get_next_line to do some of its own parsing, dropping comments
        * and trimming white space, otherwise it returns the next line as is.
@@ -261,7 +265,8 @@ namespace meat {
         std::deque<Token> tokens;
         std::string remaining;
         std::istream *stream;
-        Location position;
+        Location current_line;
+        Location current_token;
       };
       std::stack<stack_s> states;
     };
