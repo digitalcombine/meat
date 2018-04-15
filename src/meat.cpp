@@ -1618,7 +1618,7 @@ meat::Reference meat::message(meat::Reference object,
      * classes to find the actual method entry.
      */
     while (m_entry == 0 and !cls.is_null()) {
-      m_entry = ((Class &)(*cls)).class_find(hash_id);
+      m_entry = cast<Class>(cls).class_find(hash_id);
       if (m_entry == 0) cls = cast<Class>(cls).super();
     }
 
@@ -1637,7 +1637,7 @@ meat::Reference meat::message(meat::Reference object,
   // Raise an error if we couldn't resolve the method name.
   if (m_entry == 0)
     throw Exception(std::string("Message ") +
-                    cast<Class>(obj_cls).lookup(hash_id) +
+                    cast<Class>(cast<Context>(context).klass()).lookup(hash_id) +
                     " is unresolved for class " +
                     cast<Class>(obj_cls).name(),
                     context);
@@ -1709,7 +1709,7 @@ meat::Reference meat::message_super(meat::Reference object,
   // Raise an error if we couldn't resolve the method name.
   if (m_entry == 0)
     throw Exception(std::string("Message ") +
-                    cast<Class>(obj_cls).lookup(hash_id) +
+                    cast<Class>(cast<Context>(context).klass()).lookup(hash_id) +
                     " is unresolved for class " +
                     cast<Class>(obj_cls).name(),
                     context);

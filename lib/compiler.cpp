@@ -143,11 +143,6 @@ meat::grinder::Token::Token(const std::string &value,
       this->value_type = Token::NUMBER;
     }
   }
-
-#ifdef DEBUG
-  std::cout << "DEBUG: Token(" << _position << ") " << value << std::endl;
-#endif
-
   subst();
 }
 
@@ -176,11 +171,6 @@ void meat::grinder::Token::subst() {
       value.replace(offset, 2, "'");
     }
   case SUBST_STRING:
-
-#ifdef DEBUG
-  std::cout << "DEBUG: subst " << value << std::endl;
-#endif
-
     for (size_t offset = value.find("\\");
          offset != value.npos;
          offset = value.find("\\", offset + 1)) {
@@ -212,9 +202,6 @@ void meat::grinder::Token::subst() {
         value.replace(offset, 2, "\v");
         break;
       }
-#ifdef DEBUG
-      std::cout << "DEBUG:  -> " << value << std::endl;
-#endif
     }
     break;
   default:
@@ -396,14 +383,17 @@ void meat::grinder::Tokenizer::parse(const std::string &code) {
 void meat::grinder::Tokenizer::push() {
   Token current = tokens.front();
 
+  // We only allow COMMAND and BLOCK to be pushed and reparsed.
   if (not current.is_type(Token::COMMAND) and
       not current.is_type(Token::BLOCK)) {
     throw SyntaxException(current, "Internal error reparsing token");
   }
 
+  // Remove the token and save the state of the tokenizer.
   tokens.pop_front();
   states.push({tokens, remaining, stream, current_line, current_token});
 
+  // Set up the tokenizer to parse the token.
   stream = new std::stringstream((const std::string &)current);
   remaining = "";
   current_line = current.position();
@@ -412,6 +402,7 @@ void meat::grinder::Tokenizer::push() {
   current_line.inc_offset();
   tokens.clear();
 
+  // Start parsing.
   get_next_line();
 }
 
@@ -423,12 +414,14 @@ void meat::grinder::Tokenizer::pop() {
   if (not states.empty()) {
     delete stream;
 
+    // Restore the state of the tokenizer.
     tokens = states.top().tokens;
     remaining = states.top().remaining;
     stream = states.top().stream;
     current_line = states.top().current_line;
     current_token = states.top().current_token;
 
+    // Pop it from the states stack.
     states.pop();
   }
 }
@@ -839,19 +832,15 @@ void meat::grinder::Tokenizer::get_next_line() {
       } else
         cont_line = false;
 
-      // If the line is not empty then parser the tokens and compile the command.
+      /* If the line is not empty then parser the tokens and compile the
+       * command.
+       */
       if (!line.empty()) {
-#ifdef DEBUG
-        //std::cout << "DEBUG: Read cooked line \"" << line << "\"" << std::endl;
-#endif /* DEBUG */
         parse_line(line + '\n');
       } else {
         continue;
       }
     } else { // not cook_lines
-#ifdef DEBUG
-      //std::cout << "DEBUG: Read line \"" << line << "\"" << std::endl;
-#endif /* DEBUG */
       parse_line(line + '\n');
     }
 

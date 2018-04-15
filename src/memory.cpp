@@ -71,7 +71,6 @@ void memory::gc::recycle(void *ptr) throw() {
  ***********************/
 
 void memory::gc::collect(void) {
-	//std::cout << "% collecting %" << std::flush;
   memory_t *mptr = NULL;
   for (std::multimap<std::size_t, void *>::iterator it = free_memory.begin();
        it != free_memory.end(); ++it) {
@@ -87,7 +86,6 @@ void memory::gc::collect(void) {
  ***************************/
 
 void memory::gc::collect_all(void) {
-	//std::cout << "% collecting all %" << std::flush;
   for (std::multimap<std::size_t, void *>::iterator it = free_memory.begin();
        it != free_memory.end(); ++it) {
     ::operator delete(it->second);
