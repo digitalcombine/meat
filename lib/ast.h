@@ -49,7 +49,7 @@ namespace meat {
 
       private:
         std::string _name;
-        Block *block;    // The block context of the variable if there is one.
+        Block *_block;    // The block context of the variable if there is one.
       };
 
       /**
@@ -93,6 +93,8 @@ namespace meat {
         virtual std::int16_t
         resolve_class_property(const std::string &name) const;
         virtual LocalVariable resolve_local(const std::string &name) const;
+
+        virtual void add_symbol(const std::string &name);
 
         /** Returns the offset of the next bytecode that will be inserted.
          */
@@ -154,6 +156,9 @@ namespace meat {
         virtual void gen_bytecode(bool prelim);
         virtual LocalVariable gen_result(bool prelim);
 
+        virtual void add_symbol(const std::string &name);
+        void update_symbols(std::set<std::string> &symbols);
+
         void append_bytecode(std::vector<std::uint8_t> &bc);
 
         friend class LocalVariable;
@@ -172,12 +177,13 @@ namespace meat {
         virtual void bytecode(double value);
 
       private:
-        std::deque<std::string> properties;
-        int p_offset;
-        std::deque<std::string> class_properties;
-        int cp_offset;
+        std::deque<std::string> _properties;
+        int _p_offset;
+        std::deque<std::string> _class_properties;
+        int _cp_offset;
 
-        std::vector<std::uint8_t> bc;
+        std::vector<std::uint8_t> _bytecode;
+        std::set<std::string> _symbols;
       };
 
       /**
@@ -202,11 +208,11 @@ namespace meat {
         std::uint8_t local_count() const;
 
       private:
-        std::deque<std::string> local_names;
+        std::deque<std::string> _local_names;
 
-        LocalVariable local_var;
+        LocalVariable _local_var;
 
-        std::uint8_t temp_counter;
+        std::uint8_t _temp_counter;
       };
 
       /**
@@ -281,8 +287,8 @@ namespace meat {
         virtual LocalVariable gen_result(bool prelim);
 
       private:
-        Identifier *dest;
-        Node *src;
+        Identifier *_destination;
+        Node *_source;
       };
 
       /**
@@ -305,11 +311,11 @@ namespace meat {
         virtual LocalVariable gen_result(bool prelim);
 
       private:
-        Node *who;
+        Node *_who;
         std::string _method;
-        std::deque<Node *> params;
+        std::deque<Node *> _parameters;
 
-        bool super;
+        bool _super;
       };
 
     } /* namespace ast */

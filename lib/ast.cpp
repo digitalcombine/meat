@@ -41,15 +41,15 @@ using namespace meat::grinder::ast;
  ****************************************************/
 
 LocalVariable::LocalVariable()
-  : _name(), block(NULL) {
+  : _name(), _block(NULL) {
 }
 
 LocalVariable::LocalVariable(const std::string &name, Block &block_node)
-  : _name(name), block(&block_node) {
+  : _name(name), _block(&block_node) {
 }
 
 LocalVariable::LocalVariable(const LocalVariable &other)
-  : _name(other._name), block(other.block) {
+  : _name(other._name), _block(other._block) {
 }
 
 /*************************************************
@@ -59,7 +59,7 @@ LocalVariable::LocalVariable(const LocalVariable &other)
 LocalVariable &LocalVariable::operator =(const LocalVariable &other) {
   if (this != &other) {
     _name = other._name;
-    block = other.block;
+    _block = other._block;
   }
   return *this;
 }
@@ -69,10 +69,10 @@ LocalVariable &LocalVariable::operator =(const LocalVariable &other) {
  ********************************************/
 
 std::uint8_t LocalVariable::index() const {
-  if (block) {
-    for (unsigned int idx = 0; idx < block->_locals.size(); ++idx) {
-      if (block->_locals[idx] == _name)
-        return (block->locals() - block->_locals.size()) + idx;
+  if (_block) {
+    for (unsigned int idx = 0; idx < _block->_locals.size(); ++idx) {
+      if (_block->_locals[idx] == _name)
+        return (_block->locals() - _block->_locals.size()) + idx;
     }
   }
 
@@ -182,6 +182,15 @@ std::int16_t Node::resolve_class_property(const std::string &name) const {
 
 LocalVariable Node::resolve_local(const std::string &name) const {
   return scope().resolve_local(name);
+}
+
+/****************************************
+ * meat::grinder::ast::Node::add_symbol *
+ ****************************************/
+
+void Node::add_symbol(const std::string &name) {
+  if (_scope)
+    _scope->add_symbol(name);
 }
 
 /*************************************
@@ -297,13 +306,13 @@ Method::Method(const meat::List &properties, int p_offset,
                const meat::List &class_properties, int cp_offset) {
   // Add the properties to the method for easier resolution.
   for (auto &property_name: properties)
-    this->properties.push_back(cast<const Text>(property_name));
-  this->p_offset = p_offset;
+    this->_properties.push_back(cast<const Text>(property_name));
+  this->_p_offset = p_offset;
 
   // Add the class properties to the method for easier resolution.
   for (auto &property_name: class_properties)
-    this->class_properties.push_back(cast<const Text>(property_name));
-  this->cp_offset = cp_offset;
+    this->_class_properties.push_back(cast<const Text>(property_name));
+  this->_cp_offset = cp_offset;
 
   local("self");
   local("class");
@@ -355,21 +364,33 @@ LocalVariable Method::gen_result(bool prelim) {
   throw Exception("A method cannot be placed in a local variable.");
 }
 
+/*****************************************
+ * meat::grinder::ast:Method::add_symbol *
+ *****************************************/
+
+void Method::add_symbol(const std::string &name) {
+  _symbols.insert(name);
+}
+
+void Method::update_symbols(std::set<std::string> &symbols) {
+  symbols.insert(_symbols.begin(), _symbols.end());
+}
+
 void Method::append_bytecode(std::vector<uint8_t> &bc) {
-  for (auto &byte: this->bc)
+  for (auto &byte: _bytecode)
     bc.push_back(byte);
 }
 
 std::int16_t Method::resolve_property(const std::string &name) const {
-  for (unsigned int index = 0; index < properties.size(); index++) {
-    if (properties[index] == name) return index + p_offset;
+  for (unsigned int index = 0; index < _properties.size(); index++) {
+    if (_properties[index] == name) return index + _p_offset;
   }
   return -1;
 }
 
 std::int16_t Method::resolve_class_property(const std::string &name) const {
-  for (unsigned int index = 0; index < class_properties.size(); index++) {
-    if (class_properties[index] == name) return index + cp_offset;
+  for (unsigned int index = 0; index < _class_properties.size(); index++) {
+    if (_class_properties[index] == name) return index + _cp_offset;
   }
   return -1;
 }
@@ -390,60 +411,60 @@ LocalVariable Method::resolve_local(const std::string &name) const {
  ****************************************/
 
 std::uint16_t Method::bytecode() {
-  return bc.size();
+  return _bytecode.size();
 }
 
 void Method::bytecode(uint8_t value) {
-  bc.push_back(value);
+  _bytecode.push_back(value);
 }
 
 void Method::bytecode(uint16_t value) {
-  bc.push_back(0); // Add two bytes to the bytecode
-  bc.push_back(0);
+  _bytecode.push_back(0); // Add two bytes to the bytecode
+  _bytecode.push_back(0);
 
   // Now set the new value to the bytecode
-  uint16_t *iptr = (uint16_t *)&bc[bc.size() - 2];
+  uint16_t *iptr = (uint16_t *)&_bytecode[_bytecode.size() - 2];
   *iptr = endian::write_be(value);
 }
 
 void Method::bytecode(uint16_t marker, uint16_t value) {
   // Set the new value to the bytecode
-  uint16_t *iptr = (uint16_t *)&bc[marker];
+  uint16_t *iptr = (uint16_t *)&_bytecode[marker];
   *iptr = endian::write_be(value);
 }
 
 void Method::bytecode(uint32_t value) {
-  bc.push_back(0); // Add four bytes to the bytecode
-  bc.push_back(0);
-  bc.push_back(0);
-  bc.push_back(0);
+  _bytecode.push_back(0); // Add four bytes to the bytecode
+  _bytecode.push_back(0);
+  _bytecode.push_back(0);
+  _bytecode.push_back(0);
 
   // Now set the new value to the bytecode
-  int32_t *iptr = (int32_t *)&bc[bc.size() - 4];
+  int32_t *iptr = (int32_t *)&_bytecode[_bytecode.size() - 4];
   *iptr = endian::write_be(value);
 }
 
 void Method::bytecode(int32_t value) {
-  bc.push_back(0); // Add four bytes to the bytecode
-  bc.push_back(0);
-  bc.push_back(0);
-  bc.push_back(0);
+  _bytecode.push_back(0); // Add four bytes to the bytecode
+  _bytecode.push_back(0);
+  _bytecode.push_back(0);
+  _bytecode.push_back(0);
 
   // Now set the new value to the bytecode
-  uint32_t *iptr = (uint32_t *)&bc[bc.size() - 4];
+  uint32_t *iptr = (uint32_t *)&_bytecode[_bytecode.size() - 4];
   *iptr = endian::write_be(value);
 }
 
 void Method::bytecode(double value) {
   for (unsigned int c = 0; c < sizeof(std::int64_t) + sizeof(std::int32_t); c++)
-    bc.push_back(0);
+    _bytecode.push_back(0);
 
   // Now set the new value to the bytecode
-  std::int64_t *mi = (std::int64_t *)&bc[bc.size() -
-                                         (sizeof(std::int64_t) +
-                                          sizeof(std::int32_t))];
-  std::int32_t *exponent =  (std::int32_t *)&bc[bc.size() -
-                                                sizeof(std::int32_t)];
+  std::int64_t *mi = (std::int64_t *)&_bytecode[_bytecode.size() -
+                                                (sizeof(std::int64_t) +
+                                                 sizeof(std::int32_t))];
+  std::int32_t *exponent =  (std::int32_t *)&_bytecode[_bytecode.size() -
+                                                       sizeof(std::int32_t)];
 
   // Seperate the float point value into mantissa and exponent.
   double mantissa = frexp(value, exponent);
@@ -483,7 +504,7 @@ LocalVariable ContextBlock::gen_result(bool prelim) {
 
   if (prelim) {
     // Get a local variable for the BlockContext object.
-    local_var = scope().anon_local();
+    _local_var = scope().anon_local();
 
   } else {
 #ifdef DEBUG
@@ -491,7 +512,7 @@ LocalVariable ContextBlock::gen_result(bool prelim) {
               << (unsigned int)local_names.size() << "\n";
 #endif
     bytecode(meat::bytecode::BLOCK);
-    bytecode((uint8_t)local_var.index());
+    bytecode((uint8_t)_local_var.index());
     bytecode((uint8_t)_locals.size());
     bc_mark = bytecode();
     bytecode((uint16_t)0);
@@ -512,7 +533,7 @@ LocalVariable ContextBlock::gen_result(bool prelim) {
     bytecode(bc_mark, (uint16_t)(bc_mark_end - bc_mark - 2));
   }
 
-  return local_var;
+  return _local_var;
 }
 
 std::uint8_t ContextBlock::locals() const {
@@ -654,6 +675,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
                       << " as class. " << std::endl;
 #endif
             _type = CLASS_REFERENCE;
+            add_symbol(_name);
             set_result_dest();
 
           } else {
@@ -815,12 +837,12 @@ LocalVariable Constant::gen_result(bool prelim) {
  */
 
 Assignment::Assignment(Identifier *dest, Node *src)
-  : dest(dest), src(src) {
+  : _destination(dest), _source(src) {
 }
 
 Assignment::~Assignment() throw() {
-  delete dest;
-  delete src;
+  delete _destination;
+  delete _source;
 }
 
 /*****************************************
@@ -829,8 +851,8 @@ Assignment::~Assignment() throw() {
 
 void Assignment::scope(Block *block) {
   Node::scope(block);
-  dest->scope(block);
-  src->scope(block);
+  _destination->scope(block);
+  _source->scope(block);
 }
 
 /************************************************
@@ -841,29 +863,29 @@ void Assignment::gen_bytecode(bool prelim) {
   // Generate the code needed for the source value.
 
   if (prelim) {
-    dest->gen_result(prelim);
+    _destination->gen_result(prelim);
 
     // This indicates the first time the variable has been addressed.
-    dest->new_local();
+    _destination->new_local();
 
-    if (dest->type() == Identifier::LOCAL_VARIABLE)
-      src->set_result_dest(dest->get_result_dest());
-    src->gen_result(prelim);
+    if (_destination->type() == Identifier::LOCAL_VARIABLE)
+      _source->set_result_dest(_destination->get_result_dest());
+    _source->gen_result(prelim);
   } else {
-    LocalVariable source = src->gen_result(prelim);
+    LocalVariable source = _source->gen_result(prelim);
 
     /* Determine the type of assignment and generate the bytecode.
      */
-    switch (dest->type()) {
+    switch (_destination->type()) {
 
     case Identifier::OBJECT_PROPERTY:
       // Assign to an object property.
 #ifdef DEBUG
       std::cout << "BC: SETATTR " << std::dec
-                << (unsigned int)dest->index() << " ";
+                << (unsigned int)_destination->index() << " ";
 #endif
       bytecode(meat::bytecode::SET_PROP);
-      bytecode(dest->index());
+      bytecode(_destination->index());
 #ifdef DEBUG
       std::cout << source.name() << std::endl;
 #endif
@@ -874,10 +896,10 @@ void Assignment::gen_bytecode(bool prelim) {
       // Assign to a class property.
 #ifdef DEBUG
       std::cout << "BC: GETCATTR " << std::dec
-                << (unsigned int)dest->index() << " ";
+                << (unsigned int)_destination->index() << " ";
 #endif
       bytecode(meat::bytecode::SET_CLASS_PROP);
-      bytecode(dest->index());
+      bytecode(_destination->index());
 #ifdef DEBUG
       std::cout << source.name() << std::endl;
 #endif
@@ -910,11 +932,11 @@ LocalVariable Assignment::gen_result(bool prelim) {
  * meat::grinder::ast::Message::Message *
  ****************************************/
 
-Message::Message(Node *who) : who(who) {
+Message::Message(Node *who) : _who(who) {
 }
 
 Message::Message(Node *who, const std::string &name)
-  : who(who), _method(name) {
+  : _who(who), _method(name) {
 }
 
 /*****************************************
@@ -922,9 +944,9 @@ Message::Message(Node *who, const std::string &name)
  *****************************************/
 
 Message::~Message() throw() {
-  delete who;
+  delete _who;
 
-  for (auto &node: params)
+  for (auto &node: _parameters)
     delete node;
 }
 
@@ -941,7 +963,7 @@ void Message::method(const std::string &name) {
  ******************************************/
 
 void Message::add_param(Node *param) {
-  params.push_back(param);
+  _parameters.push_back(param);
   param->scope(_scope);
 }
 
@@ -950,7 +972,7 @@ void Message::add_param(Node *param) {
  **********************************************/
 
 void Message::message_super(bool to_super) {
-  super = to_super;
+  _super = to_super;
 }
 
 /**************************************
@@ -960,10 +982,10 @@ void Message::message_super(bool to_super) {
 void Message::scope(Block *block) {
   Node::scope(block); // Set our scope.
 
-  who->scope(block); // Set the scope for the messaged object.
+  _who->scope(block); // Set the scope for the messaged object.
 
   // Set the scope for our parameters.
-  for (auto &node: params)
+  for (auto &node: _parameters)
     node->scope(block);
 }
 
@@ -972,13 +994,13 @@ void Message::scope(Block *block) {
  *********************************************/
 
 void Message::gen_bytecode(bool prelim) {
-  LocalVariable who_var = who->gen_result(prelim);
+  LocalVariable who_var = _who->gen_result(prelim);
 
   std::deque<LocalVariable> param_idxs;
 
-  for (auto it = params.begin(); it != params.end(); it++) {
+  for (auto it = _parameters.begin(); it != _parameters.end(); it++) {
 
-    if ((*it)->is_block() and it != params.begin()) {
+    if ((*it)->is_block() and it != _parameters.begin()) {
 
       for  (auto param_it = it;; param_it--) {
 
@@ -994,7 +1016,7 @@ void Message::gen_bytecode(bool prelim) {
           }
         }
 
-        if (param_it == params.begin()) break;
+        if (param_it == _parameters.begin()) break;
       }
     }
 
@@ -1004,10 +1026,10 @@ void Message::gen_bytecode(bool prelim) {
   if (not prelim) {
     LocalVariable lindex;
 
-    if (super) {
+    if (_super) {
 #ifdef DEBUG
-      std::cout << "BC: SUPER " << who_var.name() << " " << _method << " "
-                << std::dec << (unsigned int)param_idxs.size();
+      std::cout << "BC: SUPER " << _who_var.name() << " " << _method << " "
+                << std::dec << (unsigned int)_param_idxs.size();
 #endif
       bytecode(meat::bytecode::MESG_SUPER);
     } else {
@@ -1040,10 +1062,10 @@ void Message::gen_bytecode(bool prelim) {
  *******************************************/
 
 LocalVariable Message::gen_result(bool prelim) {
-  LocalVariable who_var = who->gen_result(prelim);
+  LocalVariable who_var = _who->gen_result(prelim);
 
   std::deque<LocalVariable> param_idxs;
-  for (auto &node: params)
+  for (auto &node: _parameters)
     param_idxs.push_back(node->gen_result(prelim));
 
   if (prelim) set_result_dest();
@@ -1051,7 +1073,7 @@ LocalVariable Message::gen_result(bool prelim) {
   if (not prelim) {
     LocalVariable lindex;
 
-    if (super) {
+    if (_super) {
 #ifdef DEBUG
       std::cout << "BC: SUPRES " << who_var.name() << " "
                 << result.name() << " " << _method << " "

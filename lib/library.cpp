@@ -1288,6 +1288,7 @@ void grinder::Method::compile() {
     method.gen_bytecode(true);  // Bytecode generation stage 1
     method.gen_bytecode(false); // Bytecode generation stage 2
 
+    method.update_symbols(symbols);
     _locals = method.locals();
     method.append_bytecode(bytecode);
 
