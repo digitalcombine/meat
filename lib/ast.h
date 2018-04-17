@@ -30,6 +30,7 @@ namespace meat {
   /** @ns */
   namespace grinder {
 
+    /** @ns */
     namespace ast {
 
       class Block;

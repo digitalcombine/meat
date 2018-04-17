@@ -259,7 +259,7 @@ Object subclass: Objectᶲ as: {
 Object subclass: Contextᶲ as: {
 
   constructor {
-    return new meat::Context(properties);
+    return new meat::Context(klass, properties);
   }
 
   # 3.3.1

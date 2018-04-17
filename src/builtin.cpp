@@ -192,7 +192,7 @@ static Reference Object_constructor(
   std::uint8_t properties) {
 
     return new meat::Object(klass, properties);
-  
+
 }
 
 // method is:
@@ -364,8 +364,8 @@ static Reference Context_constructor(
   Reference &klass,
   std::uint8_t properties) {
 
-    return new meat::Context(properties);
-  
+    return new meat::Context(klass, properties);
+
 }
 
 // method getLocal:
@@ -776,7 +776,7 @@ static Reference Exception_constructor(
   std::uint8_t properties) {
 
     return new meat::Exception(klass, properties);
-  
+
 }
 
 #define mesg (self->property(0))
@@ -1218,7 +1218,7 @@ static Reference Integer_constructor(
   std::uint8_t properties) {
 
     return new Value(klass, properties);
-  
+
 }
 
 // method %
@@ -1539,7 +1539,7 @@ static Reference Number_constructor(
   std::uint8_t properties) {
 
     return new Value(klass, properties);
-  
+
 }
 
 // method %
@@ -1759,7 +1759,7 @@ static Reference Text_constructor(
   std::uint8_t properties) {
 
     return new Text(klass, properties);
-  
+
 }
 
 // method *
@@ -2152,7 +2152,7 @@ static Reference List_constructor(
   std::uint8_t properties) {
 
     return new List(klass, properties);
-  
+
 }
 
 // method append:
@@ -2458,7 +2458,7 @@ static Reference Set_constructor(
   std::uint8_t properties) {
 
     return new Set(klass, properties);
-  
+
 }
 
 // method clear
@@ -2629,7 +2629,7 @@ static Reference Index_constructor(
   std::uint8_t properties) {
 
     return new Index(klass, properties);
-  
+
 }
 
 // method copy

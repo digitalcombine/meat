@@ -31,7 +31,7 @@ extern "C" {
   DECLSPEC void close_interpreter(void *);
 }
 
-void * create_interpreter(const std::string &name) {
+void *create_interpreter(const std::string &name __attribute__((unused))) {
   meat::grinder::Interpreter *interp = new meat::grinder::Interpreter();
   return (void *)interp;
 }

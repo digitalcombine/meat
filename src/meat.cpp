@@ -120,16 +120,18 @@ bool meat::Object::is_type(const std::string &class_name) const {
  * meat::Object::serialize *
  ***************************/
 
-void meat::Object::serialize(data::Archive &store,
-                             std::ostream &data_stream) const {
+void meat::Object::serialize(
+  data::Archive &store __attribute__((unused)),
+  std::ostream &data_stream __attribute__((unused))) const {
 }
 
 /*****************************
  * meat::Object::unserialize *
  *****************************/
 
-void meat::Object::unserialize(data::Archive &store,
-                               std::istream &data_stream) {
+void meat::Object::unserialize(
+  data::Archive &store __attribute__((unused)),
+  std::istream &data_stream __attribute__((unused))) {
 }
 
 /**************************
@@ -368,8 +370,9 @@ meat::Class::get_class_vtable(std::uint8_t &count) const {
  * meat::Class::serialize *
  **************************/
 
-void meat::Class::serialize(data::Archive &store,
-                            std::ostream &data_stream) const {
+void meat::Class::serialize(
+  data::Archive &store __attribute__((unused)),
+  std::ostream &data_stream __attribute__((unused))) const {
   throw Exception("Classes cannot be serialized");
 }
 
@@ -1099,7 +1102,7 @@ void meat::Context::parameter(std::uint8_t index, Reference value) {
  ************************/
 
 meat::Reference &meat::Context::local(std::uint8_t index) const {
-  if (index >= 0 and index < num_of_locals) return _locals[index];
+  if (index < num_of_locals) return _locals[index];
   else {
     std::stringstream msg;
     msg << "Getting local variable " << (unsigned int)index
@@ -1317,8 +1320,10 @@ meat::Value::Value(bool value)
  * meat::Value::serialize *
  **************************/
 
-void meat::Value::serialize(data::Archive &store,
-                            std::ostream &data_stream) const {
+void meat::Value::serialize(
+  data::Archive &store __attribute__((unused)),
+  std::ostream &data_stream __attribute__((unused))) const {
+
   switch (data_type) {
   case BOOLEAN:
     store << (std::uint8_t)data.b;
@@ -1338,8 +1343,10 @@ void meat::Value::serialize(data::Archive &store,
  * meat::Value::unserialize *
  ****************************/
 
-void meat::Value::unserialize(data::Archive &store,
-                              std::istream &data_stream) {
+void meat::Value::unserialize(
+  data::Archive &store,
+  std::istream &data_stream __attribute__((unused))) {
+
   if (this->is_type("Integer")) {
     data_type = INTEGER;
     store >> data.i;
@@ -1398,7 +1405,7 @@ meat::Text::Text(const std::string &value)
  * meat::Text::serialize *
  *************************/
 
-void meat::Text::serialize(data::Archive &store,
+void meat::Text::serialize(data::Archive &store __attribute__((unused)),
                            std::ostream &data_stream) const {
   data_stream.write(c_str(), length());
   data_stream.put(0);
@@ -1408,7 +1415,7 @@ void meat::Text::serialize(data::Archive &store,
  * meat::Text::unserialize *
  ***************************/
 
-void meat::Text::unserialize(data::Archive &store,
+void meat::Text::unserialize(data::Archive &store __attribute__((unused)),
                              std::istream &data_stream) {
   clear();
   unsigned char ch;
@@ -1439,8 +1446,9 @@ meat::List::List(Reference cls, std::uint8_t properties)
  * meat::List::serialize *
  *************************/
 
-void meat::List::serialize(data::Archive &store,
-                           std::ostream &data_stream) const {
+void meat::List::serialize(
+  data::Archive &store,
+  std::ostream &data_stream __attribute__((unused))) const {
   // Record the size of the list.
   store << (std::uint32_t)size();
 
@@ -1453,8 +1461,10 @@ void meat::List::serialize(data::Archive &store,
  * meat::List::unserialize *
  ***************************/
 
-void meat::List::unserialize(data::Archive &store,
-                             std::istream &data_stream) {
+void meat::List::unserialize(
+  data::Archive &store,
+  std::istream &data_stream __attribute__((unused))) {
+
   // Read in the size of the list
   std::uint32_t elements;
   store >> elements;
@@ -1490,8 +1500,10 @@ meat::Set::Set(Reference cls, std::uint8_t properties)
  * meat::Set::serialize *
  ************************/
 
-void meat::Set::serialize(data::Archive &store,
-                          std::ostream &data_stream) const {
+void meat::Set::serialize(
+  data::Archive &store,
+  std::ostream &data_stream __attribute__((unused))) const {
+
   // Record the size of the list.
   store << (std::uint32_t)size();
 
@@ -1504,8 +1516,10 @@ void meat::Set::serialize(data::Archive &store,
  * meat::Set::unserialize *
  **************************/
 
-void meat::Set::unserialize(data::Archive &store,
-                            std::istream &data_stream) {
+void meat::Set::unserialize(
+  data::Archive &store,
+  std::istream &data_stream __attribute__((unused))) {
+
   // Read in the size of the list
   std::uint32_t elements;
   store >> elements;
@@ -1547,8 +1561,10 @@ meat::Index::Index(Reference cls, std::uint8_t properties)
  * meat::Index::serialize *
  **************************/
 
-void meat::Index::serialize(data::Archive &store,
-                            std::ostream &data_stream) const {
+void meat::Index::serialize(
+  data::Archive &store,
+  std::ostream &data_stream __attribute__((unused))) const {
+
   // Record the size of the list.
   store << (std::uint32_t)size();
 
@@ -1563,8 +1579,10 @@ void meat::Index::serialize(data::Archive &store,
  * meat::Index::unserialize *
  ****************************/
 
-void meat::Index::unserialize(data::Archive &store,
-                              std::istream &data_stream) {
+void meat::Index::unserialize(
+  data::Archive &store,
+  std::istream &data_stream __attribute__((unused))) {
+
   // Read in the size of the list
   std::uint32_t elements;
   store >> elements;

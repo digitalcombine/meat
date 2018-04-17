@@ -360,7 +360,7 @@ void Method::gen_bytecode(bool prelim) {
   }
 }
 
-LocalVariable Method::gen_result(bool prelim) {
+LocalVariable Method::gen_result(bool prelim __attribute__((unused))) {
   throw Exception("A method cannot be placed in a local variable.");
 }
 
@@ -490,7 +490,7 @@ ContextBlock::~ContextBlock() throw() {
  * meat::grinder::ast::ContextBlock::gen_bytecode *
  **************************************************/
 
-void ContextBlock::gen_bytecode(bool prelim) {
+void ContextBlock::gen_bytecode(bool prelim __attribute__((unused))) {
   throw Exception("Can't generate a code block without a local variable"
       " destination");
 }
@@ -500,7 +500,7 @@ void ContextBlock::gen_bytecode(bool prelim) {
  ************************************************/
 
 LocalVariable ContextBlock::gen_result(bool prelim) {
-  uint16_t bc_mark;
+  uint16_t bc_mark = 0;
 
   if (prelim) {
     // Get a local variable for the BlockContext object.
@@ -600,7 +600,6 @@ void Identifier::new_local() {
  ***************************************************/
 
 void Identifier::block_parameter(Block *block) {
-  //if (_type == UNKNOWN and not result_set) {
   if (_name[0] != '.')
     throw Exception(std::string("Identifier ") + _name +
                     " is not a block parameter.");
@@ -614,7 +613,7 @@ void Identifier::block_parameter(Block *block) {
  * meat::grinder::ast::Identifier::gen_bytecode *
  ************************************************/
 
-void Identifier::gen_bytecode(bool prelim) {
+void Identifier::gen_bytecode(bool prelim __attribute__((unused))) {
   throw Exception("Internal AST Error: Can't generate bytecode for an "
                   "identifier without a result destination.");
 }
@@ -781,7 +780,7 @@ Constant::~Constant() noexcept {
  * meat::grinder::ast::Constant::gen_bytecode *
  **********************************************/
 
-void Constant::gen_bytecode(bool prelim) {
+void Constant::gen_bytecode(bool prelim __attribute__((unused))) {
 }
 
 /********************************************
@@ -920,7 +919,7 @@ void Assignment::gen_bytecode(bool prelim) {
  * meat::grinder::ast::Assignment::gen_result *
  **********************************************/
 
-LocalVariable Assignment::gen_result(bool prelim) {
+LocalVariable Assignment::gen_result(bool prelim __attribute__((unused))) {
   throw Exception("Cannot get the results of an assignment.");
 }
 
@@ -1008,9 +1007,6 @@ void Message::gen_bytecode(bool prelim) {
         if ((*param_it)->is_block()) break;
 
         if ((*param_it)->is_value()) {
-          /*if (((Identifier *)(*param_it))->type() == Identifier::BLOCK_PARAMETER)  {
-            ((Identifier *)(*param_it))->block_parameter((Block *)*it);
-            }*/
           if (((Identifier *)(*param_it))->type() == Identifier::UNKNOWN)  {
             ((Identifier *)(*param_it))->block_parameter((Block *)*it);
           }

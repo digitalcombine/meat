@@ -604,7 +604,7 @@ void meat::grinder::Tokenizer::get_line(std::string &destination) {
  ****************************************/
 
 void meat::grinder::Tokenizer::parse_line(const std::string &line,
-                                          bool more) {
+                                          bool more __attribute__((unused))) {
   size_t t_begin = 0;
   size_t t_end = 0;
   bool command_done = false;

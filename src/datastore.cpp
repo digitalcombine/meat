@@ -370,7 +370,7 @@ void meat::data::Library::clear() {
  *        loaded libraries.
  */
 void meat::data::Library::set_application(const std::string &name) {
-  application = Class::resolve(_name);
+  application = Class::resolve(name);
 }
 
 /******************************

@@ -103,7 +103,7 @@ namespace memory {
       void dec_weak_ref() { if (wrefs > 0) wrefs--; }
 
       /** Get the current weak reference count. */
-      const unsigned int __wref_cnt() const { return wrefs; }
+      unsigned int __wref_cnt() const { return wrefs; }
 
       /** Increment the reference counter by 1. */
       void inc_ref() { refs++; }
@@ -112,7 +112,7 @@ namespace memory {
       void dec_ref() { refs--; }
 
       /** Get the current reference count. */
-      const unsigned int __ref_cnt() const { return refs; }
+      unsigned int __ref_cnt() const { return refs; }
 
       /** Cast this as a reference to the object being wrapped. */
       operator Ty &() { return (Ty &)*nobj; }

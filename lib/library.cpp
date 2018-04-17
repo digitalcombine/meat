@@ -260,8 +260,10 @@ void grinder::Library::write() {
  * meat::grinder::Library::unserialize *
  ***************************************/
 
-void grinder::Library::unserialize(data::Archive &store,
-                                   std::istream &data_stream) {
+void grinder::Library::unserialize(
+  data::Archive &store __attribute__((unused)),
+  std::istream &data_stream __attribute__((unused))) {
+
   library = data::Library::create(cast<Text>(_name));
 
   for (auto &library_name: cast<Set>(requiredLibraries))
@@ -299,8 +301,10 @@ void grinder::Library::clear_symbols() {
  * meat::grinder::Library::import *
  **********************************/
 
-void grinder::Library::import(const std::string &library,
-                              meat::Reference context) {
+void grinder::Library::import(
+  const std::string &library,
+  meat::Reference context __attribute__((unused))) {
+
   data::Library::import(library);
   cast<Set>(requiredLibraries).insert(new Text(library));
 }
@@ -1087,8 +1091,10 @@ void grinder::Class::update_symbols(std::set<std::string> &symbols) const {
  * meat::grinder::Class::unserialize *
  *************************************/
 
-void grinder::Class::unserialize(data::Archive &store,
-                                 std::istream &data_stream) {
+void grinder::Class::unserialize(
+  data::Archive &store __attribute__((unused)),
+  std::istream &data_stream __attribute__((unused))) {
+
   for (auto &method: cast<Index>(objectMethods))
     cast<Method>(method.second).cb = this;
 
