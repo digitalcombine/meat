@@ -213,7 +213,7 @@ namespace meat {
 
         LocalVariable _local_var;
 
-        std::uint8_t _temp_counter;
+        //std::uint8_t _temp_counter;
       };
 
       /**

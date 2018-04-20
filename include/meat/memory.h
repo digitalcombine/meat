@@ -153,15 +153,17 @@ namespace memory {
       if (obj) {
         if (weak_ref) {
           obj->dec_weak_ref();
-          if (obj->__ref_cnt() == 0 and obj->__wref_cnt() == 0)
+          if (obj->__ref_cnt() == 0 and obj->__wref_cnt() == 0) {
             delete obj; obj = 0;
+          }
         } else {
           obj->dec_ref();
           if (!obj->__ref_cnt()) {
-            if (obj->__wref_cnt())
+            if (obj->__wref_cnt()) {
               obj->free();
-            else
+            } else {
               delete obj; obj = 0;
+            }
           }
         }
       }
