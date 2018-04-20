@@ -20,10 +20,6 @@
  */
 /** @file */
 
-#ifndef TESTING
-#error "Included testing file in non testing build"
-#endif
-
 #ifndef MEAT_TESTING
 #define MEAT_TESTING
 

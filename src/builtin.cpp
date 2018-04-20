@@ -2794,7 +2794,7 @@ static Reference Application_cm_getEnviron_(Reference context) {
       return retvalue;
     }
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
     char *value = getenv(meat::cast<meat::Text>(key).c_str());
     if (value != (char *)0)
       return new meat::Text(value);
