@@ -330,7 +330,7 @@ meat::Reference meat::execute(Reference context) {
           new Value(ldexp(mantissa, endian::read_be(bc->o.cn.exponent)));
         cast<Context>(context).local(bc->o.cn.destination) = float_obj;
 #ifdef DEBUG
-        std:: cout << FLOAT(float_obj) << std::endl;
+        std::cout << FLOAT(float_obj) << std::endl;
 #endif /* DEBUG */
         ip += 13;
         break;
