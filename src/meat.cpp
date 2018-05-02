@@ -1297,13 +1297,14 @@ const char* meat::Exception::what() const throw() {
  **********************/
 
 meat::Value::Value(Reference cls, uint8_t properties)
-  : Object(cls, properties), data_type(INTEGER) {
-  data.i = 0;
+  : Object(cls, properties), data_type(INTEGER), _integer_value(0) {
+  //data.i = 0;
 }
 
 meat::Value::Value(int32_t value)
-  : Object(Class::resolve("Integer")), data_type(INTEGER) {
-  data.i = value;
+  : Object(Class::resolve("Integer")), data_type(INTEGER),
+    _integer_value(value) {
+  //data.i = value;
 }
 
 meat::Value::Value(double value)
@@ -1329,7 +1330,7 @@ void meat::Value::serialize(
     store << (std::uint8_t)data.b;
     break;
   case INTEGER:
-    store << data.i;
+    store << _integer_value;
     break;
   case FLOAT:
     store << data.f;
@@ -1349,7 +1350,9 @@ void meat::Value::unserialize(
 
   if (this->is_type("Integer")) {
     data_type = INTEGER;
-    store >> data.i;
+    numeric::integer_32::int_type read_value;
+    store >> read_value;
+    _integer_value = read_value;
   } else if (this->is_type("Number")) {
     data_type = FLOAT;
     store >> data.f;
@@ -1359,7 +1362,7 @@ void meat::Value::unserialize(
 meat::Value::operator std::int32_t() const {
   switch (data_type) {
   case INTEGER:
-    return data.i;
+    return _integer_value;
   case FLOAT:
     return data.f;
   default:
@@ -1370,7 +1373,7 @@ meat::Value::operator std::int32_t() const {
 meat::Value::operator double() const {
   switch (data_type) {
   case INTEGER:
-    return data.i;
+    return _integer_value;
   case FLOAT:
     return data.f;
   default:
