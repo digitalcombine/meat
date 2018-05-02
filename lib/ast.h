@@ -212,8 +212,6 @@ namespace meat {
         std::deque<std::string> _local_names;
 
         LocalVariable _local_var;
-
-        //std::uint8_t _temp_counter;
       };
 
       /**
