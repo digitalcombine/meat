@@ -24,6 +24,9 @@ typedef struct memory_s {
   time_t collected_time;
 } memory_t;
 
+/* XXX These need to be placed as static variables in functions to work
+ *     properly in a shared library.
+ */
 std::size_t memory::gc::limit = 5 * 1024 * 1024; // 5M
 time_t memory::gc::collection_age = 60; // 1 minute
 std::multimap<std::size_t, void *> memory::gc::free_memory;
@@ -35,15 +38,21 @@ std::size_t memory::gc::free_size = 0;
 
 #include <iostream>
 
-void *memory::gc::alloc(std::size_t size) throw(std::bad_alloc) {
+void *memory::gc::alloc(std::size_t size) {
   unsigned char *res = 0;
-  std::multimap<std::size_t, void *>::iterator it = free_memory.find(size);
 
-  if (it != free_memory.end()) {
+  /* To help further speed up allocation, we don't just try to find the
+   * exact size of memory requested. Instead we use lower_bound to find a
+   * memory block that would fit the request and make sure it's no bigger
+   * than the requested size by 50 bytes.
+   */
+  auto it = free_memory.lower_bound(size);
+  if (it != free_memory.end() and (it->first - size) < 50) {
     res = (unsigned char *)(it->second);
     free_memory.erase(it);
     free_size -= ((memory_t*)res)->size;
   } else {
+    // An appropriate block couldn't be found so get more from the system.
     res = (unsigned char *)::operator new(size + sizeof(memory_t));
     ((memory_t *)(res))->size = size;
   }
@@ -56,6 +65,9 @@ void *memory::gc::alloc(std::size_t size) throw(std::bad_alloc) {
  ***********************/
 
 void memory::gc::recycle(void *ptr) throw() {
+  /* Add the memory block to the free list according to it's size and update
+   * it's timestamp.
+   */
   memory_t *mptr = (memory_t *)((unsigned char *)ptr - sizeof(memory_t));
   if (mptr->size + free_size < limit) {
     free_memory.insert(std::make_pair(mptr->size, mptr));
@@ -71,10 +83,12 @@ void memory::gc::recycle(void *ptr) throw() {
  ***********************/
 
 void memory::gc::collect(void) {
+  /* Find blocks of memory that are older than the collection_age and
+   * actually give them back to the system.
+   */
   memory_t *mptr = NULL;
-  for (std::multimap<std::size_t, void *>::iterator it = free_memory.begin();
-       it != free_memory.end(); ++it) {
-    mptr = (memory_t *)it->second;
+  for (auto &block: free_memory) {
+    mptr = (memory_t *)block.second;
     if (mptr->collected_time - time(NULL) >= collection_age) {
       ::operator delete(mptr);
     }
@@ -86,10 +100,8 @@ void memory::gc::collect(void) {
  ***************************/
 
 void memory::gc::collect_all(void) {
-  for (std::multimap<std::size_t, void *>::iterator it = free_memory.begin();
-       it != free_memory.end(); ++it) {
-    ::operator delete(it->second);
-  }
+  for (auto &block: free_memory)
+    ::operator delete(block.second);
 }
 
 /************************************
@@ -97,7 +109,7 @@ void memory::gc::collect_all(void) {
  ************************************/
 
 void *
-memory::recyclable::operator new(std::size_t size) throw(std::bad_alloc) {
+memory::recyclable::operator new(std::size_t size) {
   return gc::alloc(size);
 }
 
@@ -106,7 +118,7 @@ memory::recyclable::operator new(std::size_t size) throw(std::bad_alloc) {
  **************************************/
 
 void *
-memory::recyclable::operator new[](std::size_t size) throw(std::bad_alloc) {
+memory::recyclable::operator new[](std::size_t size) {
   return gc::alloc(size);
 }
 
@@ -114,7 +126,7 @@ memory::recyclable::operator new[](std::size_t size) throw(std::bad_alloc) {
  * memory::recyclable::operator delete *
  ***************************************/
 
-void memory::recyclable::operator delete(void *ptr) throw() {
+void memory::recyclable::operator delete(void *ptr) noexcept {
   gc::recycle(ptr);
 }
 
@@ -122,6 +134,6 @@ void memory::recyclable::operator delete(void *ptr) throw() {
  * memory::recyclable::operator delete[] *
  *****************************************/
 
-void memory::recyclable::operator delete[](void *ptr) throw() {
+void memory::recyclable::operator delete[](void *ptr) noexcept {
   gc::recycle(ptr);
 }

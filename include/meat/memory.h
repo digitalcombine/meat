@@ -27,20 +27,21 @@
 namespace memory {
 
   /** Garbage collector for recyclable objects.
-   * @todo Update for C++-11 standard
    */
   class gc {
   public:
     static std::size_t limit;
     static time_t collection_age;
 
-    static void *alloc(std::size_t size) throw(std::bad_alloc);
+    static void *alloc(std::size_t size);
 
-    static void recycle(void *ptr) throw();
+    static void recycle(void *ptr) noexcept;
 
     static void collect(void);
 
     static void collect_all(void);
+
+    //static void finalize()
 
   private:
     static std::multimap<std::size_t, void *> free_memory;
@@ -48,17 +49,16 @@ namespace memory {
   };
 
   /**
-   * @todo Update for C++-11 standard
    */
   class recyclable {
   public:
-    void *operator new(std::size_t size) throw(std::bad_alloc);
+    void *operator new(std::size_t size);
 
-    void *operator new[](std::size_t size) throw(std::bad_alloc);
+    void *operator new[](std::size_t size);
 
-    void operator delete(void *ptr) throw();
+    void operator delete(void *ptr) noexcept;
 
-    void operator delete[](void *ptr) throw();
+    void operator delete[](void *ptr) noexcept;
   };
 
   template <typename Ty>
