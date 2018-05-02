@@ -760,6 +760,7 @@ void grinder::Class::create_class() const {
   // Register the new class and add it to the library.
   library->library->add(cls, cast<const Text>(className));
   library->add_symbol(cast<const Text>(className));
+  library->add_symbol(cast<const Text>(superClass));
 }
 
 /********************************
