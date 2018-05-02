@@ -623,9 +623,10 @@ namespace meat {
     } data_type_t;
 
     data_type_t data_type;
+    numeric::integer_32 _integer_value;
     union {
       bool b;
-      int32_t i;
+      //uint32_t i;
       double f;
     } data;
   };
