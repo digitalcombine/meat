@@ -305,5 +305,3 @@ std::ostream &operator <<(std::ostream &out,
 }
 
 #endif /* _NUMERIC_H */
-
-#endif /* __cplusplus < 201103L */
