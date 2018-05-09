@@ -85,14 +85,14 @@ namespace memory {
         if (nobj) delete nobj;
       }
 
-      bool is_null() { return (nobj == 0); }
+      bool is_null() { return (nobj == nullptr); }
 
       void free() {
         /* We have to set nobj to null before deleting it to prevent any kind
          * of race conditions with weak pointers.
          */
         Ty *obj = nobj;
-        nobj = 0;
+        nobj = nullptr;
         delete obj;
       }
 
@@ -129,15 +129,13 @@ namespace memory {
   public:
     /** Create a null reference pointer.
      */
-    reference(void) : weak_ref(false), obj(0) {
+    reference(void) : weak_ref(false), obj(nullptr) {
     }
 
     /** Create a new reference to a newly allocated object.
      */
-    reference(Ty *obj) : weak_ref(false), obj(0) {
-      if (obj != 0) {
-        this->obj = new __reference(obj, 1);
-      }
+    reference(Ty *obj) : weak_ref(false), obj(nullptr) {
+      if (obj != nullptr) this->obj = new __reference(obj, 1);
     }
 
     /** Default copy constructor.
@@ -154,15 +152,15 @@ namespace memory {
         if (weak_ref) {
           obj->dec_weak_ref();
           if (obj->__ref_cnt() == 0 and obj->__wref_cnt() == 0) {
-            delete obj; obj = 0;
+            delete obj; obj = nullptr;
           }
         } else {
           obj->dec_ref();
-          if (!obj->__ref_cnt()) {
+          if (obj->__ref_cnt() == 0) {
             if (obj->__wref_cnt()) {
               obj->free();
             } else {
-              delete obj; obj = 0;
+              delete obj; obj = nullptr;
             }
           }
         }
@@ -173,18 +171,18 @@ namespace memory {
      * @return The number of references
      */
     unsigned int references(void) {
-      return (obj ? obj->__ref_cnt() : 0);
+      return (obj != nullptr ? obj->__ref_cnt() : 0);
     }
 
     unsigned int weak_references(void) {
-      return (obj ? obj->__wref_cnt() : 0);
+      return (obj != nullptr ? obj->__wref_cnt() : 0);
     }
 
     /** Test if we reference an object or just a NULL pointer.
      * @return If true if the reference in pointing to null.
      */
     bool is_null(void) const {
-      return ((obj == 0) or obj->is_null());
+      return ((obj == nullptr) or obj->is_null());
     }
 
     /** Creates a new weak reference.
@@ -253,7 +251,7 @@ namespace memory {
       if (obj) {
         this->obj = new __reference(obj, 1);
       } else
-        this->obj = 0;
+        this->obj = nullptr;
       return *this;
     }
 
@@ -263,7 +261,6 @@ namespace memory {
       if (this != &obj) {
         dec_reference();
         this->obj = obj.obj;
-        //this->weak_ref = false;
         this->weak_ref = obj.weak_ref;
         inc_reference();
       }
@@ -310,17 +307,15 @@ namespace memory {
         if (weak_ref) {
           obj->dec_weak_ref();
           if (obj->__ref_cnt() == 0 and obj->__wref_cnt() == 0) {
-            delete obj;
-            obj = 0;
+            delete obj; obj = nullptr;
           }
         } else {
           obj->dec_ref();
-          if (!obj->__ref_cnt()) {
+          if (obj->__ref_cnt() == 0) {
             if (obj->__wref_cnt())
               obj->free();
             else {
-              delete obj;
-              obj = 0;
+              delete obj; obj = nullptr;
             }
           }
         }
