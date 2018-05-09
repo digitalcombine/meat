@@ -268,5 +268,5 @@ void init_Math(meat::data::Library &library) {
   cls->set_class_vtable(32, MathCMethods, meat::STATIC);
   library.add(cls, "Math");
 
-  library.set_symbols(Symbols, meat::STATIC);
+  library.set_symbols(Symbols);
 }

@@ -344,6 +344,7 @@ namespace meat {
       void register_as(const std::string &name);
 
       void add_class(Reference klass);
+      void add_class(meat::Class *klass);
 
       /** Interpret a parsed command already tokenized.
        */
@@ -378,8 +379,9 @@ namespace meat {
       meat::Reference message();
 
     private:
-      data::Library *library;
+      //data::Library *library;
       std::set<std::string> symbols;
+      std::deque<Reference> _classes;
 
       bool to_cpp;
       Reference context;

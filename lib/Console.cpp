@@ -131,5 +131,5 @@ void init_Console(meat::data::Library &library) {
   cls->set_class_vtable(23, ConsoleCMethods, meat::STATIC);
   library.add(cls, "Console");
 
-  library.set_symbols(Symbols, meat::STATIC);
+  library.set_symbols(Symbols);
 }

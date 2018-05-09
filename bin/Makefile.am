@@ -10,7 +10,7 @@ meat_CPPFLAGS = -I@top_srcdir@/include
 meat_LDADD = @top_srcdir@/src/libmeat.la
 meat_LDFLAGS = -rdynamic
 
-meat_grinder_SOURCES = grinder.cpp getopt.c getopt.h
+meat_grinder_SOURCES = grinder.cpp getopt.c getopt.h dump.cpp dump.h
 if TESTING
 meat_grinder_SOURCES += testing.cpp misc.cpp
 endif

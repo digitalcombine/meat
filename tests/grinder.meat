@@ -27,7 +27,6 @@
 Library include: {
 #include "compiler.h"
 }
-Library requires: Console
 
 #==============================================================================
 # Grinder.SyntaxException Class
@@ -80,9 +79,7 @@ Object subclass: Grinder.Libraryᶲ as: {
   # Create a new Library Object with the given name.
   class function new: libraryName {
     Reference new_object = cast<meat::Class>(self).new_object();
-
-    auto ctx = message(new_object, "initialize", context);
-    execute(ctx);
+    execute(message(new_object, "initialize", context));
 
     cast<grinder::Library>(new_object).property(0) = libraryName;
     cast<grinder::Library>(new_object).register_as(cast<Text>(libraryName));
@@ -91,8 +88,7 @@ Object subclass: Grinder.Libraryᶲ as: {
   }
 
   method requires: libraryName {
-    Library import: libraryName
-    requiredLibraries insert: libraryName
+    requiredLibraries insert: [Library import: libraryName]
   }
 
   method removeImport: libraryName {
@@ -100,7 +96,11 @@ Object subclass: Grinder.Libraryᶲ as: {
   }
 
   method getImportList {
-    context return: [requiredLibraries copy]
+    libraries = [Set new]
+    requiredLibraries forEach: .library do: {
+      libraries insert: [.library getName]
+    }
+    context return: libraries
   }
 
   # Return the name of the Library.

@@ -20,7 +20,6 @@
 #include <meat/datastore.h>
 #include <meat/utilities.h>
 
-#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <cmath>
@@ -48,11 +47,11 @@ using namespace meat;
 #define null (meat::Null())
 
 extern "C" {
-  typedef struct _sgelib_header_t {
+  typedef struct __attribute__((packed)) _meat_header_s {
     char magic[4];            // File type magic
     std::uint8_t major_ver;
     std::uint8_t minor_ver;
-  } sgelib_header_t;
+  } meat_header_t;
 }
 
 /******************************************************************************
@@ -63,9 +62,11 @@ static bool fexists(const char *filename) {
   return (access(filename, F_OK) == 0);
 }
 
-static nativelib_t dl_open(const char *filename) {
+// XXX This should be turned into a class
+
+static nativelib_t dl_open(const std::string &filename) {
 #if defined (__linux__) || defined (__FreeBSD__)
-  void *handle = dlopen(filename, RTLD_LAZY);
+  void *handle = dlopen(filename.c_str(), RTLD_LAZY);
   if (handle == NULL)
     throw meat::Exception(dlerror());
   return handle;
@@ -79,12 +80,11 @@ static void dl_close(nativelib_t handle) {
 #endif
 }
 
-static void *dl_symbol(nativelib_t handle, const char *funcname) {
+static void *dl_symbol(nativelib_t handle, const std::string &funcname) {
 #if defined (__linux__) || defined (__FreeBSD__)
-  return dlsym(handle, funcname);
+  return dlsym(handle, funcname.c_str());
 #endif
 }
-
 
 /***********************
  * meat::data::fl_type *
@@ -108,37 +108,36 @@ int meat::data::fl_type(const std::string &fname) {
  * class meat:data::Library
  */
 
-/** Contains the library search path.
- */
-static std::deque<std::string> &get_path() {
-  static std::deque<std::string> path;
-  return path;
-}
+ #define _name (property(0))
+ #define _requirements (property(1))
+ #define _classes (property(2))
+ #define _symbols (property(3))
 
-/** Registered libraries.
- */
-static std::map<std::string, meat::data::Library *> &get_libraries() {
-  static std::map<std::string, meat::data::Library *> imported;
-  return imported;
-}
+ #define _registry (type()->property(0))
+ #define _paths (type()->property(1))
 
 /********************************
  * meat::data::Library::Library *
  ********************************/
 
-meat::data::Library::Library(const std::string &name, bool compiled)
-  : _name(name), _developing(compiled), syms_free(false), syms_size(0),
-    symbols(NULL), is_native(false), dlhandle(0) {
+meat::data::Library::Library(const std::string &name)
+  : Object(Class::resolve("Library")), is_native(false), dlhandle(nullptr) {
 
-  if (not _developing) {
-    auto lib = get_libraries().find(name);
-    if (lib != get_libraries().end())
-      throw meat::Exception(std::string("Library ") + name +
-                            " is already loaded.");
+  _requirements = new List;
+  _classes = new List;
+  _symbols = new Index;
 
-    // Register the library.
-    get_libraries()[_name] = this;
-  }
+  Reference key = new Text(name);
+  auto library = cast<Index>(_registry).find(key);
+  if (library != cast<Index>(_registry).end())
+    throw meat::Exception(std::string("Library ") + name +
+                          " is already loaded.");
+
+  _name = new Text(name);
+}
+
+meat::data::Library::Library(Reference type, std::uint8_t properties)
+  : Object(type, properties), is_native(false), dlhandle(nullptr) {
 }
 
 /*********************************
@@ -146,58 +145,25 @@ meat::data::Library::Library(const std::string &name, bool compiled)
  *********************************/
 
 meat::data::Library::~Library() throw() {
-
 #ifdef DEBUG
-  std::cout << "LIBRARY: Final unloading of " << _name << std::endl;
+  std::cout << "LIBRARY: Final unloading of " << cast<Text>(_name) << std::endl;
 #endif
-
-  /*  Cleanup all the classes in the libray. Note if any object is still using
-   * any of these classes the references will keep the class until no one is
-   * using them any more.
-   */
-  if (_name != "__builtin__") {
-    for (auto it = classes.begin(); it != classes.end(); it++)
-      Class::unrecord(*it, _developing);
-  }
-
-  clear_symbols();
+  _requirements = nullptr;
+  for (auto &cls: cast<List>(_classes)) Class::unrecord(cls);
 
   if (is_native) dl_close(dlhandle);
-}
-
-/*******************************
- * meat::data::Library::create *
- *******************************/
-
-meat::data::Library *meat::data::Library::create(const std::string &name,
-                                                 bool compiled) {
-  // Check to see if we have already imported the library.
-  if (not compiled) {
-    //auto lib = get_libraries().find(name);
-    //if (lib != get_libraries().end()) // XXX Throw an exception here!!!
-    //  return lib->second;
-  }
-
-  Library *new_lib = new Library(name, compiled);
-
-  return new_lib;
 }
 
 /*******************************
  * meat::data::Library::import *
  *******************************/
 
-meat::data::Library *meat::data::Library::import(const std::string &name) {
+meat::Reference meat::data::Library::import(const std::string &name) {
   // Check to see if we have already imported the library.
-  auto lib = get_libraries().find(name);
-  if (lib != get_libraries().end())
-    return lib->second;
-
-  // Load the library.
-  Library *imported_lib = new Library(name);
-  imported_lib->import();
-
-  return imported_lib;
+  Reference context = message(Class::resolve("Library"), "import:",
+                              meat::Null());
+  cast<Context>(context).parameter(0, new Text(name));
+  return meat::execute(context);
 }
 
 /********************************
@@ -222,40 +188,13 @@ meat::Reference meat::data::Library::execute(const std::string &name) {
  * meat::data::Library::get *
  ****************************/
 
-meat::data::Library *
-meat::data::Library::get(const std::string &name) {
-  auto it = get_libraries().find(name);
-  if (it != get_libraries().end()) {
+meat::Reference meat::data::Library::get(const std::string &name) {
+  Reference library = Class::resolve("Library");
+  auto it = cast<Index>(library->property(0)).find(new Text(name));
+  if (it != cast<Index>(library->property(0)).end()) {
     return it->second;
   }
   return NULL;
-}
-
-/*******************************
- * meat::data::Library::unload *
- *******************************/
-
-void meat::data::Library::unload(const std::string &name) {
-
-#ifdef DEBUG
-  std::cout << "LIBRARY: Unloading " << name << std::endl;
-#endif
-
-  auto it = get_libraries().find(name);
-  if (it != get_libraries().end()) {
-    delete it->second;
-    get_libraries().erase(it);
-  }
-}
-
-void meat::data::Library::unload() {
-
-  // Unload all libraries except the __builtin__ library.
-  for (auto it = get_libraries().begin(); it != get_libraries().end(); ++it) {
-    if (it->second->_name != "__builtin__")
-      delete it->second;
-  }
-  get_libraries().clear();
 }
 
 /*******************************
@@ -265,7 +204,7 @@ void meat::data::Library::unload() {
 void meat::data::Library::import() {
 
 #ifdef DEBUG
-  std::cout << "LIBRARY: Importing " << _name << std::endl;
+  std::cout << "LIBRARY: Importing " << cast<Text>(_name) << std::endl;
 #endif
 
   // First see if the library is already loaded.
@@ -280,14 +219,15 @@ void meat::data::Library::import() {
   std::ifstream lib_file;
 
   bool found = false;
-  for (auto it = get_path().begin(); it != get_path().end(); it++) {
-    if (fexists(((*it) + (this->_name + ".mlib")).c_str())) {
-      import_from_archive((*it) + (this->_name + ".mlib"));
+  for (auto &path: cast<List>(_paths)) {
+  if (fexists((cast<Text>(path) + (cast<Text>(_name) + ".mlib")).c_str())) {
+      import_from_archive(cast<Text>(path) + (cast<Text>(_name) + ".mlib"));
       found = true;
       break;
-    } else if (fexists(((*it) + (this->_name + DLLEXT)).c_str())) {
+    } else if (fexists((cast<Text>(path) + (cast<Text>(_name) + DLLEXT)).c_str())) {
       // The .mlib failed, now try try to open a native library file.
-      import_from_native((*it) + (this->_name + DLLEXT), this->_name);
+      import_from_native(cast<Text>(path) + (cast<Text>(_name) + DLLEXT),
+                         cast<Text>(_name));
       found = true;
       break;
     }
@@ -295,7 +235,7 @@ void meat::data::Library::import() {
   if (!found) {
     /* OMG, we couldn't find the library. Must be a vegetarian :P */
     throw meat::Exception(std::string("Unable to find library ") +
-                          this->_name);
+                          cast<Text>(_name));
   }
 
   // Initialize all the imported classes.
@@ -307,10 +247,8 @@ void meat::data::Library::import() {
  *************************************/
 
 void meat::data::Library::init_classes() {
-  for (auto it = classes.begin(); it != classes.end(); ++it) {
-    auto context = message(*it, "initialize", meat::Null());
-    meat::execute(context);
-  }
+  for (auto &cls: cast<List>(_classes))
+    meat::execute(message(cls, "initialize", meat::Null()));
 }
 
 /*********************************
@@ -318,7 +256,17 @@ void meat::data::Library::init_classes() {
  *********************************/
 
 void meat::data::Library::add_path(const std::string &name) {
-  get_path().push_front(name);
+  Reference library = Class::resolve("Library");
+  cast<List>(library->property(1)).push_front(new Text(name));
+}
+
+/*********************************
+ * meat::data::Library::requires *
+ *********************************/
+
+void meat::data::Library::requires(const std::string &import_name) {
+  cast<List>(_requirements).push_back(
+    meat::data::Library::import(import_name));
 }
 
 /****************************
@@ -332,45 +280,17 @@ void meat::data::Library::add(Class *cls, const std::string &id) {
 #ifdef DEBUG
   std::cout << "LIBRARY: Adding class " << id << std::endl;
 #endif /* DEBUG */
-  Reference newcls = cls;
-  classes.push_back(newcls);
-  if (_name != "__builtin__") {
-    if (_developing)
-      Class::record_compiled_class(newcls, id);
-    else
-      Class::record(newcls, id);
+
+  if (name() != "__builtin__") {
+    cls->name(id);
+    Reference newcls = cls;
+    cast<List>(_classes).push_back(newcls);
+    Class::record(newcls);
+  } else {
+    cast<List>(_classes).push_back(Class::resolve(id));
   }
+
   cls->library = this;
-}
-
-/******************************
- * meat::data::Library::clear *
- ******************************/
-
-void meat::data::Library::clear() {
-  /*  Cleanup all the classes in the libray. Note if any object is still using
-   * any of these classes the references will keep the class until no one is
-   * using them any more.
-   */
-  if (_name != "__builtin__") {
-    for (auto it = classes.begin(); it != classes.end(); it++)
-      Class::unrecord(*it);
-  }
-  classes.clear();
-
-  clear_symbols();
-}
-
-/****************************************
- * meat::data::Library::set_application *
- ****************************************/
-
-/** @todo This is a rather dumb method. It should check to make sure
- *        the class exists in this library, not just in any of the
- *        loaded libraries.
- */
-void meat::data::Library::set_application(const std::string &name) {
-  application = Class::resolve(name);
 }
 
 /******************************
@@ -382,59 +302,33 @@ void *meat::data::Library::dlsymbol(const std::string &name) {
     void *result = dl_symbol(dlhandle, name.c_str());
     if (!result) {
       throw Exception(std::string("Unable to load DL symbol \"") + name +
-                      "\" from library " + this->_name);
+                      "\" from library " + cast<Text>(_name));
     }
     return result;
   }
   throw Exception(std::string("Unable to load DL symbol \"") + name +
-                              "\" from non-native library " + this->_name);
+                              "\" from non-native library " +
+                              cast<Text>(_name));
+}
+
+const std::string &meat::data::Library::name() const {
+  return cast<Text>(_name);
 }
 
 /************************************
  * meat::data::Library::set_symbols *
  ************************************/
 
-void meat::data::Library::set_symbols(std::uint8_t *symbols,
-                                      meat::alloc_t sym_alloc) {
-  if (this->symbols and syms_free) delete[] symbols;
+void meat::data::Library::set_symbols(std::uint8_t *symbols) {
+  cast<Index>(_symbols).clear();
 
   // Build symbol index table.
-  this->symbols = symbols;
-  const char *sym = (const char *)this->symbols;
+  const char *sym = (const char *)symbols;
   while (*sym != 0) {
-    syms_table[hash(sym)] = sym;
+    Reference hash_id = new Value((int32_t)hash(sym));
+    cast<Index>(_symbols)[hash_id] = new Text(sym);
     sym += std::strlen(sym) + 1;
   }
-
-  // Record the size of the symbols table.
-  syms_size = (unsigned int)(sym - (const char *)this->symbols) + 1;
-
-  // Deal with memory management.
-  switch (sym_alloc) {
-  case meat::STATIC:
-    syms_free = false;
-    break;
-  case meat::DYNAMIC:
-    syms_free = true;
-    break;
-  case meat::COPY:
-    syms_free = true;
-    this->symbols = new std::uint8_t[syms_size];
-    std::memcpy(this->symbols, symbols, syms_size);
-    break;
-  }
-}
-
-/**************************************
- * meat::data::Library::clear_symbols *
- **************************************/
-
-void meat::data::Library::clear_symbols() {
-  if (syms_free) delete[] symbols;
-  symbols = NULL;
-  syms_size = 0;
-  syms_free = false;
-  syms_table.clear();
 }
 
 /*******************************
@@ -442,11 +336,14 @@ void meat::data::Library::clear_symbols() {
  *******************************/
 
 std::string meat::data::Library::lookup(std::uint32_t hash_id) const {
-  auto it = syms_table.find(hash_id);
-  if (it != syms_table.end()) {
-    return it->second;
-  }
+  Reference _hash_id = new Value((int32_t)hash_id);
+  auto it = cast<Index>(_symbols).find(_hash_id);
+  if (it != cast<Index>(_symbols).end()) return cast<Text>(it->second);
   return itohex(hash_id);
+}
+
+const meat::List &meat::data::Library::get_classes() const {
+  return cast<List>(_classes);
 }
 
 /********************************************
@@ -454,7 +351,7 @@ std::string meat::data::Library::lookup(std::uint32_t hash_id) const {
  ********************************************/
 
 void meat::data::Library::import_from_archive(const std::string &name) {
-  sgelib_header_t header;
+  meat_header_t header;
 
   std::ifstream lib_file(name.c_str(), std::ios::in | std::ios::binary);
 
@@ -462,7 +359,7 @@ void meat::data::Library::import_from_archive(const std::string &name) {
     throw meat::Exception(std::string("Unable to open file ") + name);
 
   // Read in the file header and make sure the it's the right type of file.
-  lib_file.read((char *)&header, sizeof(sgelib_header_t));
+  lib_file.read((char *)&header, sizeof(meat_header_t));
   if (strncmp(header.magic, "MLIB", 4) != 0) {
     throw meat::Exception(std::string("Attempting to import a non-library"
                                       " file ") + name);
@@ -496,7 +393,7 @@ void meat::data::Library::import_from_archive(const std::string &name) {
 #endif
 
     // Import the library.
-    meat::data::Library::import(import_name.c_str());
+    requires(import_name);
   }
 
   /* Import all the classes from the file. */
@@ -507,7 +404,7 @@ void meat::data::Library::import_from_archive(const std::string &name) {
 #endif
   for (unsigned int cc = 0; cc < class_cnt; cc++) {
     Reference cls = meat::Class::import(lib_file);
-    classes.push_back(cls);
+    cast<List>(_classes).push_back(cls);
     Class::record(cls);
     cast<Class>(cls).library = this;
     if (app_id && cast<Class>(cls).hash_id() == app_id)
@@ -521,7 +418,8 @@ void meat::data::Library::import_from_archive(const std::string &name) {
   if (sz) {
     std::uint8_t *syms = new std::uint8_t[sz];
     lib_file.read((char *)syms, sz);
-    set_symbols(syms, meat::DYNAMIC);
+    set_symbols(syms);
+    delete []syms;
   }
 
   lib_file.close();
@@ -550,12 +448,12 @@ void meat::data::Library::import_from_native(const std::string &filename,
   dlhandle = dl_open(filename.c_str());
 
   init_proc_t init_proc =
-    (init_proc_t)dl_symbol(dlhandle, (std::string("init_") + name).c_str());
+    (init_proc_t)dl_symbol(dlhandle, std::string("init_") + name);
   if (init_proc != NULL) {
     init_proc(*this);
   } else
     throw meat::Exception(std::string("Unable to initialize library ") +
-                          dlerror());
+                          name + ": " + dlerror());
 }
 
 /******************************************************************************
@@ -565,13 +463,13 @@ void meat::data::Library::import_from_native(const std::string &filename,
 #define OBJECT_PROP      0x00
 #define OBJECT_PROP_WEAK 0x01
 
-typedef struct _sgedat_header_t {
+typedef struct __attribute__((packed)) _meat_arch_header_s {
   char magic[4];     // Should be MARC
   std::uint8_t major_ver;
   std::uint8_t minor_ver;
   std::uint32_t import_offset;
   std::uint32_t index_offset;
-} sgedat_header_t;
+} meat_arch_header_t;
 
 /********************************
  * meat::data::Archive::Archive *
@@ -590,10 +488,10 @@ meat::data::Archive::Archive(const std::string &filename, bool create)
                            std::ios::in | std::ios::binary);
 
     if (dat_file.is_open()) {
-      sgedat_header_t header;
+      meat_arch_header_t header;
 
       // Read the header and file magic ID.
-      dat_file.read((char *)&header, sizeof(sgedat_header_t));
+      dat_file.read((char *)&header, sizeof(meat_arch_header_t));
       if (strncmp(header.magic, "MARC", 4) != 0) {
         throw meat::Exception("Archive attempting to open a non-archive"
                                " file.");
@@ -806,8 +704,7 @@ meat::Reference meat::data::Archive::get_object(uint32_t index) {
     data_stream.seekg(this->index.at(index).obj_offset);
 
     std::uint8_t value;
-    //data_stream >> value; // Object data value type
-    data_stream >> value;
+    data_stream >> value; // Object data value type
 
     data_stream.seekg(save_pos);
     return meat::Boolean(value != 0);
@@ -890,7 +787,7 @@ void meat::data::Archive::sync() {
                    std::ios::out | std::ios::binary);
 
   if (data_stream.is_open()) {
-    sgedat_header_t header = {
+    meat_arch_header_t header = {
       {'M', 'A', 'R', 'C'},
       1, 0,
       0, 0  // These are offsets in the file we don't have yet.
@@ -900,7 +797,7 @@ void meat::data::Archive::sync() {
      * data after is in the right places. We have to rewrite this header with
      * all the offsets filled in later.
      */
-    data_stream.write((char *)&header, sizeof(sgedat_header_t));
+    data_stream.write((char *)&header, sizeof(meat_arch_header_t));
 
     /* Write the objects to the file. */
     for (size_t c = 0; c < index.size(); c++) {
@@ -975,7 +872,7 @@ void meat::data::Archive::sync() {
 
     /* Rewrite the header with the new offset information. */
     data_stream.seekp(0);
-    data_stream.write((char *)&header, sizeof(sgedat_header_t));
+    data_stream.write((char *)&header, sizeof(meat_arch_header_t));
 
     data_stream.close();
 
@@ -1133,12 +1030,4 @@ meat::data::Archive &meat::data::operator <<(meat::data::Archive &archive,
   archive.data_stream.write((char *)&exponent, sizeof(std::int32_t));
 
   return archive;
-}
-
-/******************************************************************************
- * Public Interface
- */
-
-void meat::data::initialize() {
-  Library::add_path("");
 }

@@ -216,9 +216,17 @@ $new_code = "Class::record(boolean_cls, \"Boolean\");
 
 $cpp =~ s/Class::record\(boolean_cls, "Boolean"\);/$new_code/g;
 
+# Initialize the Library class properties.
+
+$new_code = "Class::record(library_cls, \"Library\");
+  library_cls->property(0) = new Index;
+  library_cls->property(1) = new List;";
+
+$cpp =~ s/Class::record\(library_cls, "Library"\);/$new_code/g;
+
 # Actually build the __builtin__ library.
 
-$new_code = "meat::data::initialize();
+$new_code = "data::Library::add_path(\"\");
 
 #if defined(__WIN32__)
   meat::data::Library::add_path(\"C:\\\\meat\\\\\");
@@ -226,9 +234,10 @@ $new_code = "meat::data::initialize();
   meat::data::Library::add_path(\"/usr/lib/meat/\");
 #endif
 
-  data::Library *library = data::Library::create(\"__builtin__\");
+  data::Library *library = new data::Library(\"__builtin__\");
 $lib_add
-  library->set_symbols(Symbols, meat::STATIC);";
+  library->set_symbols(Symbols, meat::STATIC);
+	__builtin__library() = library;";
 
 $cpp =~ s/library.set_symbols\(Symbols, meat::STATIC\);/$new_code/g;
 

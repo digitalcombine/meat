@@ -26,6 +26,7 @@
 
 Library include: {
 #include <meat/utilities.h>
+#include "meat-internal.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -1621,23 +1622,41 @@ Object subclass: Archiveᶲ as: {
 # Library Class
 
 Object subclass: Libraryᶲ as: {
+  class property _registry
+  class property _paths
+
+  property _name
+  property _requirements
+  property _classes
+  property _symbols
+
+  constructor {
+    return new data::Library(klass, properties);
+  }
+
+  class method initialize {
+    _registry = [Index new]
+    _paths = [List new]
+  }
 
   class function import: libraryName {
-#ifdef DEBUG
-    std::cout << "DEBUG: Import library " << cast<Text>(libraryName)
-              << std::endl;
-#endif
+    auto library = cast<Index>(_registry).find(libraryName);
+    if (library != cast<Index>(_registry).end()) {
+      return library->second;
+    } else {
+      // Load the library.
+      Reference imported_library = cast<meat::Class>(self).new_object();
+      execute(message(imported_library, "initialize", context));
 
-    data::Library::import(cast<Text>(libraryName));
-    return null;
+      cast<data::Library>(imported_library).property(0) = libraryName;
+      cast<data::Library>(imported_library).import();
+      cast<Index>(_registry)[libraryName] = imported_library.weak();
+
+      return imported_library;
+    }
   }
 
   class function requires: libraryName {
-#ifdef DEBUG
-    std::cout << "DEBUG: Importing library " << cast<Text>(libraryName)
-              << std::endl;
-#endif /* DEBUG */
-
     if (compiler() != NULL)
       compiler()->import(cast<Text>(libraryName), context);
     else
@@ -1646,9 +1665,9 @@ Object subclass: Libraryᶲ as: {
     return null;
   }
 
-  class function include: cpp_includes {
+  class function include: cppIncludes {
     if (compiler() != NULL)
-      compiler()->include(cast<Text>(cpp_includes));
+      compiler()->include(cast<Text>(cppIncludes));
     else
       throw Exception("Method Library include: compiler not loaded");
 
@@ -1661,5 +1680,24 @@ Object subclass: Libraryᶲ as: {
     else
       throw Exception("Method Library setApplicationClass: compiler not loaded");
     return null;
+  }
+
+  method initialize {
+    _name = ""
+    _requirements = [List new]
+    _classes = [List new]
+    _symbols = [Index new]
+  }
+
+  method getName {
+    context return: _name
+  }
+
+  method getClasses {
+    context return: [_classes copy]
+  }
+
+  method < other {
+    context return: [_name < [other getName]]
   }
 }

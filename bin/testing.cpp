@@ -23,7 +23,7 @@
 #include <map>
 #include <iostream>
 
-std::map<std::string, unsigned int> test_results;
+static std::map<std::string, unsigned int> test_results;
 
 // misc.cpp
 void misc_tests();
@@ -76,10 +76,9 @@ void meat::test::summary() {
 
     std::cout << "TEST SUMMARY:" << std::endl;
 
-    std::map<std::string, unsigned int>::iterator it;
-    for (it = test_results.begin(); it != test_results.end(); it++) {
-      if (it->second > 0) {
-        std::cout << "  " << it->first << "... FAILED" << std::endl;
+    for (auto &result: test_results) {
+      if (result.second > 0) {
+        std::cout << "  " << result.first << "... FAILED" << std::endl;
         failures++;
       }
     }
@@ -87,6 +86,8 @@ void meat::test::summary() {
     std::cout << "  " << std::dec << failures << " of the tests failed."
               << std::endl;
   }
+
+  test_results.clear();
 }
 
 void meat::test::run_tests() {

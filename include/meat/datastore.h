@@ -44,10 +44,6 @@ namespace meat {
     typedef void* dlhandle;
 #endif
 
-    /** Internal command to initialize the Meat classes.
-     */
-    DECLSPEC void initialize();
-
     static const int FL_ARCHIVE = 1;
     static const int FL_LIBRARY = 2;
     static const int FL_UNKNOWN = -1;
@@ -55,32 +51,32 @@ namespace meat {
 
     /** Access to class library files.
      */
-    class DECLSPEC Library {
+    class DECLSPEC Library : public Object {
     public:
       /**
        */
-      static Library *create(const std::string &name, bool compiled = false);
-
-      /**
-       */
-      static Library *import(const std::string &name);
+      static Reference import(const std::string &name);
 
       /** If the library has an application
        */
       static Reference execute(const std::string &name);
 
-      static Library *get(const std::string &name);
-      static void unload(const std::string &name);
+      static Reference get(const std::string &name);
 
-      /** Unload all the libraries.
-       */
-      static void unload();
+      Library(const std::string &name);
+      Library(Reference type, std::uint8_t properties);
 
       virtual ~Library() throw();
 
       /** Adds a directory path to the list of library paths.
        */
       static void add_path(const std::string &path);
+
+      void requires(const std::string &path);
+
+      /**
+       */
+      void import();
 
       /** Manually trigger all the initialize class methods for all the
        * classes in the library.
@@ -93,61 +89,27 @@ namespace meat {
        */
       void add(Class *cls, const std::string &id);
 
-      /** Clears the library of all it's classes and symbols.
-       */
-      void clear();
-
-      void set_application(const std::string &name);
-
       /** Get a native dynamic symbol from the library, if it was a native
        * library.
        */
       void *dlsymbol(const std::string &name);
 
-      const std::string &name() { return _name; }
+      const std::string &name() const;
 
       /**
        */
-      void set_symbols(std::uint8_t *symbols,
-                       meat::alloc_t sym_alloc);
-
-      /**
-       */
-      void clear_symbols();
+      void set_symbols(std::uint8_t *symbols);
 
       /** Attempt to resolve the hash_id to
        */
       std::string lookup(std::uint32_t hash_id) const;
 
-      const std::deque<Reference> &get_classes() const { return classes; }
-
-    protected:
-      /** Reference to all the classes in the library.
-       */
-      std::deque<Reference> classes;
-
-      /**
-       */
-      void import();
+      const meat::List &get_classes() const;
 
     private:
-      std::string _name;
-      /** Flag for libraries created by the Grinder library. These libraries
-       * don't get registered as a loaded library and classes get registered
-       * seperately from normally loaded libraries.
-       */
-      bool _developing;
-
-      std::map<std::uint32_t, const char *> syms_table;
-      bool syms_free;
-      std::uint32_t syms_size;
-      std::uint8_t *symbols;
-
       bool is_native;
       nativelib_t dlhandle;
       Reference application;
-
-      Library(const std::string &name, bool compiled = false);
 
       void import_from_archive(const std::string &name);
       void import_from_native(const std::string &filename,

@@ -31,6 +31,7 @@
 #include <meat/datastore.h>
 
 #include <meat/utilities.h>
+#include "meat-internal.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -2213,16 +2214,15 @@ static Reference List_om_entries(Reference context) {
 static Reference List_om_forEach_do_(Reference context) {
   Reference self = cast<Context>(context).self();
   Reference klass = cast<Context>(context).klass();
-  Reference item = cast<Context>(context).parameter(0);
+  Reference _item = cast<Context>(context).parameter(0);
   Reference block = cast<Context>(context).parameter(1);
 
-    std::uint8_t local_id = INTEGER(item);
+    std::uint8_t local_id = INTEGER(_item);
     cast<Context>(block).messenger(context);
 
-    List::iterator it = cast<List>(self).begin();
-    for (; it != cast<List>(self).end(); it++) {
+    for (auto &item: cast<List>(self)) {
       cast<BlockContext>(block).set_break_trap();
-      cast<Context>(block).local(local_id) = *it;
+      cast<Context>(block).local(local_id) = item;
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
@@ -2971,7 +2971,24 @@ static meat::vtable_entry_t ArchiveCMethods[] = {
  * Library Class
  */
 
+static Reference Library_constructor(
+  Reference &klass,
+  std::uint8_t properties) {
+
+    return new data::Library(klass, properties);
+
+}
+
+#define _name (self->property(0))
+#define _requirements (self->property(1))
+#define _classes (self->property(2))
+#define _symbols (self->property(3))
+
+#define _registry (klass->property(0))
+#define _paths (klass->property(1))
+
 static meat::vtable_entry_t LibraryMethods[] = {
+  {0x0000003c, 0x6d20bcbb, VTM_BYTECODE, 8, {(meat::method_ptr_t)0}},
   {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -2981,15 +2998,22 @@ static meat::vtable_entry_t LibraryMethods[] = {
   {0x24ab71da, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x331156ce, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
-  {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x6d20bcbb, VTM_BYTECODE, 7, {(meat::method_ptr_t)61}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x70c2702a, 0x6d20bcbb, VTM_BYTECODE, 6, {(meat::method_ptr_t)29}},
   {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b82e32c, 0x6d20bcbb, VTM_BYTECODE, 5, {(meat::method_ptr_t)49}},
   {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x7d180801, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
+
+#undef _name
+#undef _requirements
+#undef _classes
+#undef _symbols
 
 // class method import:
 static Reference Library_cm_import_(Reference context) {
@@ -2997,13 +3021,17 @@ static Reference Library_cm_import_(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference libraryName = cast<Context>(context).parameter(0);
 
-#ifdef DEBUG
-    std::cout << "DEBUG: Import library " << cast<Text>(libraryName)
-              << std::endl;
-#endif
+    auto library = cast<Index>(_registry).find(libraryName);
+    if (library != cast<Index>(_registry).end()) {
+      return library->second;
+    } else {
+      // Load the library.
+      Reference imported_library = new data::Library(cast<Text>(libraryName));
+      cast<data::Library>(imported_library).import();
+      cast<Index>(_registry)[libraryName] = imported_library.weak();
 
-    data::Library::import(cast<Text>(libraryName));
-    return null;
+      return imported_library;
+    }
   }
 
 // class method include:
@@ -3025,11 +3053,6 @@ static Reference Library_cm_requires_(Reference context) {
   Reference self = cast<Context>(context).self();
   Reference klass = cast<Context>(context).klass();
   Reference libraryName = cast<Context>(context).parameter(0);
-
-#ifdef DEBUG
-    std::cout << "DEBUG: Importing library " << cast<Text>(libraryName)
-              << std::endl;
-#endif /* DEBUG */
 
     if (compiler() != NULL)
       compiler()->import(cast<Text>(libraryName), context);
@@ -3062,6 +3085,7 @@ static meat::vtable_entry_t LibraryCMethods[] = {
   {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x24ab71da, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x29950066, 0x6d20bcbb, VTM_NATIVE  , 1, {(meat::method_ptr_t)Library_cm_requires_}},
+  {0x34003578, 0x6d20bcbb, VTM_BYTECODE, 7, {(meat::method_ptr_t)119}},
   {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
   {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
@@ -3073,6 +3097,24 @@ static meat::vtable_entry_t LibraryCMethods[] = {
   {0x7d180801, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
 };
 
+#undef _registry
+#undef _paths
+
+static std::uint8_t LibraryBytecode[] = {
+  0x11, 0x05, 0x00, 0x02, 0x04, 0x06, 0x7b, 0x82, 0xe3, 0x2c, 0x00, 0x02, 0x05,
+  0x07, 0x00, 0x00, 0x00, 0x3c, 0x01, 0x06, 0x01, 0x02, 0x41, 0x79, 0x69, 0x3a,
+  0x01, 0x07, 0x0b, 0x11, 0x04, 0x02, 0x02, 0x04, 0x05, 0x00, 0x2e, 0xaf, 0x75,
+  0x00, 0x01, 0x02, 0x41, 0x79, 0x69, 0x3a, 0x01, 0x05, 0x0b, 0x11, 0x04, 0x00,
+  0x01, 0x02, 0x41, 0x79, 0x69, 0x3a, 0x01, 0x04, 0x0b, 0x16, 0x05, 0x00, 0x20,
+  0x00, 0x05, 0x13, 0x05, 0x00, 0x24, 0x24, 0xbe, 0x02, 0x05, 0x06, 0x00, 0x01,
+  0xa9, 0xa0, 0x00, 0x20, 0x01, 0x06, 0x13, 0x05, 0x00, 0x24, 0x24, 0xbe, 0x02,
+  0x05, 0x06, 0x00, 0x01, 0xa9, 0xa0, 0x00, 0x20, 0x02, 0x06, 0x13, 0x05, 0x04,
+  0x38, 0x38, 0xb2, 0x02, 0x05, 0x06, 0x00, 0x01, 0xa9, 0xa0, 0x00, 0x20, 0x03,
+  0x06, 0x0b, 0x13, 0x05, 0x04, 0x38, 0x38, 0xb2, 0x02, 0x05, 0x06, 0x00, 0x01,
+  0xa9, 0xa0, 0x00, 0x21, 0x00, 0x06, 0x13, 0x05, 0x00, 0x24, 0x24, 0xbe, 0x02,
+  0x05, 0x06, 0x00, 0x01, 0xa9, 0xa0, 0x00, 0x21, 0x01, 0x06, 0x0b
+};
+
 static std::uint8_t Symbols[] = {
   "%\0*\0+\0-\0/\0<\0<=\0<>\0==\0>\0>=\0Application\0Archive\0"
   "BlockContext\0Boolean\0Class\0Context\0Exception\0Index\0"
@@ -3082,18 +3124,19 @@ static std::uint8_t Symbols[] = {
   "clear\0context\0continue\0copy\0create:\0entries\0entry\0execute\0"
   "executeOnBreak:\0executeOnBreak:onContinue:\0executeOnContinue:\0false\0"
   "findFirst:\0findFirst:at:\0findLast:\0findLast:at:\0forEach:do:\0front\0"
-  "get:\0getCharAt:\0getEnviron:\0getFrom:count:\0getLocal:\0getObject\0has:\0"
-  "hasEntry:\0import:\0include:\0initialize\0insert:\0is:\0isClass\0isEmpty\0"
-  "isFalse:\0isFalse:else:\0isNot:\0isNull\0isObject\0isTrue:\0isTrue:else:\0"
-  "isType:\0isWeakReference\0last\0length\0localVariables\0lshift\0lshift:\0"
-  "maxValue\0message\0messenger\0minValue\0name\0negative\0new\0newObject\0"
-  "normalReference\0not\0object\0open:\0or:\0parameter:\0parameters\0pop\0"
-  "popFront\0push:\0pushFront:\0remove:\0removeAt:\0removeFrom:to:\0repeat:\0"
-  "replaceAll:with:\0replaceFrom:count:with:\0requires:\0reset\0return\0"
-  "return:\0rshift\0rshift:\0set:to:\0setApplicationClass:\0setLocal:to:\0"
-  "setObject:\0sort\0subclass:as:\0superClass\0swap:\0swap:with:\0sync\0"
-  "throw\0throw:\0throw:for:\0throwFor:\0timesDo:\0true\0try:\0try:catch:\0"
-  "try:catch:do:\0type\0uplevel\0weakReference\0xor:\0\0"
+  "get:\0getCharAt:\0getClasses\0getEnviron:\0getFrom:count:\0getLocal:\0"
+  "getName\0getObject\0has:\0hasEntry:\0import:\0include:\0initialize\0"
+  "insert:\0is:\0isClass\0isEmpty\0isFalse:\0isFalse:else:\0isNot:\0isNull\0"
+  "isObject\0isTrue:\0isTrue:else:\0isType:\0isWeakReference\0last\0length\0"
+  "localVariables\0lshift\0lshift:\0maxValue\0message\0messenger\0minValue\0"
+  "name\0negative\0new\0newObject\0normalReference\0not\0object\0open:\0or:\0"
+  "parameter:\0parameters\0pop\0popFront\0push:\0pushFront:\0remove:\0"
+  "removeAt:\0removeFrom:to:\0repeat:\0replaceAll:with:\0"
+  "replaceFrom:count:with:\0requires:\0reset\0return\0return:\0rshift\0"
+  "rshift:\0set:to:\0setApplicationClass:\0setLocal:to:\0setObject:\0sort\0"
+  "subclass:as:\0superClass\0swap:\0swap:with:\0sync\0throw\0throw:\0"
+  "throw:for:\0throwFor:\0timesDo:\0true\0try:\0try:catch:\0try:catch:do:\0"
+  "type\0uplevel\0weakReference\0xor:\0\0"
 };
 
 /******************************************************************************
@@ -3216,12 +3259,15 @@ void meat::initialize(int argc, const char *argv[]) {
   archive_cls->set_class_vtable(16, ArchiveCMethods, meat::STATIC);
   Class::record(archive_cls, "Archive");
 
-  Class *library_cls = new meat::Class(meat::Class::resolve(0x0c658f60), 0, 0);
-  library_cls->set_vtable(17, LibraryMethods, meat::STATIC);
-  library_cls->set_class_vtable(18, LibraryCMethods, meat::STATIC);
+  Class *library_cls = new meat::Class(meat::Class::resolve(0x0c658f60), 2, 4);
+  library_cls->set_constructor(Library_constructor);
+  library_cls->set_vtable(20, LibraryMethods, meat::STATIC);
+  library_cls->set_class_vtable(19, LibraryCMethods, meat::STATIC);
+  library_cls->bytecode(154, LibraryBytecode, meat::STATIC);
   Class::record(library_cls, "Library");
-
-  meat::data::initialize();
+  library_cls->property(0) = new Index;
+  library_cls->property(1) = new List;
+  data::Library::add_path("");
 
 #if defined(__WIN32__)
   meat::data::Library::add_path("C:\\meat\\");
@@ -3229,7 +3275,7 @@ void meat::initialize(int argc, const char *argv[]) {
   meat::data::Library::add_path("/usr/lib/meat/");
 #endif
 
-  data::Library *library = data::Library::create("__builtin__");
+  data::Library *library = new data::Library("__builtin__");
   library->add(object_cls, "Object");
   library->add(class_cls, "Class");
   library->add(context_cls, "Context");
@@ -3248,5 +3294,6 @@ void meat::initialize(int argc, const char *argv[]) {
   library->add(library_cls, "Library");
   library->add(application_cls, "Application");
 
-  library->set_symbols(Symbols, meat::STATIC);
+  library->set_symbols(Symbols);
+	__builtin__library() = library;
 }

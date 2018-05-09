@@ -29,16 +29,15 @@
 #include <sstream>
 #include <iomanip>
 #include "getopt.h"
+#include "dump.h"
 
 #ifdef TESTING
 #include <testing.h>
 #endif
 
-std::deque<const char *> source_files;
-std::string out_file;
-std::string app_class;
-
-meat::Reference library;
+static std::deque<std::string> source_files;
+static std::string out_file;
+static std::string app_class;
 
 /********
  * help *
@@ -94,35 +93,33 @@ typedef void (*exec_interp_fn)(interp_t, std::istream &);
 typedef void (*close_interp_fn)(interp_t);
 
 static void interpreter() {
-  meat::data::Library *grinder = meat::data::Library::get("Grinder");
+  meat::Reference grinder = meat::data::Library::get("Grinder");
 
 	create_interp_fn create_interpreter =
-		(create_interp_fn)grinder->dlsymbol("create_interpreter");
+		(create_interp_fn)meat::cast<meat::data::Library>(grinder).dlsymbol("create_interpreter");
 	exec_interp_fn exec_interpreter =
-		(exec_interp_fn)grinder->dlsymbol("exec_interpreter");
+		(exec_interp_fn)meat::cast<meat::data::Library>(grinder).dlsymbol("exec_interpreter");
 	close_interp_fn close_interpreter =
-		(close_interp_fn)grinder->dlsymbol("close_interpreter");
+		(close_interp_fn)meat::cast<meat::data::Library>(grinder).dlsymbol("close_interpreter");
 
 	interp_t interp = create_interpreter(out_file);
 
 	// Go through each file and compile them
-	for (std::deque<const char *>::iterator it = source_files.begin();
-			 it != source_files.end();
-			 ++it) {
+	for (auto &path: source_files) {
 
 #ifdef DEBUG
-		std::cout << "DEBUG: Compiling " << *it << std::endl;
+		std::cout << "DEBUG: Compiling " << path << std::endl;
 #endif /* DEBUG */
 
 		std::ifstream meat_file;
 
-		meat_file.open(*it, std::ios::in);
+		meat_file.open(path, std::ios::in);
 
 		if (meat_file.is_open()) {
 			exec_interpreter(interp, meat_file);
 			meat_file.close();
 		} else {
-			std::cerr << "ERROR: Unable to open " << *it << std::endl;
+			std::cerr << "ERROR: Unable to open " << path << std::endl;
 			return;
 		}
 	}
@@ -137,27 +134,26 @@ static void interpreter() {
 typedef void (*exec_library_fn)(meat::Reference, std::istream &);
 
 static void build_library() {
-	meat::data::Library *grinder = meat::data::Library::get("Grinder");
+	meat::Reference grinder = meat::data::Library::get("Grinder");
 	exec_library_fn exec_library =
-		(exec_library_fn)grinder->dlsymbol("exec_library");
+		(exec_library_fn)meat::cast<meat::data::Library>(grinder).dlsymbol("exec_library");
+
+  meat::Reference library;
 
 	// Go through each file and compile them
-	for (std::deque<const char *>::iterator it = source_files.begin();
-			 it != source_files.end();
-			 ++it) {
+	for (auto &path: source_files) {
 
 #ifdef DEBUG
-		std::cout << "DEBUG: Compiling " << *it << std::endl;
+		std::cout << "DEBUG: Compiling " << path << std::endl;
 #endif /* DEBUG */
 
-		int ftype = meat::data::fl_type(*it);
+		int ftype = meat::data::fl_type(path);
 		if (ftype == meat::data::FL_ARCHIVE) {
-			meat::data::Archive arch(*it);
-			meat::Reference obj = arch.get_object();
+			meat::data::Archive archive(path);
+			meat::Reference object = archive.get_object();
 
-			if (obj->is_type("Grinder.Library")) {
-				library = obj;
-				break;
+			if (object->is_type("Grinder.Library")) {
+				library = object;
 			} else {
 			}
 
@@ -166,19 +162,19 @@ static void build_library() {
 				meat::message(meat::Class::resolve("Grinder.Library"),
 											"new:", meat::Null());
 			meat::cast<meat::Context>
-				(context).parameter(0, new meat::Text(library_name(*it)));
+				(context).parameter(0, new meat::Text(library_name(path)));
 			library = meat::execute(context);
 
 			std::ifstream meat_file;
 
-			meat_file.open(*it, std::ios::in);
+			meat_file.open(path, std::ios::in);
 
 			meat::compiler(&meat::cast<meat::CompilerInterface>(library));
 			if (meat_file.is_open()) {
 				exec_library(library, meat_file);
 				meat_file.close();
 			} else {
-				std::cerr << "ERROR: Unable to open " << *it << std::endl;
+				std::cerr << "ERROR: Unable to open " << path << std::endl;
 				return;
 			}
 			meat::compiler(NULL);
@@ -195,8 +191,6 @@ static void build_library() {
 		meat::Reference context = message(library, "compile", meat::Null());
 		meat::execute(context);
 	}
-
-	library = NULL;
 }
 
 /******************************************************************************
@@ -227,7 +221,7 @@ int main(int argc, const char *argv[]) {
    * Parse the command line options.
    */
 	int opt;
-	while ((opt = getopt(argc, argv, "i:sc:#:hV?")) != -1) {
+	while ((opt = getopt(argc, argv, "d:i:sc:#:hV?")) != -1) {
 		switch (opt) {
 		case '#': // Display a hash value used in the vtables.
 			std::cout << itohex(hash(optarg)) << std::endl;
@@ -235,6 +229,9 @@ int main(int argc, const char *argv[]) {
 		case 'c':
 			app_class = optarg;
 			break;
+    case 'd':
+      dump::dump(optarg);
+      return 0;
 		case 'i':
 			meat::data::Library::add_path(optarg);
 			break;
@@ -265,7 +262,7 @@ int main(int argc, const char *argv[]) {
     if (source_files.size() == 0)
       throw meat::Exception("No source files specified to compile");
 
-    meat::data::Library::import("Grinder");
+    meat::Reference grinder = meat::data::Library::import("Grinder");
 
 		switch (state) {
 		case BUILD_LIBRARY:
@@ -280,7 +277,6 @@ int main(int argc, const char *argv[]) {
 			break;
 		}
   } catch (std::exception &err) {
-    library = NULL;
     std::cerr << "UNCAUGHT EXCEPTION: " << err.what() << std::endl;
 
 #ifdef TESTING

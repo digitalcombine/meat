@@ -508,8 +508,8 @@ LocalVariable ContextBlock::gen_result(bool prelim) {
 
   } else {
 #ifdef DEBUG
-    std::cout << "BC: BLOCK " << local_var.name() << " " << std::dec
-              << (unsigned int)local_names.size() << "\n";
+    std::cout << "BC: BLOCK " << _local_var.name() << " " << std::dec
+              << (unsigned int)_local_names.size() << "\n";
 #endif
     bytecode(meat::bytecode::BLOCK);
     bytecode((uint8_t)_local_var.index());
@@ -1024,8 +1024,8 @@ void Message::gen_bytecode(bool prelim) {
 
     if (_super) {
 #ifdef DEBUG
-      std::cout << "BC: SUPER " << _who_var.name() << " " << _method << " "
-                << std::dec << (unsigned int)_param_idxs.size();
+      std::cout << "BC: SUPER " << who_var.name() << " " << _method << " "
+                << std::dec << (unsigned int)param_idxs.size();
 #endif
       bytecode(meat::bytecode::MESG_SUPER);
     } else {

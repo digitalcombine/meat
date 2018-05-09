@@ -190,12 +190,6 @@ static class_registry_t &class_registry() {
   return classes;
 }
 
-static class_registry_t &dev_class_registry() {
-  static class_registry_t dev_classes;
-
-  return dev_classes;
-}
-
 /**********************
  * meat::Class::Class *
  **********************/
@@ -536,47 +530,16 @@ void meat::Class::record(Reference &cls, const std::string &id, bool replace) {
     thecls.vtable.link(cast<Class>(thecls._super));
 }
 
-/**************************************
- * meat::Class::record_compiled_class *
- **************************************/
-
-void meat::Class::record_compiled_class(Reference cls, const std::string &id) {
-  std::uint32_t hash_id = hash(id);
-  Class &thecls = cast<Class>(cls);
-
-#ifdef DEBUG
-  std::cout << "CLASS: Recording development class " << id << " as id "
-            << itohex(hash_id) << std::endl;
-#endif
-
-  // Check if the class has already been recorded.
-  auto &classes = dev_class_registry();
-  if (classes.find(hash_id) != classes.end()) {
-    throw Exception(std::string("Development class ") + id
-                    + " already registered.");
-  }
-
-  classes[hash_id] = cls;
-  //thecls._hash_id = hash_id;
-  thecls.name(id);
-  if (!thecls._super.is_null())
-    thecls.vtable.link(cast<Class>(thecls._super));
-}
-
 /*************************
  * meat::Class::unrecord *
  *************************/
 
-void meat::Class::unrecord(Reference &cls, bool compiled) {
-
+void meat::Class::unrecord(Reference cls, bool compiled) {
 #ifdef DEBUG
   std::cout << "CLASS: Unrecording class " << cast<Class>(cls).name()
             << std::endl;
 #endif
-  if (compiled)
-    dev_class_registry().erase(cast<Class>(cls)._hash_id);
-  else
-    class_registry().erase(cast<Class>(cls)._hash_id);
+  class_registry().erase(cast<Class>(cls)._hash_id);
 }
 
 /***********************
@@ -596,37 +559,26 @@ void meat::Class::relink() {
  ************************/
 
 meat::Reference &meat::Class::resolve(const std::string &id, bool compiled) {
-  auto &dev_classes = dev_class_registry();
-  std::uint32_t hash_id = hash(id);
-
 #ifdef DEBUG
   std::clog << "DEBUG: resolving class " << id << std::endl;
 #endif
 
-  if (not compiled or dev_classes.find(hash_id) == dev_classes.end()) {
-    auto &classes = class_registry();
-
-    if (classes.find(hash_id) == classes.end()) {
-      throw Exception(std::string("Resolving class ") + id + " failed.");
-    } else
-      return classes[hash_id];
+  std::uint32_t hash_id = hash(id);
+  auto &classes = class_registry();
+  if (classes.find(hash_id) == classes.end()) {
+    throw Exception(std::string("Resolving class ") + id + " failed.");
   } else
-    return dev_classes[hash_id];
+    return classes[hash_id];
 }
 
 meat::Reference &meat::Class::resolve(std::uint32_t hash_id, bool compiled) {
-  auto &dev_classes = dev_class_registry();
+  auto &classes = class_registry();
 
-  if (not compiled or dev_classes.find(hash_id) == dev_classes.end()) {
-    auto &classes = class_registry();
-
-    if (classes.find(hash_id) == classes.end()) {
-      throw Exception(std::string("Resolving class ") +
-                      itohex(hash_id) + " failed.");
-    } else
-      return classes[hash_id];
+  if (classes.find(hash_id) == classes.end()) {
+    throw Exception(std::string("Resolving class ") +
+                    itohex(hash_id) + " failed.");
   } else
-    return dev_classes[hash_id];
+    return classes[hash_id];
 }
 
 /***************************
@@ -634,10 +586,8 @@ meat::Reference &meat::Class::resolve(std::uint32_t hash_id, bool compiled) {
  ***************************/
 
 bool meat::Class::have_class(const std::string &id) {
-  auto &dev_classes = dev_class_registry();
   auto &classes = class_registry();
-  return (dev_classes.find(hash(id)) != dev_classes.end() or
-          classes.find(hash(id)) != classes.end());
+  return (classes.find(hash(id)) != classes.end());
 }
 
 meat::Class::iterator meat::Class::begin() {
@@ -1603,12 +1553,18 @@ void meat::Index::unserialize(
 /******************************************************************************
  */
 
+meat::Reference &__builtin__library() {
+  static meat::Reference _builtin_library;
+  return _builtin_library;
+}
+
 /*****************
  * meat::cleanup *
  *****************/
 
 void meat::cleanup() {
-  meat::data::Library::unload();
+  __builtin__library() = NULL;
+  class_registry().clear();
   memory::gc::collect_all();
 }
 
@@ -1801,7 +1757,7 @@ meat::Reference meat::Boolean(bool value) {
   return (value ? true_object : false_object);
 }
 
-bool DECLSPEC meat::Boolean(meat::Reference value) {
+bool meat::Boolean(meat::Reference value) {
   static Reference true_object;
 
   if (true_object.is_null()) {

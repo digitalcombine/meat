@@ -87,9 +87,6 @@ void meat::grinder::Interpreter::command() {
  *******************************/
 
 meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
-  int32_t int_value;
-  double flt_value;
-
 #ifdef DEBUG
   std::cout << "INTERPRETER: Resolving token " << (std::string)token
             << std::endl;
@@ -97,17 +94,7 @@ meat::Reference meat::grinder::Interpreter::resolve_object(Token &token) {
 
   switch (token.type()) {
   case Token::WORD:
-    if (Utils::is_integer(token, int_value)) {
-#ifdef DEBUG
-      std::cout << "             is integer" << std::endl;
-#endif
-      return new Value(int_value);
-    } else if (Utils::is_float(token, flt_value)) {
-#ifdef DEBUG
-      std::cout << "             is float" << std::endl;
-#endif
-      return new Value(flt_value);
-    } else if (variables.find(token) != variables.end()) {
+    if (variables.find(token) != variables.end()) {
 #ifdef DEBUG
       std::cout << "             is variable" << std::endl;
 #endif
@@ -214,6 +201,12 @@ meat::Reference meat::grinder::Interpreter::message() {
       } else if (tokens.expect(Token::LITRL_STRING) or
                  tokens.expect(Token::SUBST_STRING)) {
         parameters.push_back(new meat::Text(tokens[0]));
+        tokens.next();
+      } else if (tokens.expect(Token::INTEGER)) {
+        parameters.push_back(new meat::Value((std::int32_t)tokens[0]));
+        tokens.next();
+      } else if (tokens.expect(Token::NUMBER)) {
+        parameters.push_back(new meat::Value((double)tokens[0]));
         tokens.next();
       } else if (tokens.expect(Token::COMMAND)) {
         tokens.push();

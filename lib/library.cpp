@@ -169,7 +169,7 @@ public:
 
 grinder::Library::Library(Reference klass,
                           uint8_t properties)
-  : Object(klass, properties), library(NULL), to_cpp(false) {
+  : Object(klass, properties), to_cpp(false) {
 
   classes = new List();
   requiredLibraries = new Set();
@@ -180,7 +180,9 @@ grinder::Library::Library(Reference klass,
  ************************************/
 
 grinder::Library::~Library() throw() {
-  if (library) data::Library::unload(library->name());
+  //std::cout << "LIBRARY: Final unloading of " << cast<Text>(_name) << std::endl;
+  for (auto &cls: _classes) meat::Class::unrecord(cls);
+  _classes.clear();
 }
 
 /***************************************
@@ -189,7 +191,7 @@ grinder::Library::~Library() throw() {
 
 void grinder::Library::register_as(const std::string &name) {
   _name = new Text(name);
-  library = data::Library::create(name, true);
+  //library = data::Library::create(name, true);
 }
 
 /*************************************
@@ -201,13 +203,21 @@ void grinder::Library::add_class(Reference klass) {
   cast<Class>(klass).library = this;
 }
 
+void grinder::Library::add_class(meat::Class *klass) {
+  Reference the_class = klass;
+  _classes.push_back(the_class);
+  meat::Class::record(the_class);
+}
+
 /***********************************
  * meat::grinder::Library::compile *
  ***********************************/
 
 void grinder::Library::compile() {
   // Clear any existing library.
-  library->clear();
+  //library->clear();
+  for (auto &cls: _classes) meat::Class::unrecord(cls);
+  _classes.clear();
 
   // Compile all our classes.
   for (auto &cls: cast<List>(classes))
@@ -232,7 +242,7 @@ void grinder::Library::write() {
     }
 
   } else {
-    library->clear_symbols();
+    //library->clear_symbols();
 
     for (auto &cls: cast<List>(classes)) {
       cast<const Class>(cls).update_symbols(symbols);
@@ -243,8 +253,8 @@ void grinder::Library::write() {
       syms_table << symbol << '\0';
     }
     syms_table << '\0';
-    library->set_symbols((std::uint8_t *)syms_table.str().c_str(),
-                         meat::COPY);
+    /*library->set_symbols((std::uint8_t *)syms_table.str().c_str(),
+                         meat::COPY);*/
 
     std::ofstream cpp_file;
     cpp_file.open((cast<Text>(_name) + ".mlib").c_str());
@@ -264,7 +274,7 @@ void grinder::Library::unserialize(
   data::Archive &store __attribute__((unused)),
   std::istream &data_stream __attribute__((unused))) {
 
-  library = data::Library::create(cast<Text>(_name));
+  //library = data::Library::create(cast<Text>(_name));
 
   for (auto &library_name: cast<Set>(requiredLibraries))
     data::Library::import(cast<Text>(library_name));
@@ -304,9 +314,7 @@ void grinder::Library::clear_symbols() {
 void grinder::Library::import(
   const std::string &library,
   meat::Reference context __attribute__((unused))) {
-
-  data::Library::import(library);
-  cast<Set>(requiredLibraries).insert(new Text(library));
+  cast<Set>(requiredLibraries).insert(data::Library::import(library));
 }
 
 /***********************************
@@ -463,20 +471,20 @@ void grinder::Library::write_mlib(std::ostream &out) {
   auto import_cnt = imports.size();
 
   out.put(import_cnt);
-  for (auto &library_name: imports) {
-    out.write(cast<const Text>(library_name).data(),
-              cast<const Text>(library_name).length());
+  for (auto &library: imports) {
+    std::string library_name = cast<meat::data::Library>(library).name();
+    out.write(library_name.data(), library_name.length());
     out.put('\0');
   }
 
   // Write the classes to the file.
-  auto &klasses = library->get_classes();
+  //auto &klasses = library->get_classes();
 #ifdef DEBUG
   std::cout << "LIBRARY: Adding " << (int)klasses.size()
             << " classes" << std::endl;
 #endif /* DEBUG */
-  out.put((uint8_t)klasses.size());
-  for (auto &cls: klasses)
+  out.put((uint8_t)_classes.size());
+  for (auto &cls: _classes)
     cast<const meat::Class>(cls).write(out);
 
   // Write the symbols table to the file.
@@ -537,14 +545,14 @@ void grinder::Library::write_cpp(std::ostream &out) {
   out << "\n";
 
   // Declare the init function using C conventions.
-  out << "// We need to declare init_"
-      << std::string(library->name()) + " as a C function.\n"
+  out << "// We need to declare init_" << cast<Text>(_name)
+      << " as a C function.\n"
       << "extern \"C\" {\n"
-      << "  DECLSPEC void init_" + std::string(library->name())
+      << "  DECLSPEC void init_" << cast<Text>(_name)
       << "(meat::data::Library &library);\n}\n\n";
 
   // Generate the init function.
-  out << "void init_" + std::string(library->name())
+  out << "void init_" << cast<Text>(_name)
       << "(meat::data::Library &library) {\n  meat::Class *cls;\n";
 
   // Import required libraries
@@ -554,7 +562,7 @@ void grinder::Library::write_cpp(std::ostream &out) {
     meat::Set &imports = cast<Set>(requiredLibraries);
     Set::const_iterator sit;
     for (sit = imports.begin(); sit != imports.end(); ++sit) {
-      out << "  meat::data::Library::import(\""
+      out << "  library.requires(\""
           << meat::cast<const meat::Text>(*sit) << "\");\n";
     }
   }
@@ -564,7 +572,7 @@ void grinder::Library::write_cpp(std::ostream &out) {
     cast<Class>(cls).cpp_new_class(out);
 
   if (!symbols.empty())
-    out << "\n  library.set_symbols(Symbols, meat::STATIC);\n";
+    out << "\n  library.set_symbols(Symbols);\n";
 
   out << "}\n";
 }
@@ -755,10 +763,11 @@ void grinder::Class::create_class() const {
 
   // Add the bytecode to the class.
   cls->bytecode(bytecode.size(), (uint8_t *)&bytecode[0], COPY);
-  //cls->name(cast<const Text>(className));
+  cls->name(cast<const Text>(className));
 
   // Register the new class and add it to the library.
-  library->library->add(cls, cast<const Text>(className));
+  //library->library->add(cls, cast<const Text>(className));
+  library->add_class(cls);
   library->add_symbol(cast<const Text>(className));
   library->add_symbol(cast<const Text>(superClass));
 }

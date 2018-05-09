@@ -295,9 +295,7 @@ namespace meat {
     static void record(Reference &cls, bool replace = false);
     //@}
 
-    static void record_compiled_class(Reference cls, const std::string &id);
-
-    static void unrecord(Reference &cls, bool compiled = false);
+    static void unrecord(Reference cls, bool compiled = false);
 
     void relink();
 

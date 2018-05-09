@@ -24,9 +24,6 @@ typedef struct memory_s {
   time_t collected_time;
 } memory_t;
 
-/* XXX These need to be placed as static variables in functions to work
- *     properly in a shared library.
- */
 std::size_t memory::gc::limit = 5 * 1024 * 1024; // 5M
 time_t memory::gc::collection_age = 60; // 1 minute
 std::multimap<std::size_t, void *> memory::gc::free_memory;
@@ -87,10 +84,14 @@ void memory::gc::collect(void) {
    * actually give them back to the system.
    */
   memory_t *mptr = NULL;
-  for (auto &block: free_memory) {
-    mptr = (memory_t *)block.second;
+  auto it = free_memory.begin();
+  while (it != free_memory.end()) {
+    mptr = (memory_t *)it->second;
     if (mptr->collected_time - time(NULL) >= collection_age) {
-      ::operator delete(mptr);
+      ::operator delete(it->second);
+      it = free_memory.erase(it);
+    } else {
+      ++it;
     }
   }
 }
@@ -102,6 +103,7 @@ void memory::gc::collect(void) {
 void memory::gc::collect_all(void) {
   for (auto &block: free_memory)
     ::operator delete(block.second);
+  free_memory.clear();
 }
 
 /************************************
