@@ -598,6 +598,18 @@ namespace meat {
   /****************************************************************************
    */
 
+  class DECLSPEC BlockParameter : public Object {
+  public:
+    BlockParameter(std::uint8_t offset);
+    BlockParameter(Reference cls, std::uint8_t properties);
+    virtual ~BlockParameter() noexcept;
+
+    void set_parameter(Reference block, Reference value) const;
+  };
+
+  /****************************************************************************
+   */
+
   class DECLSPEC Value : public Object {
   public:
     Value(Reference cls, uint8_t properties);

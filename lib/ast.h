@@ -92,7 +92,7 @@ namespace meat {
 
         virtual std::int16_t resolve_property(const std::string &name) const;
         virtual std::int16_t
-        resolve_class_property(const std::string &name) const;
+          resolve_class_property(const std::string &name) const;
         virtual LocalVariable resolve_local(const std::string &name) const;
 
         virtual void add_symbol(const std::string &name);
@@ -237,6 +237,7 @@ namespace meat {
 
         ident_type_t type() const { return _type; }
         std::uint8_t index() const { return _index; }
+        std::string name() const { return _name; }
 
         virtual void gen_bytecode(bool prelim);
         virtual LocalVariable gen_result(bool prelim);

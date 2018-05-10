@@ -30,27 +30,28 @@ namespace meat {
 
   /** @ns */
   namespace bytecode {
-    const std::uint8_t NOOP              = 0x00;
+    const std::uint8_t NOOP               = 0x00;
 
-    const std::uint8_t MESSAGE           = 0x01; // obj mesg_id pcnt ...
-    const std::uint8_t MESG_RESULT       = 0X02; // obj res mesg_id pcnt ...
-    const std::uint8_t MESG_SUPER        = 0x03;
-    const std::uint8_t MESG_SUPER_RESULT = 0x04;
+    const std::uint8_t MESSAGE            = 0x01; // obj mesg_id pcnt ...
+    const std::uint8_t MESG_RESULT        = 0X02; // obj res mesg_id pcnt ...
+    const std::uint8_t MESG_SUPER         = 0x03;
+    const std::uint8_t MESG_SUPER_RESULT  = 0x04;
 
-    const std::uint8_t BLOCK             = 0x0a; // local locals block_size
-    const std::uint8_t CONTEXT_END       = 0x0b;
+    const std::uint8_t BLOCK              = 0x0a; // local locals block_size
+    const std::uint8_t CONTEXT_END        = 0x0b;
 
-    const std::uint8_t ASSIGN            = 0x10; // local local
-    const std::uint8_t ASSIGN_PROP       = 0x11; // local object_attr
-    const std::uint8_t ASSIGN_CLASS_PROP = 0x12; // local class_attr
-    const std::uint8_t ASSIGN_CLASS      = 0x13; // local class_hash_id
+    const std::uint8_t ASSIGN             = 0x10; // local local
+    const std::uint8_t ASSIGN_PROP        = 0x11; // local object_attr
+    const std::uint8_t ASSIGN_CLASS_PROP  = 0x12; // local class_attr
+    const std::uint8_t ASSIGN_CLASS       = 0x13; // local class_hash_id
 
-    const std::uint8_t ASSIGN_CONST_INT  = 0x14; // local const
-    const std::uint8_t ASSIGN_CONST_NUM  = 0x15;
-    const std::uint8_t ASSIGN_CONST_TXT  = 0x16;
+    const std::uint8_t ASSIGN_CONST_INT   = 0x14; // local const
+    const std::uint8_t ASSIGN_CONST_NUM   = 0x15;
+    const std::uint8_t ASSIGN_CONST_TXT   = 0x16;
+    const std::uint8_t ASSIGN_BLOCK_PARAM = 0x17;
 
-    const std::uint8_t SET_PROP          = 0x20; // attr local
-    const std::uint8_t SET_CLASS_PROP    = 0x21; // attr const
+    const std::uint8_t SET_PROP           = 0x20; // attr local
+    const std::uint8_t SET_CLASS_PROP     = 0x21; // attr const
 
     typedef struct __attribute__((packed)) _message_s {
       std::uint8_t object;
@@ -104,6 +105,12 @@ namespace meat {
       unsigned char value[]; // This is 0 terminated
     } const_text_t;
 
+    typedef struct __attribute__((packed)) _block_parameter_s {
+      std::uint8_t destination;
+      //std::uint8_t block;
+      std::uint8_t local_index;
+    } block_parameter_t;
+
     typedef struct __attribute__((packed)) _set_property_s {
       std::uint8_t destination;
       std::uint8_t source;
@@ -121,6 +128,7 @@ namespace meat {
         const_integer_t ci;
         const_number_t cn;
         const_text_t ct;
+        block_parameter_t bp;
         set_property_t sp;
       } o;
     } bytecode_t;

@@ -121,7 +121,7 @@ int meat::data::fl_type(const std::string &fname) {
  ********************************/
 
 meat::data::Library::Library(const std::string &name)
-  : Object(Class::resolve("Library")), is_native(false), dlhandle(nullptr) {
+  : Object(Class::resolve("Library"), 4), is_native(false), dlhandle(nullptr) {
 
   _requirements = new List;
   _classes = new List;

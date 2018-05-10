@@ -350,6 +350,20 @@ meat::Reference meat::execute(Reference context) {
         break;
       }
 
+      case meat::bytecode::ASSIGN_BLOCK_PARAM: {
+#ifdef DEBUG
+        std::cout << "BC" << BCLOC << ": BLOCK PARAMETER " << std::dec
+                  << local(bc->o.bp.destination) << " @ "
+                  << "\"" << local(bc->o.bp.local_index) << "\""
+                  << std::endl;
+#endif /* DEBUG */
+
+        Reference block_parameter = new BlockParameter(bc->o.bp.local_index);
+        cast<Context>(context).local(bc->o.bp.destination) = block_parameter;
+        ip += 3;
+        break;
+      }
+
       case meat::bytecode::SET_PROP:
       case meat::bytecode::SET_CLASS_PROP: {
 #ifdef DEBUG

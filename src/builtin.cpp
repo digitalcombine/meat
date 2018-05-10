@@ -193,7 +193,7 @@ static Reference Object_constructor(
   std::uint8_t properties) {
 
     return new meat::Object(klass, properties);
-
+  
 }
 
 // method is:
@@ -366,7 +366,7 @@ static Reference Context_constructor(
   std::uint8_t properties) {
 
     return new meat::Context(klass, properties);
-
+  
 }
 
 // method getLocal:
@@ -777,7 +777,7 @@ static Reference Exception_constructor(
   std::uint8_t properties) {
 
     return new meat::Exception(klass, properties);
-
+  
 }
 
 #define mesg (self->property(0))
@@ -889,7 +889,7 @@ static Reference Exception_cm_try_catch_do_(Reference context) {
   Reference self = cast<Context>(context).self();
   Reference klass = cast<Context>(context).klass();
   Reference try_block = cast<Context>(context).parameter(0);
-  Reference error = cast<Context>(context).parameter(1);
+  Reference _error = cast<Context>(context).parameter(1);
   Reference catch_block = cast<Context>(context).parameter(2);
 
     try {
@@ -897,7 +897,7 @@ static Reference Exception_cm_try_catch_do_(Reference context) {
       execute(try_block);
     } catch (Exception &err) {
       Reference excp = new meat::Exception(err);
-      cast<Context>(catch_block).local(INTEGER(error)) = excp;
+      cast<BlockParameter>(_error).set_parameter(catch_block, excp);
       cast<Context>(catch_block).messenger(context);
       execute(catch_block);
       cast<BlockContext>(try_block).reset();
@@ -1099,6 +1099,65 @@ static std::uint8_t BooleanBytecode[] = {
 };
 
 /******************************************************************************
+ * BlockParameter Class
+ */
+
+static Reference BlockParameter_constructor(
+  Reference &klass,
+  std::uint8_t properties) {
+
+    return new BlockParameter(klass, properties);
+  
+}
+
+#define localIndex (self->property(0))
+
+static meat::vtable_entry_t BlockParameterMethods[] = {
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00379f78, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x24ab71da, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x331152ee, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x331156ce, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x34003578, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x48dbf560, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7644da37, 0x015582fd, VTM_BYTECODE, 8, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7d180801, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
+};
+
+#undef localIndex
+
+static meat::vtable_entry_t BlockParameterCMethods[] = {
+  {0x00000782, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x000007a0, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00019850, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x00368f3a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x068b6f7b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x20be875b, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x24ab71da, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a68c12, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x39a6a1d2, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x54aa30e6, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x6b2d9a7a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7a8e569a, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7b840562, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}},
+  {0x7d180801, 0x00000000, VTM_SUPER   , 0, {(meat::method_ptr_t)0}}
+};
+
+static std::uint8_t BlockParameterBytecode[] = {
+  0x13, 0x06, 0x46, 0xba, 0x8a, 0x20, 0x11, 0x07, 0x00, 0x01, 0x06, 0x67, 0x5b,
+  0xde, 0x74, 0x02, 0x07, 0x05, 0x0b
+};
+
+/******************************************************************************
  * Numeric Class
  */
 
@@ -1219,7 +1278,7 @@ static Reference Integer_constructor(
   std::uint8_t properties) {
 
     return new Value(klass, properties);
-
+  
 }
 
 // method %
@@ -1246,13 +1305,7 @@ static Reference Integer_om_add(Reference context) {
   Reference klass = cast<Context>(context).klass();
   Reference other = cast<Context>(context).parameter(0);
 
-    std::int32_t res;
-    bool overflow = __builtin_add_overflow(INTEGER(self),
-                                           INTEGER(other),
-                                           &res);
-    if (overflow)
-      throw Exception("Addition overflow");
-    return new Value(res);
+    return new Value(INTEGER(self) + INTEGER(other));
   }
 
 // method -
@@ -1540,7 +1593,7 @@ static Reference Number_constructor(
   std::uint8_t properties) {
 
     return new Value(klass, properties);
-
+  
 }
 
 // method %
@@ -1760,7 +1813,7 @@ static Reference Text_constructor(
   std::uint8_t properties) {
 
     return new Text(klass, properties);
-
+  
 }
 
 // method *
@@ -1944,16 +1997,15 @@ static Reference Text_om_findLast_at_(Reference context) {
 static Reference Text_om_forEach_do_(Reference context) {
   Reference self = cast<Context>(context).self();
   Reference klass = cast<Context>(context).klass();
-  Reference character = cast<Context>(context).parameter(0);
+  Reference _character = cast<Context>(context).parameter(0);
   Reference block = cast<Context>(context).parameter(1);
 
-    std::uint8_t local_id = INTEGER(character);
     cast<Context>(block).messenger(context);
 
     utf8::Iterator it(cast<const Text>(self));
     for (; it != it.end(); ++it) {
       cast<BlockContext>(block).set_break_trap();
-      cast<Context>(block).local(local_id) = new Text(*it);
+      cast<BlockParameter>(_character).set_parameter(block, new Text(*it));
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
@@ -2153,7 +2205,7 @@ static Reference List_constructor(
   std::uint8_t properties) {
 
     return new List(klass, properties);
-
+  
 }
 
 // method append:
@@ -2217,12 +2269,11 @@ static Reference List_om_forEach_do_(Reference context) {
   Reference _item = cast<Context>(context).parameter(0);
   Reference block = cast<Context>(context).parameter(1);
 
-    std::uint8_t local_id = INTEGER(_item);
     cast<Context>(block).messenger(context);
 
     for (auto &item: cast<List>(self)) {
       cast<BlockContext>(block).set_break_trap();
-      cast<Context>(block).local(local_id) = item;
+      cast<BlockParameter>(_item).set_parameter(block, item);
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
@@ -2458,7 +2509,7 @@ static Reference Set_constructor(
   std::uint8_t properties) {
 
     return new Set(klass, properties);
-
+  
 }
 
 // method clear
@@ -2629,7 +2680,7 @@ static Reference Index_constructor(
   std::uint8_t properties) {
 
     return new Index(klass, properties);
-
+  
 }
 
 // method copy
@@ -2976,7 +3027,7 @@ static Reference Library_constructor(
   std::uint8_t properties) {
 
     return new data::Library(klass, properties);
-
+  
 }
 
 #define _name (self->property(0))
@@ -3026,7 +3077,10 @@ static Reference Library_cm_import_(Reference context) {
       return library->second;
     } else {
       // Load the library.
-      Reference imported_library = new data::Library(cast<Text>(libraryName));
+      Reference imported_library = cast<meat::Class>(self).new_object();
+      execute(message(imported_library, "initialize", context));
+
+      cast<data::Library>(imported_library).property(0) = libraryName;
       cast<data::Library>(imported_library).import();
       cast<Index>(_registry)[libraryName] = imported_library.weak();
 
@@ -3038,10 +3092,10 @@ static Reference Library_cm_import_(Reference context) {
 static Reference Library_cm_include_(Reference context) {
   Reference self = cast<Context>(context).self();
   Reference klass = cast<Context>(context).klass();
-  Reference cpp_includes = cast<Context>(context).parameter(0);
+  Reference cppIncludes = cast<Context>(context).parameter(0);
 
     if (compiler() != NULL)
-      compiler()->include(cast<Text>(cpp_includes));
+      compiler()->include(cast<Text>(cppIncludes));
     else
       throw Exception("Method Library include: compiler not loaded");
 
@@ -3117,26 +3171,27 @@ static std::uint8_t LibraryBytecode[] = {
 
 static std::uint8_t Symbols[] = {
   "%\0*\0+\0-\0/\0<\0<=\0<>\0==\0>\0>=\0Application\0Archive\0"
-  "BlockContext\0Boolean\0Class\0Context\0Exception\0Index\0"
-  "Integer\0Library\0List\0Null\0Number\0Numeric\0"
-  "Object\0Set\0Text\0^\0absolute\0and:\0append:\0asInteger\0"
-  "asLowercase\0asNumber\0asText\0asUppercase\0at:insert:\0break\0cleanup\0"
-  "clear\0context\0continue\0copy\0create:\0entries\0entry\0execute\0"
-  "executeOnBreak:\0executeOnBreak:onContinue:\0executeOnContinue:\0false\0"
-  "findFirst:\0findFirst:at:\0findLast:\0findLast:at:\0forEach:do:\0front\0"
-  "get:\0getCharAt:\0getClasses\0getEnviron:\0getFrom:count:\0getLocal:\0"
-  "getName\0getObject\0has:\0hasEntry:\0import:\0include:\0initialize\0"
-  "insert:\0is:\0isClass\0isEmpty\0isFalse:\0isFalse:else:\0isNot:\0isNull\0"
-  "isObject\0isTrue:\0isTrue:else:\0isType:\0isWeakReference\0last\0length\0"
-  "localVariables\0lshift\0lshift:\0maxValue\0message\0messenger\0minValue\0"
-  "name\0negative\0new\0newObject\0normalReference\0not\0object\0open:\0or:\0"
-  "parameter:\0parameters\0pop\0popFront\0push:\0pushFront:\0remove:\0"
-  "removeAt:\0removeFrom:to:\0repeat:\0replaceAll:with:\0"
-  "replaceFrom:count:with:\0requires:\0reset\0return\0return:\0rshift\0"
-  "rshift:\0set:to:\0setApplicationClass:\0setLocal:to:\0setObject:\0sort\0"
-  "subclass:as:\0superClass\0swap:\0swap:with:\0sync\0throw\0throw:\0"
-  "throw:for:\0throwFor:\0timesDo:\0true\0try:\0try:catch:\0try:catch:do:\0"
-  "type\0uplevel\0weakReference\0xor:\0\0"
+  "BlockContext\0BlockContext\0BlockParameter\0Boolean\0Boolean\0"
+  "Class\0Class\0Context\0Exception\0Exception\0Index\0Index\0"
+  "Integer\0Library\0List\0List\0Null\0Number\0Numeric\0"
+  "Numeric\0Object\0Object\0Set\0Text\0^\0absolute\0and:\0"
+  "append:\0asInteger\0asLowercase\0asNumber\0asText\0asUppercase\0"
+  "at:insert:\0break\0cleanup\0clear\0context\0continue\0copy\0create:\0"
+  "entries\0entry\0execute\0executeOnBreak:\0executeOnBreak:onContinue:\0"
+  "executeOnContinue:\0false\0findFirst:\0findFirst:at:\0findLast:\0"
+  "findLast:at:\0forEach:do:\0front\0get:\0getCharAt:\0getClasses\0"
+  "getEnviron:\0getFrom:count:\0getLocal:\0getName\0getObject\0has:\0"
+  "hasEntry:\0import:\0include:\0initialize\0insert:\0is:\0isClass\0isEmpty\0"
+  "isFalse:\0isFalse:else:\0isNot:\0isNull\0isObject\0isTrue:\0isTrue:else:\0"
+  "isType:\0isWeakReference\0last\0length\0localVariables\0lshift\0lshift:\0"
+  "maxValue\0message\0messenger\0minValue\0name\0negative\0new\0newObject\0"
+  "normalReference\0not\0object\0open:\0or:\0parameter:\0parameters\0pop\0"
+  "popFront\0push:\0pushFront:\0remove:\0removeAt:\0removeFrom:to:\0repeat:\0"
+  "replaceAll:with:\0replaceFrom:count:with:\0requires:\0reset\0return\0"
+  "return:\0rshift\0rshift:\0set:to:\0setApplicationClass:\0setLocal:to:\0"
+  "setObject:\0sort\0subclass:as:\0superClass\0swap:\0swap:with:\0sync\0"
+  "throw\0throw:\0throw:for:\0throwFor:\0timesDo:\0true\0try:\0try:catch:\0"
+  "try:catch:do:\0type\0uplevel\0weakReference\0xor:\0\0"
 };
 
 /******************************************************************************
@@ -3201,6 +3256,13 @@ void meat::initialize(int argc, const char *argv[]) {
   Class::record(boolean_cls, "Boolean");
   boolean_cls->property(0) = new Value(true);
   boolean_cls->property(1) = new Value(false);
+
+  Class *blockparameter_cls = new meat::Class(meat::Class::resolve(0x0c658f60), 0, 1);
+  blockparameter_cls->set_constructor(BlockParameter_constructor);
+  blockparameter_cls->set_vtable(18, BlockParameterMethods, meat::STATIC);
+  blockparameter_cls->set_class_vtable(14, BlockParameterCMethods, meat::STATIC);
+  blockparameter_cls->bytecode(19, BlockParameterBytecode, meat::STATIC);
+  Class::record(blockparameter_cls, "BlockParameter");
 
   Class *numeric_cls = new meat::Class(meat::Class::resolve(0x0c658f60), 0, 0);
   numeric_cls->set_vtable(30, NumericMethods, meat::STATIC);
@@ -3267,6 +3329,7 @@ void meat::initialize(int argc, const char *argv[]) {
   Class::record(library_cls, "Library");
   library_cls->property(0) = new Index;
   library_cls->property(1) = new List;
+
   data::Library::add_path("");
 
 #if defined(__WIN32__)
@@ -3282,6 +3345,7 @@ void meat::initialize(int argc, const char *argv[]) {
   library->add(blockcontext_cls, "BlockContext");
   library->add(null_cls, "Null");
   library->add(exception_cls, "Exception");
+  library->add(blockparameter_cls, "BlockParameter");
   library->add(boolean_cls, "Boolean");
   library->add(numeric_cls, "Numeric");
   library->add(integer_cls, "Integer");

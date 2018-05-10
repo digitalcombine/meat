@@ -283,6 +283,13 @@ static void disassemble(uint8_t *ip, const std::string &pre = "    ") {
       break;
     }
 
+    case meat::bytecode::ASSIGN_BLOCK_PARAM: {
+      std::cout << pre << local(bc->o.ct.destination) << " = BLOCK PARAMETER "
+                << local(bc->o.bp.local_index) << "\n";
+      ip += 3;
+      break;
+    }
+
     case meat::bytecode::SET_PROP:
     case meat::bytecode::SET_CLASS_PROP:
       switch (bc->code) {
@@ -298,7 +305,7 @@ static void disassemble(uint8_t *ip, const std::string &pre = "    ") {
       break;
 
     default:
-      std::cout << std::hex << "0x" << (unsigned int)(bc->code)
+      std::cout << pre << std::hex << "0x" << (unsigned int)(bc->code)
                 << " Unknown bytecode\n";
       return;
     }

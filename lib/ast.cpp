@@ -603,8 +603,10 @@ void Identifier::block_parameter(Block *block) {
   if (_name[0] != '.')
     throw Exception(std::string("Identifier ") + _name +
                     " is not a block parameter.");
+
   result = anon_local();
   result_set = true;
+
   _parameter = block->local(_name);
   _type = BLOCK_PARAMETER;
 }
@@ -694,13 +696,14 @@ LocalVariable Identifier::gen_result(bool prelim) {
     switch (_type) {
     case BLOCK_PARAMETER:
 #ifdef DEBUG
-      std::cout << "BC: INT " << result.name()
+      std::cout << "BC: BLOCK PARAMETER " << result.name()
                 << " \"" << std::dec << (int)_parameter.index() << "\""
                 << std::endl;
 #endif
-      bytecode(bytecode::ASSIGN_CONST_INT);
+      bytecode(bytecode::ASSIGN_BLOCK_PARAM);
       bytecode(result.index());
-      bytecode((int32_t)_parameter.index());
+      //bytecode(_block_context.index());
+      bytecode(_parameter.index());
       return result;
     case OBJECT_PROPERTY: {
 #ifdef DEBUG

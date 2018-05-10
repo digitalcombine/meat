@@ -1239,6 +1239,40 @@ const char* meat::Exception::what() const throw() {
 }
 
 /******************************************************************************
+ * meat::BlockParameter Class
+ */
+
+/****************************************
+ * meat::BlockParameter::BlockParameter *
+ ****************************************/
+
+meat::BlockParameter::BlockParameter(std::uint8_t offset)
+  : Object(Class::resolve("BlockParameter"), 1) {
+  property(0) = new Value(offset);
+}
+
+meat::BlockParameter::BlockParameter(Reference cls, std::uint8_t properties)
+  : Object(cls, properties) {
+}
+
+/*****************************************
+ * meat::BlockParameter::~BlockParameter *
+ *****************************************/
+
+meat::BlockParameter::~BlockParameter() noexcept {
+}
+
+/***************************************
+ * meat::BlockParameter::set_parameter *
+ ***************************************/
+
+void
+meat::BlockParameter::set_parameter(Reference block, Reference value) const {
+  Reference index = property(0);
+  cast<BlockContext>(block).local(INTEGER(index)) = value;
+}
+
+/******************************************************************************
  * meat::Value Class
  */
 

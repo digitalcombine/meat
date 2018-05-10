@@ -527,13 +527,13 @@ Object subclass: Exceptionᶲ as: {
   }
 
   # 3.6.3
-  class function try: try_block catch: error do: catch_block {
+  class function try: try_block catch: .error do: catch_block {
     try {
       cast<Context>(try_block).messenger(context);
       execute(try_block);
     } catch (Exception &err) {
       Reference excp = new meat::Exception(err);
-      cast<Context>(catch_block).local(INTEGER(error)) = excp;
+      cast<BlockParameter>(_error).set_parameter(catch_block, excp);
       cast<Context>(catch_block).messenger(context);
       execute(catch_block);
       cast<BlockContext>(try_block).reset();
@@ -662,6 +662,21 @@ Object subclass: Booleanᶲ as: {
 }
 
 #==============================================================================
+# $BlockParameter Class
+
+Object subclass: BlockParameterᶲ as: {
+  property localIndex
+
+  constructor {
+    return new BlockParameter(klass, properties);
+  }
+
+  method set: blockContext to: value {
+    BlockContext setLocal: localIndex to: value
+  }
+}
+
+#==============================================================================
 # Numeric
 
 Object subclass: Numericᶲ as: {
@@ -753,13 +768,7 @@ Numeric subclass: Integerᶲ as: {
   }
 
   function + other {
-    std::int32_t res;
-    bool overflow = __builtin_add_overflow(INTEGER(self),
-                                           INTEGER(other),
-                                           &res);
-    if (overflow)
-      throw Exception("Addition overflow");
-    return new Value(res);
+    return new Value(INTEGER(self) + INTEGER(other));
   }
 
   function - other {
@@ -1125,14 +1134,13 @@ Object subclass: Textᶲ as: {
   }
 
   # 3.11.11
-  function forEach: character do: block {
-    std::uint8_t local_id = INTEGER(character);
+  function forEach: .character do: block {
     cast<Context>(block).messenger(context);
 
     utf8::Iterator it(cast<const Text>(self));
     for (; it != it.end(); ++it) {
       cast<BlockContext>(block).set_break_trap();
-      cast<Context>(block).local(local_id) = new Text(*it);
+      cast<BlockParameter>(_character).set_parameter(block, new Text(*it));
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
@@ -1362,12 +1370,11 @@ Object subclass: Listᶲ as: {
 
   # 3.12.19
   function forEach: .item do: block {
-    std::uint8_t local_id = INTEGER(_item);
     cast<Context>(block).messenger(context);
 
     for (auto &item: cast<List>(self)) {
       cast<BlockContext>(block).set_break_trap();
-      cast<Context>(block).local(local_id) = item;
+      cast<BlockParameter>(_item).set_parameter(block, item);
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
