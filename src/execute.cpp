@@ -70,7 +70,7 @@ meat::Reference meat::execute(Reference context) {
     /* Here we execute a c++ native function */
 
     cast<Context>(context).local(2) = context.weak(); // context
-    Reference result = cast<Context>(context).pointer(context);
+    Reference result = cast<Context>(context)(context);
     cast<Context>(context).result(result);
 
     return result;

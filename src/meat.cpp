@@ -1084,6 +1084,10 @@ meat::Reference meat::Context::result() const {
   return _result;
 }
 
+meat::Reference meat::Context::operator ()(meat::Reference context) {
+  return pointer(context);
+}
+
 /******************************************************************************
  * meat::BlockContext Class
  */

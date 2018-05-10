@@ -478,6 +478,8 @@ namespace meat {
     virtual void unfinish() { done = false; };
     virtual void reset() {};
 
+    virtual Reference operator ()(Reference context);
+
     friend class Class;
     friend class BlockContext;
     friend Reference message(Reference object,
