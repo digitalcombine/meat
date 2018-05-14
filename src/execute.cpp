@@ -36,6 +36,10 @@
 #include <iomanip>
 #include <cstddef>
 
+/*********
+ * local *
+ *********/
+
 inline std::string local(std::uint8_t id) {
   switch (id) {
   case 0:

@@ -35,8 +35,6 @@ namespace meat {
     void failed(const char *id, bool show = true);
 
     void summary();
-
-    void run_tests();
   }
 }
 

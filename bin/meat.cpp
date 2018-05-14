@@ -76,10 +76,6 @@ int main(int argc, const char *argv[]) {
 
   meat::initialize(argc, argv); // Initialize the runtime environment.
 
-#ifdef TESTING
-  meat::test::run_tests();
-#endif
-
   /*********************************
    * Parse the command line options.
    */

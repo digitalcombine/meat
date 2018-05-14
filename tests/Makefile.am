@@ -29,17 +29,20 @@ CLEANFILES = UnitTest.mlib Test.Characters.mlib \
 			 builtin.cpp grinder.cpp \
 			 data.mar tests.mapp hello.mlib libtests.mlib
 
+noinst_LIBRARIES = libtesting.a
+libtesting_a_SOURCES = testsuite.cpp testing.cpp
+libtesting_a_CPPFLAGS = -I@top_srcdir@/include
+
 check_PROGRAMS = memory-tests parser-tests
 
-memory_tests_SOURCES = memory-tests.cpp @top_srcdir@/bin/testsuite.cpp
+memory_tests_SOURCES = memory-tests.cpp
 memory_tests_CPPFLAGS = -I@top_srcdir@/include
-memory_tests_LDADD = @top_srcdir@/src/libmeat.la
+memory_tests_LDADD = @top_srcdir@/src/libmeat.la libtesting.a
 memory_tests_LDFLAGS = -rdynamic
 
-parser_tests_SOURCES = parser-tests.cpp @top_srcdir@/bin/testsuite.cpp \
-	@top_srcdir@/bin/testing.cpp @top_srcdir@/bin/misc.cpp
+parser_tests_SOURCES = parser-tests.cpp
 parser_tests_CPPFLAGS = -I@top_srcdir@/include -I@top_srcdir@/lib
-parser_tests_LDADD = @top_srcdir@/lib/Grinder.la
+parser_tests_LDADD = @top_srcdir@/lib/Grinder.la libtesting.a
 parser_tests_LDFLAGS = -rdynamic
 
 MEATDEPS = @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat \

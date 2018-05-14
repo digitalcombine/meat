@@ -25,9 +25,6 @@
 
 static std::map<std::string, unsigned int> test_results;
 
-// misc.cpp
-void misc_tests();
-
 void meat::test::test(const char *id, bool show) {
   if (test_results.find(id) == test_results.end())
     test_results[id] = 0;
@@ -88,8 +85,4 @@ void meat::test::summary() {
   }
 
   test_results.clear();
-}
-
-void meat::test::run_tests() {
-  misc_tests();
 }

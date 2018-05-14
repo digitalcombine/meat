@@ -301,9 +301,7 @@ meat::grinder::SyntaxException::SyntaxException(const Token &token,
                                                 const std::string &message)
   : meat::Exception(meat::Class::resolve("Grinder.SyntaxException"), 2),
     token(token) {
-  this->property(0) = new Text(std::string("Syntax Error (") +
-                               (std::string)token.position() + ") " +
-                               message);
+  this->property(0) = new Text(message);
 }
 
 meat::grinder::SyntaxException::SyntaxException(const SyntaxException &other)
@@ -323,7 +321,7 @@ meat::grinder::SyntaxException::~SyntaxException() throw() {
  ****************************************/
 
 unsigned int meat::grinder::SyntaxException::line() const {
-  return 0;
+  return token.position().line();
 }
 
 /*********************************************
@@ -331,7 +329,7 @@ unsigned int meat::grinder::SyntaxException::line() const {
  *********************************************/
 
 unsigned int meat::grinder::SyntaxException::character() const {
-  return 0;
+  return token.position().offset();
 }
 
 /******************************************************************************
