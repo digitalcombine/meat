@@ -333,7 +333,7 @@ static void dump_libary(std::istream &in) {
     char ch;
     while ((ch = in.get()) != 0)
       import_name += ch;
-      std::cout << "Library requires: " << import_name << "\n";
+    std::cout << "Library requires: " << import_name << "\n";
   }
   std::cout << std::flush;
 

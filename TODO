@@ -1,12 +1,6 @@
-All the stuff that still needs to be done to the Script language.
-
-* Complete the magic checking for data archives.
-
-* Fix the linking with meatc
+All the stuff that still needs to be done to the Meat language.
 
 * Finish the runtime environment
-- Add bytecode constants that can be used for including bytecode into native
-  classes.
 - Implement a unicode library for Text classes.
   - For the most part the library is good, just the get and length methods
     need to handle the unicode characters.

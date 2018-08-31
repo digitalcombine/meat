@@ -18,6 +18,7 @@
 # along with Meat.  If not, see <http://www.gnu.org/licenses/>.
 
 Library requires: UnitTest
+Library requires: Console
 
 #==============================================================================
 #
@@ -26,7 +27,7 @@ Test.Suite subclass: Test.Exception as: {
   # Where all the tests happen.
   method setup {
     self title: "3.6 Exception Class"
-  
+
     self title: "3.6.1 Method try:" test: {
       # This should catch the exception an not let it get to the test suite.
       Exception try: {
@@ -51,6 +52,48 @@ Test.Suite subclass: Test.Exception as: {
       # Here we actually catch the exception and tests it's value.
       Exception try: {
         Exception throw: "Exception was not caught by the try clause"
+        self fail: "Exception thrown but not caught"
+      } catch: .error do: {
+        [[.error message] <> "Exception was not caught by the try clause"] isTrue: {
+          self fail: "Didn't receive the correct error message"
+        }
+        self pass
+      }
+      self fail: "Failed to catch exception"
+    }
+  }
+}
+
+Test.Suite subclass: Test.Exception2 as: {
+
+  # Where all the tests happen.
+  method setup {
+    self title: "3.6 Exception2 Class"
+
+    self title: "3.6.1 Method try:" test: {
+      # This should catch the exception an not let it get to the test suite.
+      Exception2 try: {
+        Exception2 throw: "Exception was not caught by the try clause"
+        self fail: "Exception thrown but not caught"
+      }
+      self pass
+    }
+
+    self title: "3.6.2 Method try: catch:" test: {
+      # Same as above just with a different method.
+      Exception2 try: {
+        Exception2 throw: "Exception was not caught by the try clause"
+        self fail: "Exception thrown but not caught"
+      } catch: {
+        self pass
+      }
+      self fail: "Failed to catch exception"
+    }
+
+    self title: "3.6.3 Method try: catch: do:" test: {
+      # Here we actually catch the exception and tests it's value.
+      Exception2 try: {
+        Exception2 throw: "Exception was not caught by the try clause"
         self fail: "Exception thrown but not caught"
       } catch: .error do: {
         [[.error message] <> "Exception was not caught by the try clause"] isTrue: {

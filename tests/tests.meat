@@ -42,6 +42,7 @@ Application subclass: Tests as: {
 		summary addSuite: [Test.BlockContext new]
 		summary addSuite: [Test.Null new]
 		summary addSuite: [Test.Exception new]
+    summary addSuite: [Test.Exception2 new]
 		summary addSuite: [Test.Boolean new]
 		summary addSuite: [Test.Numeric new]
 		summary addSuite: [Test.Integer new]

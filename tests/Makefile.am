@@ -3,7 +3,7 @@
 TESTS = tests.mlib hello.mlib memory-tests parser-tests
 TEST_EXTENSIONS = .mlib
 MLIB_LOG_COMPILER = @top_srcdir@/bin/meat
-AM_MLIB_LOG_FLAGS = -i ../lib/.libs/
+AM_MLIB_LOG_FLAGS = -i ../lib/.libs/ -i ../rtl/.libs/
 
 SUFFIXES = .meat .mlib
 
@@ -49,12 +49,12 @@ MEATDEPS = @top_srcdir@/bin/meat-grinder @top_srcdir@/bin/meat \
 	@top_srcdir@/src/libmeat.la
 
 .meat.mlib:
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -i ../rtl/.libs/ $<
 
 .meat.cpp:
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -i ../rtl/.libs/ $<
 
-UnitTest.mlib: $(MEATDEPS) @top_srcdir@/lib/Console.la
+UnitTest.mlib: $(MEATDEPS) @top_srcdir@/rtl/Console.la
 Test.Characters.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Object.mlib: UnitTest.mlib $(MEATDEPS)
 Test.Class.mlib: UnitTest.mlib $(MEATDEPS)
@@ -71,7 +71,7 @@ builtin.cpp: $(MEATDEPS)
 grinder.cpp: $(MEATDEPS)
 
 data.mar: Test.Data.mlib
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -s data.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -i ../rtl/.libs/ -s data.meat
 
 tests.mlib: $(MEATDEPS)
 tests.mlib: UnitTest.mlib
@@ -87,7 +87,7 @@ tests.mlib: Test.Application.mlib
 tests.mlib: Test.Compiler.mlib
 tests.mlib: builtin.cpp grinder.cpp
 tests.mlib: tests.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ tests.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -i ../rtl/.libs/ tests.meat
 
 hello.mlib: hello.meat
-	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ hello.meat
+	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ -i ../rtl/.libs/ hello.meat

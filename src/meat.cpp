@@ -247,8 +247,6 @@ std::uint8_t meat::Class::obj_properties() const {
  ***************************/
 
 meat::Reference meat::Class::new_object() {
-  Reference result;
-
   if (vtable.constructor)
     return vtable.constructor((Reference &)(*this), obj_properties());
   else {
@@ -469,8 +467,7 @@ void meat::Class::record(Reference &cls, bool replace) {
   std::uint32_t hash_id = cast<Class>(cls)._hash_id;
 
 #ifdef DEBUG
-  std::cout << "CLASS: Recording class as "
-            << itohex(hash_id) << std::endl;
+  std::cout << "CLASS: Recording class as " << itohex(hash_id) << std::endl;
 #endif
 
   // Check if the class has already been recorded.
@@ -560,7 +557,7 @@ void meat::Class::relink() {
 
 meat::Reference &meat::Class::resolve(const std::string &id, bool compiled) {
 #ifdef DEBUG
-  std::clog << "DEBUG: resolving class " << id << std::endl;
+  //std::clog << "DEBUG: resolving class " << id << std::endl;
 #endif
 
   std::uint32_t hash_id = hash(id);
@@ -590,9 +587,17 @@ bool meat::Class::have_class(const std::string &id) {
   return (classes.find(hash(id)) != classes.end());
 }
 
+/**********************
+ * meat::Class::begin *
+ **********************/
+
 meat::Class::iterator meat::Class::begin() {
   return class_registry().begin();
 }
+
+/********************
+ * meat::Class::end *
+ ********************/
 
 meat::Class::iterator meat::Class::end() {
   return class_registry().end();

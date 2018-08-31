@@ -97,6 +97,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  bin/Makefile
                  lib/Makefile
+                 rtl/Makefile
                  tests/Makefile
                  include/Makefile
                  docs/Makefile])

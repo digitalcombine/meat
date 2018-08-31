@@ -480,7 +480,7 @@ void grinder::Library::write_mlib(std::ostream &out) {
   // Write the classes to the file.
   //auto &klasses = library->get_classes();
 #ifdef DEBUG
-  std::cout << "LIBRARY: Adding " << (int)klasses.size()
+  std::cout << "LIBRARY: Adding " << (int)_classes.size()
             << " classes" << std::endl;
 #endif /* DEBUG */
   out.put((uint8_t)_classes.size());
@@ -556,14 +556,14 @@ void grinder::Library::write_cpp(std::ostream &out) {
       << "(meat::data::Library &library) {\n  meat::Class *cls;\n";
 
   // Import required libraries
-  if (not (property(3) == meat::Null())) {
+  //if (not (property(3) == meat::Null())) {
+  if (cast<Set>(requiredLibraries).size() > 0) {
     out << "\n  // Import required libraries.\n";
 
-    meat::Set &imports = cast<Set>(requiredLibraries);
-    Set::const_iterator sit;
-    for (sit = imports.begin(); sit != imports.end(); ++sit) {
+    for (auto &lib: cast<Set>(requiredLibraries)) {
+      const data::Library &l = meat::cast<const meat::data::Library>(lib);
       out << "  library.requires(\""
-          << meat::cast<const meat::Text>(*sit) << "\");\n";
+          << meat::cast<const meat::Text>(l.property(0)) << "\");\n";
     }
   }
 
@@ -1009,7 +1009,8 @@ void grinder::Class::cpp_new_class(std::ostream &out) const {
 
   Reference super = meat::Class::resolve(cast<const Text>(superClass));
 
-  out << "\n  cls = new meat::Class(meat::Class::resolve("
+  out << "\n  // Register class " << class_name << "."
+      << "\n  cls = new meat::Class(meat::Class::resolve("
       << itohex(cast<const meat::Class>(super).hash_id())
       << "), " << ::to_string(cast<const List>(classProperties).size())
       << ", " << ::to_string(cast<const List>(objectProperties).size() +

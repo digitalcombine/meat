@@ -19,7 +19,8 @@
 
 archive = [Archive create: "data.mar"]
 
-archive import: "Test.Data"
+#archive requires: "Test.Data"
+archive requires: "Console"
 
 # Create an index as the object to add to the archive
 data = [Index new]
@@ -38,8 +39,8 @@ data set: "True" to: [Boolean true]
 data set: "False" to: [Boolean false]
 
 # Serialize a test object
-obj = [TestObject new]
-data set: "Test Object" to: obj
+#obj = [TestObject new]
+#data set: "Test Object" to: obj
 
 # Serialize a List
 list = [List new]

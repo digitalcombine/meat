@@ -33,6 +33,7 @@ Makefile.in
 *.o
 *.obj
 *.la
+rtl/*.cpp
 /tests/*.mar
 /tests/*.mlib
 /tests/*.mapp
@@ -41,6 +42,7 @@ Makefile.in
 /tests/grinder.cpp
 /tests/memory-tests
 /tests/parser-tests
+/tests/libtesting.a
 /docs/*.pdf
 /docs/*.aux
 /docs/*.log

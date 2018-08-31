@@ -6,7 +6,7 @@
 # Written by Ron R Wills
 
 # Shared libraries
-pkglib_LTLIBRARIES = Grinder.la Console.la Math.la
+pkglib_LTLIBRARIES = Grinder.la
 EXTRA_DIST = Console.cpp Math.cpp
 
 Grinder_la_SOURCES = compiler.cpp comp_utils.cpp library.cpp \
@@ -14,18 +14,6 @@ Grinder_la_SOURCES = compiler.cpp comp_utils.cpp library.cpp \
 Grinder_la_CPPFLAGS = -I@top_srcdir@/include
 Grinder_la_LIBADD = @top_srcdir@/src/libmeat.la
 Grinder_la_LDFLAGS = -module -avoid-version -shared
-
-Console_la_SOURCES = Console.meat
-Console_la_CPPFLAGS = -I@top_srcdir@/include
-Console_la_LIBADD = @top_srcdir@/src/libmeat.la
-Console_la_LDFLAGS = -module -avoid-version -shared
-
-Math_la_SOURCES = Math.meat
-Math_la_CPPFLAGS = -I@top_srcdir@/include
-Math_la_LIBADD = @top_srcdir@/src/libmeat.la
-Math_la_LDFLAGS = -module -avoid-version -shared
-
-#CLEANFILES = Console.cpp Math.cpp
 
 .meat.cpp:
 	@top_srcdir@/bin/meat-grinder -i ../lib/.libs/ $<

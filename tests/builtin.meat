@@ -97,36 +97,6 @@ Object subclass: Classᶲ as: {
     return new Text(cast<Class>(self).name());
   }
 
-  class function forEach: .class do: block {
-    std::uint8_t local_id = INTEGER(_class);
-    cast<Context>(block).messenger(context);
-
-    Class::iterator it = Class::begin();
-    for (; it != Class::end(); ++it) {
-      cast<BlockContext>(block).set_break_trap();
-      cast<Context>(block).local(local_id) = it->second;
-      execute(block);
-
-      if (cast<BlockContext>(block).break_called()) break;
-      else cast<BlockContext>(block).reset();
-    }
-
-    cast<BlockContext>(block).reset();
-    return null;
-  }
-}
-
-#==============================================================================
-# 3.1 Object Class
-#
-
-Object subclass: Objectᶲ as: {
-
-  constructor {
-    return new meat::Object(klass, properties);
-  }
-
-  # 3.1.1
   class method == other {
     context return: [self is: other]
   }
@@ -185,6 +155,94 @@ Object subclass: Objectᶲ as: {
   class function isWeakReference {
     return Boolean(self.is_weak());
   }
+
+  class function forEach: .class do: block {
+    cast<Context>(block).messenger(context);
+
+    auto it = Class::begin();
+    for (; it != Class::end(); ++it) {
+      cast<BlockContext>(block).set_break_trap();
+      cast<BlockParameter>(_class).set_parameter(block, it->second);
+      execute(block);
+
+      if (cast<BlockContext>(block).break_called()) break;
+      else cast<BlockContext>(block).reset();
+    }
+
+    cast<BlockContext>(block).reset();
+    return null;
+  }
+}
+
+#==============================================================================
+# 3.1 Object Class
+#
+
+Object subclass: Objectᶲ as: {
+
+  constructor {
+    return new meat::Object(klass, properties);
+  }
+
+  # 3.1.1
+  #class method == other {
+  #  context return: [self is: other]
+  #}
+
+  # 3.1.2
+  #class method <> other {
+  #  context return: [self isNot: other]
+  #}
+
+  # 3.1.3
+  #class function is: other {
+  #  return Boolean(self == other);
+  #}
+
+  # 3.1.4
+  #class function isNot: other {
+  #  return Boolean(not (self == other));
+  #}
+
+  # 3.1.5
+  #class method isObject {
+  #  context return: [Boolean false]
+  #}
+
+  # 3.1.6
+  #class method isClass {
+  #  context return: [Boolean true]
+  #}
+
+  # 3.1.7
+  #class method isNull {
+  #  context return: [Boolean false]
+  #}
+
+  # 3.1.8
+  #class method type {
+  #  context return: Class
+  #}
+
+  # 3.1.9
+  #class method isType: type {
+  #  context return: [Class == type]
+  #}
+
+  # 3.1.10
+  #class function weakReference {
+  #  return self.weak();
+  #}
+
+  # 3.1.11
+  #class function normalReference {
+  #  return self.normal();
+  #}
+
+  # 3.1.12
+  #class function isWeakReference {
+  #  return Boolean(self.is_weak());
+  #}
 
   # 3.1.13
   method initialize {
@@ -257,16 +315,16 @@ Object subclass: Objectᶲ as: {
 #==============================================================================
 # 3.3 Context Class
 
-Object subclass: Contextᶲ as: {
+Objectᶲ subclass: Contextᶲ as: {
 
   constructor {
     return new meat::Context(klass, properties);
   }
 
   # 3.3.1
-  class method subclass: name as: def {
-    Exception throw: "Cannot subclass an internal Context class"
-  }
+  #class method subclass: name as: def {
+  #  Exception throw: "Cannot subclass an internal Context class"
+  #}
 
   # 3.3.2
   class method newObject {
@@ -328,6 +386,12 @@ Object subclass: Contextᶲ as: {
     return null;
   }
 
+  function returnTo: otherContext {
+    cast<Context>(self).messenger(otherContext);
+    cast<Context>(self).finish();
+    return null;
+  }
+
   # 3.3.10
   method break {
   }
@@ -340,7 +404,7 @@ Object subclass: Contextᶲ as: {
 #==============================================================================
 # 3.4 BlockContext Class
 
-Object subclass: BlockContextᶲ as: {
+Contextᶲ subclass: BlockContextᶲ as: {
 
   # 3.4.1
   function execute {
@@ -458,7 +522,7 @@ Object subclass: BlockContextᶲ as: {
 #==============================================================================
 # 3.5 Null Class
 
-Object subclass: Nullᶲ as: {
+Objectᶲ subclass: Nullᶲ as: {
 
   class property nullObject
 
@@ -488,7 +552,7 @@ Object subclass: Nullᶲ as: {
 #==============================================================================
 # 3.6 Exception Class
 
-Object subclass: Exceptionᶲ as: {
+Objectᶲ subclass: Exceptionᶲ as: {
 
   property mesg
   property cntxt
@@ -575,10 +639,111 @@ Object subclass: Exceptionᶲ as: {
   }
 }
 
+Objectᶲ subclass: Exception2ᶲ as: {
+  class property _exceptionBlock
+  class property _exceptionParameter
+  class property _returnContext
+
+  property _message
+  property _context
+
+  class method try: tryBlock {
+    # Save the previous exception block.
+    originalExceptionBlock = _exceptionBlock
+    originalExceptionParameter = _exceptionParameter
+    originalContext = _returnContext
+
+    # Set up our exception block.
+    _exceptionBlock = null
+    _exceptionParameter = null
+    _returnContext = context
+    tryBlock execute
+
+    # Restore the previous exception block.
+    _returnContext = originalContext
+    _exceptionParameter = originalExceptionParameter
+    _exceptionBlock = originalExceptionBlock
+  }
+
+  class method try: tryBlock catch: exceptionBlock {
+    # Save the previous exception block.
+    originalExceptionBlock = _exceptionBlock
+    originalExceptionParameter = _exceptionParameter
+    originalContext = _returnContext
+
+    # Set up our exception block.
+    _exceptionBlock = exceptionBlock
+    _exceptionParameter = null
+    _returnContext = context
+    tryBlock execute
+
+    # Restore the previous exception block.
+    _returnContext = originalContext
+    _exceptionParameter = originalExceptionParameter
+    _exceptionBlock = originalExceptionBlock
+  }
+
+  class method try: tryBlock catch: .exception do: exceptionBlock {
+    # Save the previous exception block.
+    originalExceptionBlock = _exceptionBlock
+    originalExceptionParameter = _exceptionParameter
+    originalContext = _returnContext
+
+    # Set up our exception block.
+    _exceptionBlock = exceptionBlock
+    _exceptionParameter = .exception
+    _returnContext = context
+    tryBlock execute
+
+    # Restore the previous exception block.
+    _returnContext = originalContext
+    _exceptionParameter = originalExceptionParameter
+    _exceptionBlock = originalExceptionBlock
+  }
+
+  class method throw: message {
+    [_exceptionBlock isNull] isFalse: {
+      [_exceptionParameter isNull] isFalse: {
+        self newObject
+        _message = message
+        _context = [context messenger]
+        _exceptionParameter set: _exceptionBlock to: self
+      }
+
+      _exceptionBlock execute
+    }
+
+    context returnTo: _returnContext
+  }
+
+  class method throw: message for: otherContext {
+    [_exceptionBlock isNull] isFalse: {
+      [_exceptionParameter isNull] isFalse: {
+        self newObject
+        _message = message
+        _context = otherContext
+        _exceptionParameter set: _exceptionBlock to: self
+      }
+
+      _exceptionBlock execute
+    }
+
+    context returnTo: _returnContext
+  }
+
+  method message {
+    context return: _message
+  }
+
+  method context {
+    context return: _context
+  }
+}
+
 #==============================================================================
 # Boolean Class
 
-Object subclass: Booleanᶲ as: {
+Objectᶲ subclass: Booleanᶲ as: {
 
   class property trueObject
   class property falseObject
@@ -662,9 +827,9 @@ Object subclass: Booleanᶲ as: {
 }
 
 #==============================================================================
-# $BlockParameter Class
+# BlockParameter Class
 
-Object subclass: BlockParameterᶲ as: {
+Objectᶲ subclass: BlockParameterᶲ as: {
   property localIndex
 
   constructor {
@@ -672,14 +837,14 @@ Object subclass: BlockParameterᶲ as: {
   }
 
   method set: blockContext to: value {
-    BlockContext setLocal: localIndex to: value
+    blockContext setLocal: localIndex to: value
   }
 }
 
 #==============================================================================
 # Numeric
 
-Object subclass: Numericᶲ as: {
+Objectᶲ subclass: Numericᶲ as: {
 
   class method minValue {
     Exception throw: "Numeric value has no minimum value"
@@ -753,7 +918,7 @@ Object subclass: Numericᶲ as: {
 #==============================================================================
 # Integer Class
 
-Numeric subclass: Integerᶲ as: {
+Numericᶲ subclass: Integerᶲ as: {
 
   constructor {
     return new Value(klass, properties);
@@ -888,7 +1053,7 @@ Numeric subclass: Integerᶲ as: {
 #==============================================================================
 # Number Class
 
-Numeric subclass: Numberᶲ as: {
+Numericᶲ subclass: Numberᶲ as: {
 
   constructor {
     return new Value(klass, properties);
@@ -982,7 +1147,7 @@ Numeric subclass: Numberᶲ as: {
 #==============================================================================
 # Text Class
 
-Object subclass: Textᶲ as: {
+Objectᶲ subclass: Textᶲ as: {
 
   constructor {
     return new Text(klass, properties);
@@ -1231,7 +1396,7 @@ Object subclass: Textᶲ as: {
 #==============================================================================
 # List Class
 
-Object subclass: Listᶲ as: {
+Objectᶲ subclass: Listᶲ as: {
 
   constructor {
     return new List(klass, properties);
@@ -1400,7 +1565,7 @@ Object subclass: Listᶲ as: {
 #==============================================================================
 # Set Class
 
-Object subclass: Setᶲ as: {
+Objectᶲ subclass: Setᶲ as: {
 
   constructor {
     return new Set(klass, properties);
@@ -1450,14 +1615,12 @@ Object subclass: Setᶲ as: {
     return new Value((std::int32_t)cast<Set>(self).size());
   }
 
-  function forEach: item do: block {
-    std::uint8_t local_id = INTEGER(item);
-
+  function forEach: .item do: block {
     cast<Context>(block).messenger(context);
 
     Set::iterator it = cast<Set>(self).begin();
     for (; it != cast<Set>(self).end(); it++) {
-      cast<BlockContext>(block).local(local_id) = *it;
+      cast<BlockParameter>(_item).set_parameter(block, *it);
       execute(block);
 
       if (cast<BlockContext>(block).break_called() or
@@ -1480,7 +1643,7 @@ Object subclass: Setᶲ as: {
 #==============================================================================
 # 3.14 Index Class
 
-Object subclass: Indexᶲ as: {
+Objectᶲ subclass: Indexᶲ as: {
 
   constructor {
     return new Index(klass, properties);
@@ -1533,7 +1696,7 @@ Object subclass: Indexᶲ as: {
 #==============================================================================
 # Application Class
 
-Object subclass: Applicationᶲ as: {
+Objectᶲ subclass: Applicationᶲ as: {
 
   class function parameters {
     return new meat::Value((std::int32_t)arg_count());
@@ -1587,7 +1750,7 @@ Object subclass: Applicationᶲ as: {
 #==============================================================================
 # 3.15 Archive Class
 
-Object subclass: Archiveᶲ as: {
+Objectᶲ subclass: Archiveᶲ as: {
 
   # 3.15.1
   class function open: filename {
@@ -1628,7 +1791,7 @@ Object subclass: Archiveᶲ as: {
 #==============================================================================
 # Library Class
 
-Object subclass: Libraryᶲ as: {
+Objectᶲ subclass: Libraryᶲ as: {
   class property _registry
   class property _paths
 

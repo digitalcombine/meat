@@ -94,9 +94,9 @@ sub translate_def {
 # the name.
 
 translate_hashes("Object", "Class", "Context", "BlockContext", "Null",
-                 "Exception", "Boolean", "Numeric", "Integer", "Number",
-                 "Text", "List", "Set", "Index", "Archive", "Library",
-                 "Application");
+                 "Exception", "Exception2", "Boolean", "Numeric", "Integer", "Number",
+                 "Text", "List", "Set", "Index", "Archive", "Library", "BlockParameter",
+                 "Application", "Exception2");
 
 ###############################################################################
 #  Remove the ᶲ unicode character in the names and fix all the class name
@@ -107,8 +107,8 @@ $cpp = <>;
 
 $cpp =~ s/ᶲ//g;
 
-while (($key, $value) = each(%hash_trans)) {
-		$cpp =~ s/$key/$value/g;
+while (($old_hash, $new_hash) = each(%hash_trans)) {
+		$cpp =~ s/$old_hash/$new_hash/g;
 }
 
 ###############################################################################
@@ -176,7 +176,7 @@ $cpp =~ s/$old/$new/g;
 translate_def("Object", "Class", "Context", "BlockContext", "Null",
               "Exception", "BlockParameter", "Boolean", "Numeric", "Integer",
 							"Number", "Text", "List", "Set", "Index", "Archive", "Library",
-              "Application");
+              "Application", "Exception2");
 
 ###############################################################################
 # Required custom code.
@@ -235,7 +235,7 @@ $new_code = "data::Library::add_path(\"\");
   data::Library *library = new data::Library(\"__builtin__\");
 $lib_add
   library->set_symbols(Symbols);
-	__builtin__library() = library;";
+  __builtin__library() = library;";
 
 $cpp =~ s/library.set_symbols\(Symbols\);/$new_code/g;
 

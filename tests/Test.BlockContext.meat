@@ -124,6 +124,13 @@ Test.Suite subclass: Test.BlockContext as: {
 
     other = ""
 
+    self title: "3.4.0 BlockContext Class" test: {
+      [[BlockContext superClass] == Context] isFalse: {
+        self fail: "The BlockContext class is not of type Context"
+      }
+      self pass
+    }
+
     self title: "3.4.1 Method execute" test: {
 		  BlockTests executeBlock: {
         self pass
@@ -218,6 +225,26 @@ Test.Suite subclass: Test.BlockContext as: {
       [[context getLocal: 0] <> self] isTrue: {
         self fail: "Method getLocal failed to return self for index 0"
       }
+      [[context getLocal: 1] <> class] isTrue: {
+        self fail: "Method getLocal failed to return class for index 1"
+      }
+      #[[context getLocal: 2] <> context] isTrue: {
+      #  self fail: "Method getLocal failed to return context for index 2"
+      #}
+      self pass
+    }
+
+    self title: "3.4.7 Method setLocal:to:" test: {
+      [context isType: BlockContext] isFalse: {
+        self fail: "The current context being tested is not a BlockContext"
+      }
+
+      context setLocal: 0 to: self
+      [[context getLocal: 0] <> self] isTrue: {
+        self fail: "Method getLocal failed to return self for index 0"
+      }
+
+      context setLocal: 1 to: class
       [[context getLocal: 1] <> class] isTrue: {
         self fail: "Method getLocal failed to return class for index 1"
       }

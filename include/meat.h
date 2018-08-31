@@ -435,7 +435,7 @@ namespace meat {
     virtual ~Context() throw();
 
     virtual Reference self() const;
-    void self(Reference new_self);
+    virtual void self(Reference new_self);
 
     virtual Reference klass() const { return _locals[1]; }
     virtual Reference context() const { return _locals[2]; }
@@ -528,6 +528,10 @@ namespace meat {
 
     virtual Reference self() const {
       return cast<const Context>(_origin).self();
+    }
+
+    virtual void self(Reference new_self) {
+      cast<Context>(_origin).self(new_self);
     }
 
     virtual Reference klass() const {

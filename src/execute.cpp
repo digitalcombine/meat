@@ -40,7 +40,7 @@
  * local *
  *********/
 
-inline std::string local(std::uint8_t id) {
+static std::string local(std::uint8_t id) {
   switch (id) {
   case 0:
     return "self";
@@ -58,6 +58,16 @@ inline std::string local(std::uint8_t id) {
   }
 }
 
+static std::string typenam(meat::Reference object) {
+  if (object.is_null()) {
+    return "Null";
+  } else if (object->is_object()) {
+    return meat::cast<meat::Class>(object->type()).name();
+  } else {
+    return std::string("<") + meat::cast<meat::Class>(object).name() + ">";
+  }
+}
+
 #endif
 
 using namespace meat;
@@ -71,7 +81,9 @@ meat::Reference meat::execute(Reference context) {
   if (context.is_null()) {
     throw Exception("Unable to execute a Null object");
   } else  if (cast<Context>(context).flags == Context::PRIMATIVE) {
-    /* Here we execute a c++ native function */
+    /* Here we execute a c++ native function.
+     * XXX Catch C++ exceptions here.
+     */
 
     cast<Context>(context).local(2) = context.weak(); // context
     Reference result = cast<Context>(context)(context);
@@ -90,6 +102,7 @@ meat::Reference meat::execute(Reference context) {
     // Adds the class hash id and ip to debugging messages.
 #define BCLOC "(" << (cast<Class>(cast<Context>(context).klass()).name()) \
                   << "," << itohex(ip, 4) << ")"
+    //std::cout << "Context " << (void *)&(*context) << std::endl;
 #endif
 
     while (not context.is_null()) {
@@ -149,12 +162,21 @@ meat::Reference meat::execute(Reference context) {
         ip += 7 + bc->o.m.parameters;
         cast<Context>(context)._ip = ip;
 
+#ifdef DEBUG
+        /*std::cout << "Context " << (void *)&(*context) << " => "
+                  << (void *)&(*new_ctx);
+        if (cast<Context>(new_ctx).flags == Context::PRIMATIVE)
+          std::cout << " (primative)";
+        std::cout << std::endl;*/
+#endif
+
         // Execute the message.
+        context = new_ctx;
         if (cast<Context>(new_ctx).flags == Context::PRIMATIVE) {
-          cast<Context>(new_ctx).local(2) = new_ctx.weak();
-          cast<Context>(new_ctx).pointer(new_ctx);
+          cast<Context>(context).local(2) = new_ctx.weak();
+          cast<Context>(context).pointer(context);
+          cast<Context>(context).finish();
         } else {
-          context = new_ctx;
           ip = cast<Context>(context)._ip;
           code =
             cast<Class>(cast<Context>(context).klass()).bytecode();
@@ -173,20 +195,20 @@ meat::Reference meat::execute(Reference context) {
         std::cout << "BC" << BCLOC;
         switch (bc->code) {
         case meat::bytecode::MESG_RESULT:
-          std::cout << ": MESSAGE RESULT "; break;
+          std::cout << ": MESSAGE "; break;
         case meat::bytecode::MESG_SUPER:
-          std::cout << ": MESSAGE SUPER RESULT "; break;
+          std::cout << ": MESSAGE SUPER "; break;
         default: break;
         }
-        std::cout << local(bc->o.mr.result) << " = "
+        std::cout << local(bc->o.mr.result) << " = ["
                   << local(bc->o.mr.object) << " "
-                  << klass.lookup(endian::read_be(bc->o.mr.message_id)) << " ";
+                  << klass.lookup(endian::read_be(bc->o.mr.message_id));
         if (bc->o.mr.parameters) {
           for (uint8_t c = 0; c < bc->o.mr.parameters; c++) {
-            std::cout << local(bc->o.mr.parameter[c]) << " ";
+            std::cout << " " << local(bc->o.mr.parameter[c]);
           }
         }
-        std::cout << std::endl;
+        std::cout << "]" << std::endl;
 #endif /* DEBUG */
 
         Reference obj = cast<Context>(context).local(bc->o.mr.object);
@@ -212,13 +234,22 @@ meat::Reference meat::execute(Reference context) {
 
         cast<Context>(new_ctx).result_index(bc->o.mr.result);
 
+#ifdef DEBUG
+        /*std::cout << "Context " << (void *)&(*context) << " => "
+                  << (void *)&(*new_ctx);
+        if (cast<Context>(new_ctx).flags == Context::PRIMATIVE)
+          std::cout << " \u23ce " << (void *)&(*context);
+        std::cout << std::endl;*/
+#endif
+
         // Execute the message.
+        context = new_ctx;
         if (cast<Context>(new_ctx).flags == Context::PRIMATIVE) {
-          cast<Context>(new_ctx).local(2) = new_ctx.weak();
-          Reference result = cast<Context>(new_ctx).pointer(new_ctx);
-          cast<Context>(new_ctx).result(result);
+          cast<Context>(context).local(2) = new_ctx.weak();
+          Reference result = cast<Context>(context).pointer(context);
+          cast<Context>(context).result(result);
+          cast<Context>(context).finish();
         } else {
-          context = new_ctx;
           ip = cast<Context>(context)._ip;
           code = cast<Class>(cast<Context>(context).klass()).bytecode();
           cast<Context>(context).local(2) = context.weak();
@@ -286,8 +317,10 @@ meat::Reference meat::execute(Reference context) {
         }
         std::cout << local(bc->o.ap.destination) << " = "
                   << (unsigned int)bc->o.ap.property_id
+                  << "(" << typenam(self->property(bc->o.ap.property_id)) << ")"
                   << std::endl;
 #endif /* DEBUG */
+
         cast<Context>(context).local(bc->o.ap.destination) =
           self->property(bc->o.ap.property_id);
         ip += 3;
@@ -380,15 +413,18 @@ meat::Reference meat::execute(Reference context) {
         default: break;
         }
         std::cout << (unsigned int)bc->o.sp.destination << " = "
-                  << local(bc->o.sp.source)
-                  << std::endl;
+                  << local(bc->o.sp.source) << std::endl;
 #endif /* DEBUG */
 
         Reference self;
-        if (bc->code == bytecode::SET_PROP)
+        if (bc->code == bytecode::SET_PROP) {
           self = cast<Context>(context).self();
-        else
+          if (not self->is_object())
+            throw Exception("Attempting to set an object property to a class.");
+
+        } else
           self = cast<Context>(context).klass();
+
         self->property(bc->o.sp.destination) =
           cast<Context>(context).local(bc->o.sp.source);
         ip += 3;
@@ -424,6 +460,11 @@ meat::Reference meat::execute(Reference context) {
         context = cast<Context>(context).messenger();
         cast<Context>(old_ctx).messenger(meat::Null());
         //cast<Context>(old_ctx).local(2) = NULL; // context
+
+#ifdef DEBUG
+        /*std::cout << "Context " << (void *)&(*old_ctx) << " \u23ce "
+                  << (void *)&(*context) << std::endl;*/
+#endif
 
         // If we are the top level context then return.
         if (context.is_null() or context == meat::Null()) {
