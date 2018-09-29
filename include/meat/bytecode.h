@@ -107,7 +107,7 @@ namespace meat {
 
     typedef struct __attribute__((packed)) _block_parameter_s {
       std::uint8_t destination;
-      //std::uint8_t block;
+      std::uint8_t block;
       std::uint8_t local_index;
     } block_parameter_t;
 

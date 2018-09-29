@@ -1302,8 +1302,8 @@ void grinder::Method::compile() {
     // Tokenize and send command to command() method.
     execute(cast<Text>(this->property(2)));
 
-    method.gen_bytecode(true);  // Bytecode generation stage 1
-    method.gen_bytecode(false); // Bytecode generation stage 2
+    for (int stage = 2; stage >= 0; --stage)
+      method.gen_bytecode(stage);  // Bytecode generation
 
     method.update_symbols(symbols);
     _locals = method.locals();

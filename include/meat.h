@@ -248,6 +248,8 @@ namespace meat {
     std::string name() const;
     void name(const std::string &new_name);
 
+    bool cleanup() const;
+
     /** Set the constructor function. The constructor is used by the method
      * new_object() to create the actual internal Object. If a constructor
      * function is not set the parent meat classes will be checked for a
@@ -606,11 +608,11 @@ namespace meat {
 
   class DECLSPEC BlockParameter : public Object {
   public:
-    BlockParameter(std::uint8_t offset);
+    BlockParameter(std::uint8_t offset, Reference block);
     BlockParameter(Reference cls, std::uint8_t properties);
     virtual ~BlockParameter() noexcept;
 
-    void set_parameter(Reference block, Reference value) const;
+    void set_parameter(Reference value) const;
   };
 
   /****************************************************************************

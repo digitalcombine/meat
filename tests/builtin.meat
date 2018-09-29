@@ -162,7 +162,7 @@ Object subclass: Classᶲ as: {
     auto it = Class::begin();
     for (; it != Class::end(); ++it) {
       cast<BlockContext>(block).set_break_trap();
-      cast<BlockParameter>(_class).set_parameter(block, it->second);
+      cast<BlockParameter>(_class).set_parameter(it->second);
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
@@ -184,72 +184,8 @@ Object subclass: Objectᶲ as: {
     return new meat::Object(klass, properties);
   }
 
-  # 3.1.1
-  #class method == other {
-  #  context return: [self is: other]
-  #}
-
-  # 3.1.2
-  #class method <> other {
-  #  context return: [self isNot: other]
-  #}
-
-  # 3.1.3
-  #class function is: other {
-  #  return Boolean(self == other);
-  #}
-
-  # 3.1.4
-  #class function isNot: other {
-  #  return Boolean(not (self == other));
-  #}
-
-  # 3.1.5
-  #class method isObject {
-  #  context return: [Boolean false]
-  #}
-
-  # 3.1.6
-  #class method isClass {
-  #  context return: [Boolean true]
-  #}
-
-  # 3.1.7
-  #class method isNull {
-  #  context return: [Boolean false]
-  #}
-
-  # 3.1.8
-  #class method type {
-  #  context return: Class
-  #}
-
-  # 3.1.9
-  #class method isType: type {
-  #  context return: [Class == type]
-  #}
-
-  # 3.1.10
-  #class function weakReference {
-  #  return self.weak();
-  #}
-
-  # 3.1.11
-  #class function normalReference {
-  #  return self.normal();
-  #}
-
-  # 3.1.12
-  #class function isWeakReference {
-  #  return Boolean(self.is_weak());
-  #}
-
   # 3.1.13
   method initialize {
-  }
-
-  # 3.1.14
-  method cleanup {
   }
 
   # 3.1.1
@@ -597,7 +533,7 @@ Objectᶲ subclass: Exceptionᶲ as: {
       execute(try_block);
     } catch (Exception &err) {
       Reference excp = new meat::Exception(err);
-      cast<BlockParameter>(_error).set_parameter(catch_block, excp);
+      cast<BlockParameter>(_error).set_parameter(excp);
       cast<Context>(catch_block).messenger(context);
       execute(catch_block);
       cast<BlockContext>(try_block).reset();
@@ -707,7 +643,7 @@ Objectᶲ subclass: Exception2ᶲ as: {
         self newObject
         _message = message
         _context = [context messenger]
-        _exceptionParameter set: _exceptionBlock to: self
+        _exceptionParameter setValueTo: self
       }
 
       _exceptionBlock execute
@@ -722,7 +658,7 @@ Objectᶲ subclass: Exception2ᶲ as: {
         self newObject
         _message = message
         _context = otherContext
-        _exceptionParameter set: _exceptionBlock to: self
+        _exceptionParameter setValueTo: self
       }
 
       _exceptionBlock execute
@@ -830,14 +766,19 @@ Objectᶲ subclass: Booleanᶲ as: {
 # BlockParameter Class
 
 Objectᶲ subclass: BlockParameterᶲ as: {
+  property blockContext
   property localIndex
 
   constructor {
     return new BlockParameter(klass, properties);
   }
 
-  method set: blockContext to: value {
+  method setValueTo: value {
     blockContext setLocal: localIndex to: value
+  }
+
+  method getValue {
+    context return: [blockContext getLocal: localIndex]
   }
 }
 
@@ -1161,7 +1102,7 @@ Objectᶲ subclass: Textᶲ as: {
   # 3.11.2
   function length {
     std::int32_t length = 0;
-    utf8::Iterator it(cast<const Text>(self));
+    utf8::iterator it(cast<const Text>(self));
     for (; it != it.end(); ++it, ++length);
 
     return new Value(length);
@@ -1173,7 +1114,7 @@ Objectᶲ subclass: Textᶲ as: {
 
     if (i <= 0) throw Exception("Text character index out of range");
 
-    utf8::Iterator it(cast<const Text>(self));
+    utf8::iterator it(cast<const Text>(self));
     for (; it != it.end() and i > 1; ++it, --i);
 
     if (it == it.end())
@@ -1191,15 +1132,15 @@ Objectᶲ subclass: Textᶲ as: {
     if (start_idx <= 0)
       throw Exception("Text character index out of range");
 
-    utf8::Iterator it(cast<const Text>(self));
+    utf8::iterator it(cast<const Text>(self));
     for (; it != it.end() and start_idx > 1; ++it, --start_idx);
 
     if (it == it.end())
       throw Exception("Text character index out of range");
 
-    utf8::Iterator start_it(it);
+    utf8::iterator start_it(it);
 
-    for (; it != it.end() and end_count > 2; ++it, --end_count);
+    for (; it != it.end() and end_count > 0; ++it, --end_count);
 
     return new Text(utf8::substr(start_it, it));
   }
@@ -1213,13 +1154,13 @@ Objectᶲ subclass: Textᶲ as: {
     if (start_idx <= 0)
       throw Exception("Text character index out of range");
 
-    utf8::Iterator it(cast<const Text>(self));
+    utf8::iterator it(cast<const Text>(self));
     for (; it != it.end() and start_idx > 1; ++it, --start_idx);
 
     if (it == it.end())
       throw Exception("Text character index out of range");
 
-    utf8::Iterator start_it(it);
+    utf8::iterator start_it(it);
 
     for (; it != it.end() and end_count > 1; ++it, --end_count);
 
@@ -1244,8 +1185,8 @@ Objectᶲ subclass: Textᶲ as: {
   # 3.11.7
   function findFirst: value {
     std::int32_t index = 1;
-    utf8::Iterator first_char(cast<const Text>(value));
-    utf8::Iterator it(cast<const Text>(self));
+    utf8::iterator first_char(cast<const Text>(value));
+    utf8::iterator it(cast<const Text>(self));
 
     for (; it != it.end(); ++it, ++index) {
       if ((*it == *first_char) and
@@ -1262,8 +1203,8 @@ Objectᶲ subclass: Textᶲ as: {
   # 3.11.8
   function findFirst: value at: index {
     std::int32_t result = 1;
-    utf8::Iterator first_char(cast<const Text>(value));
-    utf8::Iterator it(cast<const Text>(self));
+    utf8::iterator first_char(cast<const Text>(value));
+    utf8::iterator it(cast<const Text>(self));
 
     int start_idx = INTEGER(index);
 
@@ -1302,10 +1243,10 @@ Objectᶲ subclass: Textᶲ as: {
   function forEach: .character do: block {
     cast<Context>(block).messenger(context);
 
-    utf8::Iterator it(cast<const Text>(self));
+    utf8::iterator it(cast<const Text>(self));
     for (; it != it.end(); ++it) {
       cast<BlockContext>(block).set_break_trap();
-      cast<BlockParameter>(_character).set_parameter(block, new Text(*it));
+      cast<BlockParameter>(_character).set_parameter(new Text(*it));
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
@@ -1539,7 +1480,7 @@ Objectᶲ subclass: Listᶲ as: {
 
     for (auto &item: cast<List>(self)) {
       cast<BlockContext>(block).set_break_trap();
-      cast<BlockParameter>(_item).set_parameter(block, item);
+      cast<BlockParameter>(_item).set_parameter(item);
       execute(block);
 
       if (cast<BlockContext>(block).break_called()) break;
@@ -1620,7 +1561,7 @@ Objectᶲ subclass: Setᶲ as: {
 
     Set::iterator it = cast<Set>(self).begin();
     for (; it != cast<Set>(self).end(); it++) {
-      cast<BlockParameter>(_item).set_parameter(block, *it);
+      cast<BlockParameter>(_item).set_parameter(*it);
       execute(block);
 
       if (cast<BlockContext>(block).break_called() or

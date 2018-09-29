@@ -285,8 +285,9 @@ static void disassemble(uint8_t *ip, const std::string &pre = "    ") {
 
     case meat::bytecode::ASSIGN_BLOCK_PARAM: {
       std::cout << pre << local(bc->o.ct.destination) << " = BLOCK PARAMETER "
+                << local(bc->o.bp.block) << " "
                 << local(bc->o.bp.local_index) << "\n";
-      ip += 3;
+      ip += 4;
       break;
     }
 
@@ -362,12 +363,23 @@ static void dump_libary(std::istream &in) {
   for (auto &cls: classes) {
     std::cout << "\n" << lookup(cls.super_hash_id)
               << " subclass: " << lookup(cls.hash_id) << " {\n";
-    if (cls.object_properties)
-      std::cout << "  " << (unsigned int)cls.object_properties
-                << " properties\n";
+
     if (cls.class_properties)
       std::cout << "  " << (unsigned int)cls.class_properties
                 << " class properties\n";
+    if (cls.object_properties)
+      std::cout << "  " << (unsigned int)cls.object_properties
+                << " properties\n";
+
+    for (auto &entry: cls.cvtable) {
+      if (entry.class_id == cls.hash_id) {
+        std::cout << "\n  method " << lookup(entry.hash_id)
+                  << " {\n    # " << (unsigned int)entry.locals
+                  << " context variables\n";
+        disassemble(&cls.bytecode[entry.offset]);
+        std::cout << "  }\n";
+      }
+    }
 
     for (auto &entry: cls.vtable) {
       if (entry.class_id == cls.hash_id) {

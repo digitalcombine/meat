@@ -395,9 +395,11 @@ meat::Reference meat::execute(Reference context) {
                   << std::endl;
 #endif /* DEBUG */
 
-        Reference block_parameter = new BlockParameter(bc->o.bp.local_index);
+        Reference block_parameter =
+          new BlockParameter(bc->o.bp.local_index,
+                             cast<Context>(context).local(bc->o.bp.block));
         cast<Context>(context).local(bc->o.bp.destination) = block_parameter;
-        ip += 3;
+        ip += 4;
         break;
       }
 

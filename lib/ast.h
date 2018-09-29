@@ -21,6 +21,8 @@
 
 #include <meat.h>
 
+//#define DEBUG_AST 1
+
 #ifndef _MEAT_AST_H
 #define _MEAT_AST_H
 
@@ -34,6 +36,7 @@ namespace meat {
     namespace ast {
 
       class Block;
+      class Identifier;
 
       /**
        */
@@ -60,8 +63,8 @@ namespace meat {
         Node();
         virtual ~Node() throw();
 
-        virtual void gen_bytecode(bool prelim) = 0;
-        virtual LocalVariable gen_result(bool prelim) = 0;
+        virtual void gen_bytecode(unsigned int stage) = 0;
+        virtual LocalVariable gen_result(unsigned int stage) = 0;
 
         virtual bool is_value() { return false; }
         virtual bool is_block() { return false; }
@@ -83,6 +86,12 @@ namespace meat {
         void set_result_dest(LocalVariable dest);
         void set_result_dest();
         LocalVariable get_result_dest();
+
+        /** This is used by block to keep track of the number of temperary
+         * variables needed by the node across each compiling stage.
+         */
+        void temp_locals(unsigned int value) { _x_temp_counter = value; }
+        unsigned int temp_locals() const { return _x_temp_counter; }
 
       protected:
         Block *_scope;
@@ -106,6 +115,9 @@ namespace meat {
         virtual void bytecode(std::uint32_t value);
         virtual void bytecode(std::int32_t value);
         virtual void bytecode(double value);
+
+      private:
+        unsigned int _x_temp_counter;
       };
 
       /**
@@ -154,8 +166,8 @@ namespace meat {
 
         std::uint8_t add_parameter(const std::string &name);
 
-        virtual void gen_bytecode(bool prelim);
-        virtual LocalVariable gen_result(bool prelim);
+        virtual void gen_bytecode(unsigned int stage);
+        virtual LocalVariable gen_result(unsigned int stage);
 
         virtual void add_symbol(const std::string &name);
         void update_symbols(std::set<std::string> &symbols);
@@ -194,13 +206,15 @@ namespace meat {
         ContextBlock();
         virtual ~ContextBlock() throw();
 
-        virtual void gen_bytecode(bool prelim);
-        virtual LocalVariable gen_result(bool prelim);
+        virtual void gen_bytecode(unsigned int stage);
+        virtual LocalVariable gen_result(unsigned int stage);
 
         virtual bool is_block() { return true; }
 
         virtual std::uint8_t locals() const;
         virtual LocalVariable anon_local();
+
+        void add_parameter(Identifier *parameter);
 
       protected:
         virtual LocalVariable resolve_local(const std::string &name) const;
@@ -231,7 +245,7 @@ namespace meat {
         virtual ~Identifier() throw();
 
         void new_local();
-        void block_parameter(Block *block);
+        void block_parameter(LocalVariable block, LocalVariable parameter);
 
         virtual bool is_value() { return true; }
 
@@ -239,8 +253,8 @@ namespace meat {
         std::uint8_t index() const { return _index; }
         std::string name() const { return _name; }
 
-        virtual void gen_bytecode(bool prelim);
-        virtual LocalVariable gen_result(bool prelim);
+        virtual void gen_bytecode(unsigned int stage);
+        virtual LocalVariable gen_result(unsigned int stage);
 
       private:
         ident_type_t _type;
@@ -248,6 +262,7 @@ namespace meat {
         std::string _name;
         std::uint8_t _index;
         LocalVariable _parameter;
+        LocalVariable _block;
       };
 
       /** Represents a constant value.
@@ -259,8 +274,8 @@ namespace meat {
         Constant(double value);
         virtual ~Constant() throw();
 
-        virtual void gen_bytecode(bool prelim);
-        virtual LocalVariable gen_result(bool prelim);
+        virtual void gen_bytecode(unsigned int stage);
+        virtual LocalVariable gen_result(unsigned int stage);
 
       private:
         enum {
@@ -283,8 +298,8 @@ namespace meat {
 
         virtual void scope(Block *block);
 
-        virtual void gen_bytecode(bool prelim);
-        virtual LocalVariable gen_result(bool prelim);
+        virtual void gen_bytecode(unsigned int stage);
+        virtual LocalVariable gen_result(unsigned int stage);
 
       private:
         Identifier *_destination;
@@ -307,8 +322,8 @@ namespace meat {
 
         virtual void scope(Block *block);
 
-        virtual void gen_bytecode(bool prelim);
-        virtual LocalVariable gen_result(bool prelim);
+        virtual void gen_bytecode(unsigned int stage);
+        virtual LocalVariable gen_result(unsigned int stage);
 
       private:
         Node *_who;
@@ -316,6 +331,9 @@ namespace meat {
         std::deque<Node *> _parameters;
 
         bool _super;
+
+        void sort_parameters(unsigned int stage,
+                             std::deque<LocalVariable> &param_idxs);
       };
 
     } /* namespace ast */

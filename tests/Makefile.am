@@ -3,7 +3,7 @@
 TESTS = tests.mlib hello.mlib memory-tests parser-tests
 TEST_EXTENSIONS = .mlib
 MLIB_LOG_COMPILER = @top_srcdir@/bin/meat
-AM_MLIB_LOG_FLAGS = -i ../lib/.libs/ -i ../rtl/.libs/
+AM_MLIB_LOG_FLAGS = -i ../rtl/.libs/
 
 SUFFIXES = .meat .mlib
 

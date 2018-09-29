@@ -83,45 +83,48 @@ std::string itohex(unsigned int value, size_t width = 8);
 
 namespace utf8 {
 
-  class Iterator : public std::iterator<std::bidirectional_iterator_tag,
+  class iterator : public std::iterator<std::bidirectional_iterator_tag,
                                         std::string> {
   public:
-    Iterator(const std::string &value);
-    Iterator(const Iterator &other);
+    iterator(const std::string &value);
+    iterator(const std::string &value, size_t offset);
+    iterator(const iterator &other);
 
-    Iterator &operator ++();
-    Iterator operator ++(int);
-    Iterator &operator --();
-    Iterator operator --(int);
+    iterator &operator =(const iterator &other);
 
-    bool operator ==(const Iterator &other) const;
-    bool operator !=(const Iterator &other) const;
+    iterator &operator ++();
+    iterator operator ++(int);
+    iterator &operator --();
+    iterator operator --(int);
+
+    bool operator ==(const iterator &other) const;
+    bool operator !=(const iterator &other) const;
 
     const std::string &operator *() const;
 
-    Iterator end() const;
+    iterator end() const;
     size_t position() const;
     size_t length() const;
 
-    friend std::string substr(const Iterator &start,
-                              const Iterator &end);
+    friend std::string substr(const iterator &start,
+                              const iterator &end);
 
-    friend std::string replace(const Iterator &start,
-                               const Iterator &end,
+    friend std::string replace(const iterator &start,
+                               const iterator &end,
                                const std::string &value);
   private:
-    const std::string &_value;
+    const std::string *_value;
 
     size_t _index, _length;
     std::string _current;
   };
 
-  std::string substr(const Iterator &start, const Iterator &end);
+  std::string substr(const iterator &start, const iterator &end);
 
   /** Returns a new std::string with the text from start to end replaced
    * with the given value.
    */
-  std::string replace(const Iterator &start, const Iterator &end,
+  std::string replace(const iterator &start, const iterator &end,
                       const std::string &value);
 }
 

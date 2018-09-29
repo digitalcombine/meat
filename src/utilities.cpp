@@ -192,35 +192,44 @@ std::string itohex(unsigned int value, size_t width) {
 }
 
 /******************************************************************************
- * utf8::Iterator Class
+ * utf8::iterator Class
  */
 
-utf8::Iterator::Iterator(const std::string &value)
-  : _value(value), _index(0) {
+utf8::iterator::iterator(const std::string &value)
+  : _value(&value), _index(0) {
   _length = 1;
 
   // Find the length of the character and make a copy for dereferencing.
-  for (; (_value[_index + _length] & 0xc0) == 0x80; ++_length);
-  _current = _value.substr(_index, _length);
+  for (; ((*_value)[_index + _length] & 0xc0) == 0x80; ++_length);
+  _current = _value->substr(_index, _length);
 }
 
-utf8::Iterator::Iterator(const Iterator &other)
+utf8::iterator::iterator(const std::string &value, size_t offset)
+  : _value(&value), _index(offset) {
+
+  // Find the length of the character and make a copy for dereferencing.
+  for (; ((*_value)[_index + _length] & 0xc0) == 0x80; ++_length);
+  _current = _value->substr(_index, _length);
+}
+
+
+utf8::iterator::iterator(const iterator &other)
   : _value(other._value), _index(other._index), _length(other._length),
     _current(other._current) {
 }
 
 /*******************************
- * utf8::Iterator::operator ++ *
+ * utf8::iterator::operator ++ *
  *******************************/
 
-utf8::Iterator &utf8::Iterator::operator ++() {
+utf8::iterator &utf8::iterator::operator ++() {
   // Increment the index.
-  if (_index < _value.length()) _index += _length;
+  if (_index < _value->length()) _index += _length;
 
   // Get the length of the character and copy the character.
-  if (_index < _value.length()) {
-    for (; (_value[_index + _length] & 0xc0) == 0x80; ++_length);
-    _current = _value.substr(_index, _length);
+  if (_index < _value->length()) {
+    for (; ((*_value)[_index + _length] & 0xc0) == 0x80; ++_length);
+    _current = _value->substr(_index, _length);
   } else {
     _current.clear();
   }
@@ -228,16 +237,16 @@ utf8::Iterator &utf8::Iterator::operator ++() {
   return *this;
 }
 
-utf8::Iterator utf8::Iterator::operator ++(int) {
-  Iterator tmp(*this);
+utf8::iterator utf8::iterator::operator ++(int) {
+  iterator tmp(*this);
 
   // Increment the index.
-  if (_index < _value.length()) _index += _length;
+  if (_index < _value->length()) _index += _length;
 
   // Get the length of the character and copy it.
-  if (_index < _value.length()) {
-    for (; (_value[_index + _length] & 0xc0) == 0x80; ++_length);
-    _current = _value.substr(_index, _length);
+  if (_index < _value->length()) {
+    for (; ((*_value)[_index + _length] & 0xc0) == 0x80; ++_length);
+    _current = _value->substr(_index, _length);
   } else {
     _current.clear();
   }
@@ -246,19 +255,19 @@ utf8::Iterator utf8::Iterator::operator ++(int) {
 }
 
 /*******************************
- * utf8::Iterator::operator -- *
+ * utf8::iterator::operator -- *
  *******************************/
 
-utf8::Iterator &utf8::Iterator::operator --() {
+utf8::iterator &utf8::iterator::operator --() {
   if (_index > 0) {
     size_t tmp = _index;
 
     // Find the first character.
-    for (--_index; (_value[_index] & 0xc0) == 0x80 and _index > 0; --_index);
+    for (--_index; ((*_value)[_index] & 0xc0) == 0x80 and _index > 0; --_index);
 
     // Get the length of the character and copy it.
     _length = tmp - _index;
-    _current = _value.substr(_index, _length);
+    _current = _value->substr(_index, _length);
   } else {
     _current.clear();
   }
@@ -266,18 +275,18 @@ utf8::Iterator &utf8::Iterator::operator --() {
   return *this;
 }
 
-utf8::Iterator utf8::Iterator::operator --(int) {
-  Iterator tmp(*this);
+utf8::iterator utf8::iterator::operator --(int) {
+  iterator tmp(*this);
 
   if (_index > 0) {
     size_t tmp = _index;
 
     // Find the first character.
-    for (--_index; (_value[_index] & 0xc0) == 0x80 and _index > 0; --_index);
+    for (--_index; ((*_value)[_index] & 0xc0) == 0x80 and _index > 0; --_index);
 
     // Get the length of the character and copy it.
     _length = tmp - _index;
-    _current = _value.substr(_index, _length);
+    _current = _value->substr(_index, _length);
   } else {
     _current.clear();
   }
@@ -286,40 +295,40 @@ utf8::Iterator utf8::Iterator::operator --(int) {
 }
 
 /*******************************
- * utf8::Iterator::operator == *
+ * utf8::iterator::operator == *
  *******************************/
 
-bool utf8::Iterator::operator ==(const Iterator &other) const {
+bool utf8::iterator::operator ==(const iterator &other) const {
   return _index == other._index;
 }
 
 /*******************************
- * utf8::Iterator::operator != *
+ * utf8::iterator::operator != *
  *******************************/
 
-bool utf8::Iterator::operator !=(const Iterator &other) const {
+bool utf8::iterator::operator !=(const iterator &other) const {
   return _index != other._index;
 }
 
 /******************************
- * utf8::Iterator::operator * *
+ * utf8::iterator::operator * *
  ******************************/
 
-const std::string &utf8::Iterator::operator *() const {
+const std::string &utf8::iterator::operator *() const {
   return _current;
 }
 
-utf8::Iterator utf8::Iterator::end() const {
-  Iterator tmp(*this);
-  tmp._index = _value.length();
+utf8::iterator utf8::iterator::end() const {
+  iterator tmp(*this);
+  tmp._index = _value->length();
   return tmp;
 }
 
-size_t utf8::Iterator::position() const {
+size_t utf8::iterator::position() const {
   return _index;
 }
 
-size_t utf8::Iterator::length() const {
+size_t utf8::iterator::length() const {
   return _length;
 }
 
@@ -327,10 +336,10 @@ size_t utf8::Iterator::length() const {
  * utf8::substr *
  ****************/
 
-std::string utf8::substr(const Iterator &start, const Iterator &end) {
-  const std::string &value = start._value;
+std::string utf8::substr(const iterator &start, const iterator &end) {
+  const std::string &value = *start._value;
   if (start != start.end() and end._index >= start._index) {
-    return value.substr(start._index, end._index + end._length);
+    return value.substr(start._index, end._index - start._index);
   }
   throw std::range_error("sub string iterators out of range");
 }
@@ -339,9 +348,9 @@ std::string utf8::substr(const Iterator &start, const Iterator &end) {
  * utf8::replace *
  *****************/
 
-std::string utf8::replace(const Iterator &start, const Iterator &end,
+std::string utf8::replace(const iterator &start, const iterator &end,
                           const std::string &value) {
-  std::string new_value = start._value;
+  std::string new_value = *start._value;
   if (start != start.end() and end._index >= start._index) {
     return new_value.replace(start._index,
                              (end._index + end._length) - start._index,

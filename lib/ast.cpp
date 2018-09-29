@@ -88,7 +88,7 @@ std::uint8_t LocalVariable::index() const {
  * meat::grinder::ast::Node::Node *
  **********************************/
 
-Node::Node() : _scope(NULL), result_set(false) {
+Node::Node() : _scope(NULL), result_set(false), _x_temp_counter(0) {
 }
 
 /***********************************
@@ -236,8 +236,16 @@ void Node::bytecode(double value) {
  * meat::grinder::ast::Block Class
  */
 
+ /************************************
+  * meat::grinder::ast::Block::Block *
+  ************************************/
+
 Block::Block() : temp_counter(0) {
 }
+
+/*************************************
+ * meat::grinder::ast::Block::~Block *
+ *************************************/
 
 Block::~Block() noexcept {
   for (auto &node: _nodes)
@@ -273,7 +281,7 @@ LocalVariable Block::local(const std::string &name) {
     if (_locals[index] == name) return result;
   }
 
-#ifdef DEBUG
+#ifdef DEBUG_AST
   std::cout << "AST: Adding local " << name << std::endl;
 #endif
   if (locals() < 0xff)
@@ -332,7 +340,7 @@ Method::~Method() throw() {
  *********************************************/
 
 std::uint8_t Method::add_parameter(const std::string &name) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
   std::cout << "STAGE: Adding parameter " << name << std::endl;
 #endif
   local(name);
@@ -343,16 +351,22 @@ std::uint8_t Method::add_parameter(const std::string &name) {
  * meat::grinder::ast::Method::gen_bytecode *
  ********************************************/
 
-void Method::gen_bytecode(bool prelim) {
-
-  std::deque<Node *>::iterator it;
-  for (it = _nodes.begin(); it != _nodes.end(); it++) {
-    (*it)->gen_bytecode(prelim);
-    temp_counter = 0; // We can reuse temporary variable previously created.
+void Method::gen_bytecode(unsigned int stage) {
+#ifdef DEBUG_AST
+  std::cout << "\nMETHOD: Compiling stage " << (unsigned int)stage
+            << std::endl;
+#endif
+  for (auto &node: _nodes) {
+    temp_counter = node->temp_locals();
+    node->gen_bytecode(stage);
+    node->temp_locals(temp_counter);
+#ifdef DEBUG_AST
+    std::cout << "." << std::endl;
+#endif
   }
 
-  if (!prelim) {
-#ifdef DEBUG
+  if (stage == 0) {
+#ifdef DEBUG_AST
     std::cout << "BC: CTXEND" << std::endl;
     std::cout << "CONTEXT: " << _locals.size() << " locals" << std::endl;
 #endif
@@ -360,7 +374,11 @@ void Method::gen_bytecode(bool prelim) {
   }
 }
 
-LocalVariable Method::gen_result(bool prelim __attribute__((unused))) {
+/******************************************
+ * meat::grinder::ast::Method::gen_result *
+ ******************************************/
+
+LocalVariable Method::gen_result(unsigned int stage __attribute__((unused))) {
   throw Exception("A method cannot be placed in a local variable.");
 }
 
@@ -372,14 +390,26 @@ void Method::add_symbol(const std::string &name) {
   _symbols.insert(name);
 }
 
+/*********************************************
+ * meat::grinder::ast:Method::update_symbols *
+ *********************************************/
+
 void Method::update_symbols(std::set<std::string> &symbols) {
   symbols.insert(_symbols.begin(), _symbols.end());
 }
+
+/**********************************************
+ * meat::grinder::ast:Method::append_bytecode *
+ **********************************************/
 
 void Method::append_bytecode(std::vector<uint8_t> &bc) {
   for (auto &byte: _bytecode)
     bc.push_back(byte);
 }
+
+/***********************************************
+ * meat::grinder::ast:Method::resolve_property *
+ ***********************************************/
 
 std::int16_t Method::resolve_property(const std::string &name) const {
   for (unsigned int index = 0; index < _properties.size(); index++) {
@@ -388,12 +418,20 @@ std::int16_t Method::resolve_property(const std::string &name) const {
   return -1;
 }
 
+/*****************************************************
+ * meat::grinder::ast:Method::resolve_class_property *
+ *****************************************************/
+
 std::int16_t Method::resolve_class_property(const std::string &name) const {
   for (unsigned int index = 0; index < _class_properties.size(); index++) {
     if (_class_properties[index] == name) return index + _cp_offset;
   }
   return -1;
 }
+
+/********************************************
+ * meat::grinder::ast:Method::resolve_local *
+ ********************************************/
 
 LocalVariable Method::resolve_local(const std::string &name) const {
   LocalVariable bad_result;
@@ -480,7 +518,6 @@ void Method::bytecode(double value) {
  */
 
 ContextBlock::ContextBlock() {
-  temp_counter = 0;
 }
 
 ContextBlock::~ContextBlock() throw() {
@@ -490,7 +527,7 @@ ContextBlock::~ContextBlock() throw() {
  * meat::grinder::ast::ContextBlock::gen_bytecode *
  **************************************************/
 
-void ContextBlock::gen_bytecode(bool prelim __attribute__((unused))) {
+void ContextBlock::gen_bytecode(unsigned int stage __attribute__((unused))) {
   throw Exception("Can't generate a code block without a local variable"
       " destination");
 }
@@ -499,15 +536,17 @@ void ContextBlock::gen_bytecode(bool prelim __attribute__((unused))) {
  * meat::grinder::ast::ContextBlock::gen_result *
  ************************************************/
 
-LocalVariable ContextBlock::gen_result(bool prelim) {
+LocalVariable ContextBlock::gen_result(unsigned int stage) {
   uint16_t bc_mark = 0;
 
-  if (prelim) {
+  if (stage == 2) {
     // Get a local variable for the BlockContext object.
     _local_var = scope().anon_local();
 
-  } else {
-#ifdef DEBUG
+  }
+
+  if (stage == 0) {
+#ifdef DEBUG_AST
     std::cout << "BC: BLOCK " << _local_var.name() << " " << std::dec
               << (unsigned int)_local_names.size() << "\n";
 #endif
@@ -519,12 +558,13 @@ LocalVariable ContextBlock::gen_result(bool prelim) {
   }
 
   for (auto &node: _nodes) {
-    node->gen_bytecode(prelim);
-    temp_counter = 0;
+    temp_counter = node->temp_locals();
+    node->gen_bytecode(stage);
+    node->temp_locals(temp_counter);
   }
 
-  if (not prelim) {
-#ifdef DEBUG
+  if (stage == 0) {
+#ifdef DEBUG_AST
     std::cout << "BC: CTXEND" << std::endl;
 #endif
     bytecode(meat::bytecode::CONTEXT_END);
@@ -544,6 +584,14 @@ LocalVariable ContextBlock::anon_local() {
   std::stringstream temp_name;
   temp_name << ".anon.b." << (unsigned int)++temp_counter;
   return local(temp_name.str());
+}
+
+/***************************************************
+ * meat::grinder::ast::ContextBlock::add_parameter *
+ ***************************************************/
+
+void ContextBlock::add_parameter(Identifier *parameter) {
+  parameter->block_parameter(_local_var, this->local(parameter->name()));
 }
 
 LocalVariable ContextBlock::resolve_local(const std::string &name) const {
@@ -599,7 +647,7 @@ void Identifier::new_local() {
  * meat::grinder::ast::Identifier::block_parameter *
  ***************************************************/
 
-void Identifier::block_parameter(Block *block) {
+void Identifier::block_parameter(LocalVariable block, LocalVariable parameter) {
   if (_name[0] != '.')
     throw Exception(std::string("Identifier ") + _name +
                     " is not a block parameter.");
@@ -607,15 +655,16 @@ void Identifier::block_parameter(Block *block) {
   result = anon_local();
   result_set = true;
 
-  _parameter = block->local(_name);
-  _type = BLOCK_PARAMETER;
+  _parameter = parameter;
+  _block = block;
+  this->_type = BLOCK_PARAMETER;
 }
 
 /************************************************
  * meat::grinder::ast::Identifier::gen_bytecode *
  ************************************************/
 
-void Identifier::gen_bytecode(bool prelim __attribute__((unused))) {
+void Identifier::gen_bytecode(unsigned int stage __attribute__((unused))) {
   throw Exception("Internal AST Error: Can't generate bytecode for an "
                   "identifier without a result destination.");
 }
@@ -624,8 +673,9 @@ void Identifier::gen_bytecode(bool prelim __attribute__((unused))) {
  * meat::grinder::ast::Identifier::gen_result *
  **********************************************/
 
-LocalVariable Identifier::gen_result(bool prelim) {
-  if (prelim) {
+LocalVariable Identifier::gen_result(unsigned int stage) {
+
+  if (stage == 1) {
     /* The first stage in compilation where we resolve the identifier and
      * attempt to optimize the destination of the result.
      */
@@ -635,7 +685,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
 
       if ((local_idx = resolve_property(_name)) != -1) {
         // Is it an object property?
-#ifdef DEBUG
+#ifdef DEBUG_AST
         std::cout << "STAGE: Resolved identifier " << _name << " as property "
                   << std::dec << local_idx << std::endl;
 #endif
@@ -645,7 +695,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
 
       } else if ((local_idx = resolve_class_property(_name)) != -1) {
         // Is it a class property?
-#ifdef DEBUG
+#ifdef DEBUG_AST
         std::cout << "STAGE: Resolved identifier " << _name
                   << " as class property " << std::dec << local_idx
                   << std::endl;
@@ -658,7 +708,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
         // Is it a local variable?
         LocalVariable source = resolve_local(_name);
         if (not source.name().empty()) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
           std::cout << "STAGE: Resolved identifier " << source.name()
                     << " as local variable " << (unsigned int)source.index()
                     << std::endl;
@@ -671,7 +721,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
           // Is it a class object?
           result_set = false;
           if (meat::Class::have_class(_name)) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
             std::cout << "STAGE: Resolved identifier " << _name
                       << " as class. " << std::endl;
 #endif
@@ -681,7 +731,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
 
           } else {
             // So far we haven't been able to resolve the identifier.
-#ifdef DEBUG
+#ifdef DEBUG_AST
             std::cout << "STAGE: Identifier " << _name << " is unresolved."
                       << std::endl;
 #endif
@@ -689,24 +739,27 @@ LocalVariable Identifier::gen_result(bool prelim) {
         }
       }
     }
+  }
 
-  } else {
+  if (stage == 0) {
     // The byte code generation.
 
     switch (_type) {
-    case BLOCK_PARAMETER:
-#ifdef DEBUG
+    case BLOCK_PARAMETER: {
+#ifdef DEBUG_AST
       std::cout << "BC: BLOCK PARAMETER " << result.name()
+                << " \"" << std::dec << (int)_block.index() << "\""
                 << " \"" << std::dec << (int)_parameter.index() << "\""
                 << std::endl;
 #endif
       bytecode(bytecode::ASSIGN_BLOCK_PARAM);
       bytecode(result.index());
-      //bytecode(_block_context.index());
+      bytecode(_block.index());
       bytecode(_parameter.index());
       return result;
+    }
     case OBJECT_PROPERTY: {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: PROP " << (unsigned int)result.index() << " "
                 << std::dec << (unsigned int)_index << std::endl;
 #endif
@@ -716,7 +769,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
       return result;
     }
     case CLASS_PROPERTY: {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: CLASS PROP " << result.name() << " "
                 << std::dec << (unsigned int)_index << std::endl;
 #endif
@@ -726,7 +779,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
       return result;
     }
     case CLASS_REFERENCE:
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: CLASS " << result.name() << " "
                 << std::hex << _name << std::endl;
 #endif
@@ -736,7 +789,7 @@ LocalVariable Identifier::gen_result(bool prelim) {
       return result;
     case LOCAL_VARIABLE:
       if (result.name() != _name) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
         std::cout << "BC: MOV " << result.name() << " " << std::dec
                   << _name << std::endl;;
 #endif
@@ -783,20 +836,20 @@ Constant::~Constant() noexcept {
  * meat::grinder::ast::Constant::gen_bytecode *
  **********************************************/
 
-void Constant::gen_bytecode(bool prelim __attribute__((unused))) {
+void Constant::gen_bytecode(unsigned int stage __attribute__((unused))) {
 }
 
 /********************************************
  * meat::grinder::ast::Constant::gen_result *
  ********************************************/
 
-LocalVariable Constant::gen_result(bool prelim) {
-  if (prelim) {
-    set_result_dest();
-  } else {
+LocalVariable Constant::gen_result(unsigned int stage) {
+  set_result_dest();
+
+  if (stage == 0) {
     switch (_type) {
     case TEXT: {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: STR " << result.name()
                 << " \"" << _text << "\"" << std::endl;
 #endif
@@ -808,7 +861,7 @@ LocalVariable Constant::gen_result(bool prelim) {
       return result;
     }
     case INTEGER: {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: INT " << result.name()
                 << " \"" << std::dec << (int)_value.integer << "\""
                 << std::endl;
@@ -819,7 +872,7 @@ LocalVariable Constant::gen_result(bool prelim) {
       return result;
     }
     case NUMBER: {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: NUM " << result.name()
                 << " \"" << (double)_value.number << "\"" << std::endl;
 #endif
@@ -861,20 +914,23 @@ void Assignment::scope(Block *block) {
  * meat::grinder::ast::Assignment::gen_bytecode *
  ************************************************/
 
-void Assignment::gen_bytecode(bool prelim) {
+void Assignment::gen_bytecode(unsigned int stage) {
   // Generate the code needed for the source value.
 
-  if (prelim) {
-    _destination->gen_result(prelim);
+  switch (stage) {
+  case 1:
+    _destination->gen_result(stage);
 
     // This indicates the first time the variable has been addressed.
     _destination->new_local();
 
     if (_destination->type() == Identifier::LOCAL_VARIABLE)
       _source->set_result_dest(_destination->get_result_dest());
-    _source->gen_result(prelim);
-  } else {
-    LocalVariable source = _source->gen_result(prelim);
+    _source->gen_result(stage);
+    break;
+
+  case 0: {
+    LocalVariable source = _source->gen_result(stage);
 
     /* Determine the type of assignment and generate the bytecode.
      */
@@ -882,13 +938,13 @@ void Assignment::gen_bytecode(bool prelim) {
 
     case Identifier::OBJECT_PROPERTY:
       // Assign to an object property.
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: SETATTR " << std::dec
                 << (unsigned int)_destination->index() << " ";
 #endif
       bytecode(meat::bytecode::SET_PROP);
       bytecode(_destination->index());
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << source.name() << std::endl;
 #endif
       bytecode(source.index());
@@ -896,13 +952,13 @@ void Assignment::gen_bytecode(bool prelim) {
 
     case Identifier::CLASS_PROPERTY:
       // Assign to a class property.
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: GETCATTR " << std::dec
                 << (unsigned int)_destination->index() << " ";
 #endif
       bytecode(meat::bytecode::SET_CLASS_PROP);
       bytecode(_destination->index());
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << source.name() << std::endl;
 #endif
       bytecode(source.index());
@@ -916,13 +972,14 @@ void Assignment::gen_bytecode(bool prelim) {
     }
     }
   }
+  }
 }
 
 /**********************************************
  * meat::grinder::ast::Assignment::gen_result *
  **********************************************/
 
-LocalVariable Assignment::gen_result(bool prelim __attribute__((unused))) {
+LocalVariable Assignment::gen_result(unsigned int stage __attribute__((unused))) {
   throw Exception("Cannot get the results of an assignment.");
 }
 
@@ -950,6 +1007,7 @@ Message::~Message() throw() {
 
   for (auto &node: _parameters)
     delete node;
+  _parameters.clear();
 }
 
 /***************************************
@@ -995,44 +1053,23 @@ void Message::scope(Block *block) {
  * meat::grinder::ast::Message::gen_bytecode *
  *********************************************/
 
-void Message::gen_bytecode(bool prelim) {
-  LocalVariable who_var = _who->gen_result(prelim);
+void Message::gen_bytecode(unsigned int stage) {
+  LocalVariable who_var = _who->gen_result(stage);
 
   std::deque<LocalVariable> param_idxs;
+  sort_parameters(stage, param_idxs);
 
-  for (auto it = _parameters.begin(); it != _parameters.end(); it++) {
-
-    if ((*it)->is_block() and it != _parameters.begin()) {
-
-      for  (auto param_it = it;; param_it--) {
-
-        if (param_it == it) continue;
-        if ((*param_it)->is_block()) break;
-
-        if ((*param_it)->is_value()) {
-          if (((Identifier *)(*param_it))->type() == Identifier::UNKNOWN)  {
-            ((Identifier *)(*param_it))->block_parameter((Block *)*it);
-          }
-        }
-
-        if (param_it == _parameters.begin()) break;
-      }
-    }
-
-    param_idxs.push_back((*it)->gen_result(prelim));
-  }
-
-  if (not prelim) {
+  if (stage == 0) {
     LocalVariable lindex;
 
     if (_super) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: SUPER " << who_var.name() << " " << _method << " "
                 << std::dec << (unsigned int)param_idxs.size();
 #endif
       bytecode(meat::bytecode::MESG_SUPER);
     } else {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: MESSAGE " << who_var.name() << " "
                 << _method << " " << std::dec
                 << (unsigned int)param_idxs.size();
@@ -1044,13 +1081,13 @@ void Message::gen_bytecode(bool prelim) {
     bytecode((uint32_t)hash(_method));
     bytecode((uint8_t)param_idxs.size());
     for (auto &local: param_idxs) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << " " << local.name();
 #endif
       bytecode(local.index());
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_AST
     std::cout << std::endl;
 #endif
   }
@@ -1060,27 +1097,26 @@ void Message::gen_bytecode(bool prelim) {
  * meat::grinder::ast::Message::gen_result *
  *******************************************/
 
-LocalVariable Message::gen_result(bool prelim) {
-  LocalVariable who_var = _who->gen_result(prelim);
+LocalVariable Message::gen_result(unsigned int stage) {
+  LocalVariable who_var = _who->gen_result(stage);
 
   std::deque<LocalVariable> param_idxs;
-  for (auto &node: _parameters)
-    param_idxs.push_back(node->gen_result(prelim));
+  sort_parameters(stage, param_idxs);
 
-  if (prelim) set_result_dest();
+  set_result_dest();
 
-  if (not prelim) {
+  if (stage == 0) {
     LocalVariable lindex;
 
     if (_super) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: SUPRES " << who_var.name() << " "
                 << result.name() << " " << _method << " "
                 << std::dec << (unsigned int)param_idxs.size();
 #endif
       bytecode(meat::bytecode::MESG_SUPER_RESULT);
     } else {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << "BC: MSGRES " << who_var.name() << " "
                 << result.name() << " " << _method << " "
                 << std::dec << (unsigned int)param_idxs.size();
@@ -1094,16 +1130,41 @@ LocalVariable Message::gen_result(bool prelim) {
     bytecode((uint8_t)param_idxs.size());
 
     for (auto &local: param_idxs) {
-#ifdef DEBUG
+#ifdef DEBUG_AST
       std::cout << " " << local.name();
 #endif
       bytecode(local.index());
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_AST
     std::cout << std::endl;
 #endif
   }
 
   return result;
+}
+
+/************************************************
+ * meat::grinder::ast::Message::sort_parameters *
+ ************************************************/
+
+void Message::sort_parameters(unsigned int stage,
+                              std::deque<LocalVariable> &param_idxs) {
+  for (auto it = _parameters.rbegin(); it != _parameters.rend(); ++it) {
+    param_idxs.push_front((*it)->gen_result(stage));
+
+    // If the parameter is a block lets look for block parameters.
+    if (stage == 2 and (*it)->is_block()) {
+      auto param_it = it; ++param_it;
+      for (; param_it != _parameters.rend(); ++param_it) {
+
+        if ((*param_it)->is_block()) break;
+
+        if ((*param_it)->is_value() and
+            (dynamic_cast<Identifier *>(*param_it))->type() == Identifier::UNKNOWN)  {
+          (dynamic_cast<ContextBlock *>(*it))->add_parameter(dynamic_cast<Identifier *>(*param_it));
+        }
+      }
+    }
+  }
 }

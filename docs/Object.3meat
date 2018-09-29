@@ -1,0 +1,35 @@
+.TH meat 3MEAT "26 April 2017" "version 0.3"
+.SH NAME
+
+.SH SYNOPSIS
+\fBObject\fR subclass: \fBObject\fR as: {
+  method \fBinitialize\fR
+  method \fBcleanup\fR
+  method \fB==\fR \fIother\fR
+  method \fB<>\fR \fIother\fR
+  method \fBis:\fR \fIother\fR
+  method \fBisNot:\fR \fIother\fR
+  method \fBisObject\fR
+  method \fBisClass\fR
+  method \fBisNull\fR
+  method \fBtype\fR
+  method \fBisType:\fR \fIclass\fR
+  method \fBweakReference\fR
+  method \fBnormalReference\fR
+  method \fBisWeakReference\fR
+ }
+
+.SH DESCRIPTION
+The Object class is the base class of all the objects in the \fBMeat\fR language.
+.SS method initialize
+When a class creates a new object this method is messaged to populate the objects properties with default values. By default, the properties of a new object are all initially set to the Null object. This method can be overridden by sub-classes to set it's properties to something other than null and must always message the super class initialize method.
+
+ method initialize {
+   super initialize
+   # Populate object's properties here.
+ }
+
+.SS method cleanup
+
+.SS method == other
+Tests if the \fIother\fB object or class is the same object as self. For the Object class, it does not test the equality of values, but sub-classes should override this method to test for value equality. The result is to be either the True or False Boolean objects.

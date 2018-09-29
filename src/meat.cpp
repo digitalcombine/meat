@@ -85,6 +85,10 @@ meat::Object::Object(Reference type, std::uint8_t properties)
  *************************/
 
 meat::Object::~Object() throw () {
+  if (is_object() and cast<Class>(_type).cleanup()) {
+    Reference self = this; ++self;
+    execute(message(self, "cleanup", Null()));
+  }
   // Clean up all the properties
   if (_property)
     delete [] _property;
@@ -279,6 +283,10 @@ std::string meat::Class::name() const {
 void meat::Class::name(const std::string &new_name) {
   _name = new_name;
   _hash_id = hash(_name);
+}
+
+bool meat::Class::cleanup() const {
+  return (find(0x331156ce) != nullptr);
 }
 
 /********************************
@@ -803,7 +811,7 @@ meat::Class::VTable::find(std::uint32_t hash_id) {
       else if (res > 0) lo = pivot + 1;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 const meat::vtable_entry_t *
@@ -822,7 +830,7 @@ meat::Class::VTable::find(std::uint32_t hash_id) const {
       else if (res > 0) lo = pivot + 1;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 /***********************************
@@ -1255,9 +1263,10 @@ const char* meat::Exception::what() const throw() {
  * meat::BlockParameter::BlockParameter *
  ****************************************/
 
-meat::BlockParameter::BlockParameter(std::uint8_t offset)
-  : Object(Class::resolve("BlockParameter"), 1) {
-  property(0) = new Value(offset);
+meat::BlockParameter::BlockParameter(std::uint8_t offset, Reference block)
+  : Object(Class::resolve("BlockParameter"), 2) {
+  property(0) = block;
+  property(1) = new Value(offset);
 }
 
 meat::BlockParameter::BlockParameter(Reference cls, std::uint8_t properties)
@@ -1276,9 +1285,9 @@ meat::BlockParameter::~BlockParameter() noexcept {
  ***************************************/
 
 void
-meat::BlockParameter::set_parameter(Reference block, Reference value) const {
-  Reference index = property(0);
-  cast<BlockContext>(block).local(INTEGER(index)) = value;
+meat::BlockParameter::set_parameter(Reference value) const {
+  Reference index = property(1);
+  cast<BlockContext>(property(0)).local(INTEGER(index)) = value;
 }
 
 /******************************************************************************

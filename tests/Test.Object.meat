@@ -20,6 +20,7 @@
 Library requires: UnitTest
 
 Object subclass: TestObject1 as: {
+  class property _cleanedUp
   property _init1
 
   class method new {
@@ -27,9 +28,21 @@ Object subclass: TestObject1 as: {
     context return: self
   }
 
+  class method initialize {
+    _cleanedUp = [Boolean false]
+  }
+
+  class method wasCleanedUp {
+    context return: _cleanedUp
+  }
+
   method initialize {
     super initialize
     _init1 = [Boolean true]
+  }
+
+  method cleanup {
+    _cleanedUp = [Boolean true]
   }
 
   method wasInitialized {
@@ -56,6 +69,18 @@ Test.Suite subclass: Test.Object as: {
   method setup {
     self title: "3.1 The Object Class"
     other = ""
+
+    self title: "3.1.? The cleanup method" test: {
+      testObject = [TestObject1 new]
+      [TestObject1 wasCleanedUp] isTrue: {
+        self fail: "Cleanup happend before destruction of object"
+      }
+      testObject = null
+      [TestObject1 wasCleanedUp] isFalse: {
+        self fail: "Cleanup message never sent"
+      }
+      self pass
+    }
 
     self title: "3.1.1 The == methods" test: {
       [self == self] isFalse: {

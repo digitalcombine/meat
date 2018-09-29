@@ -50,7 +50,7 @@ Test.Suite subclass: Test.Class as: {
     self title: "3.2.? method forEach: do:" test: {
       Class forEach: .class do: {
         [.class isClass] isFalse: {
-          #self fail: "Failed to iterator over a classes"
+          self fail: "Failed to iterator over a classes"
           #context break
         }
       }
